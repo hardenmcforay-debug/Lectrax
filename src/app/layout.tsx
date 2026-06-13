@@ -71,7 +71,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const logoUrl = await getSiteLogoUrl();
+  let logoUrl: string | null = null;
+  try {
+    logoUrl = await getSiteLogoUrl();
+  } catch (error) {
+    console.error("[RootLayout] Failed to load site logo:", error);
+  }
 
   return (
     <html lang="en" className="low-data-mode">

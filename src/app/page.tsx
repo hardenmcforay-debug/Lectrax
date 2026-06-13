@@ -6,7 +6,12 @@ import "./landing.css";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const heroImageUrl = await getLandingHeroImageUrl();
+  let heroImageUrl: string | null = null;
+  try {
+    heroImageUrl = await getLandingHeroImageUrl();
+  } catch (error) {
+    console.error("[HomePage] Failed to load hero image:", error);
+  }
 
   return (
     <>

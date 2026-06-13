@@ -24,7 +24,7 @@ function loadEnvFile(filename) {
 loadEnvFile(".env.local");
 loadEnvFile(".env");
 
-const PLACEHOLDER = /^your-|change-this|replace-me|^example|^xxx/i;
+const PLACEHOLDER = /^your-|change-this|replace-me|^example|^xxx|^\.\.+$/i;
 
 function read(name) {
   const value = process.env[name]?.trim();
@@ -37,7 +37,6 @@ const required = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "NEXT_PUBLIC_APP_URL",
   "QR_TOKEN_SECRET",
-  "CRON_SECRET",
 ];
 
 const errors = [];
@@ -59,10 +58,14 @@ if (qr && qr.length < 32) {
   errors.push("QR_TOKEN_SECRET must be at least 32 characters");
 }
 
+if (!read("CRON_SECRET")) {
+  warnings.push("CRON_SECRET not set (subscription lifecycle cron will not run)");
+}
+
 const monimeKeys = ["MONIME_API_KEY", "MONIME_SPACE_ID", "MONIME_WEBHOOK_SECRET"];
 const monimeSet = monimeKeys.filter((key) => read(key));
 if (monimeSet.length > 0 && monimeSet.length < monimeKeys.length) {
-  errors.push("Incomplete Monime configuration (set all MONIME_* keys together)");
+  warnings.push("Incomplete Monime configuration (set all MONIME_* keys together)");
 }
 if (monimeSet.length === 0) {
   warnings.push("Monime not configured (optional until payments are enabled)");

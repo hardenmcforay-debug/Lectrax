@@ -9,6 +9,7 @@ const PLACEHOLDER_PATTERNS = [
   /^replace-me/i,
   /^example/i,
   /^xxx/i,
+  /^\.{2,}$/,
 ];
 
 function isPlaceholder(value: string): boolean {
@@ -126,7 +127,6 @@ export function validateProductionEnv(): EnvValidationResult {
     "SUPABASE_SERVICE_ROLE_KEY",
     "NEXT_PUBLIC_APP_URL",
     "QR_TOKEN_SECRET",
-    "CRON_SECRET",
   ] as const;
 
   for (const name of required) {
@@ -145,12 +145,24 @@ export function validateProductionEnv(): EnvValidationResult {
     errors.push("QR_TOKEN_SECRET must be at least 32 characters");
   }
 
+  if (!readEnv("CRON_SECRET")) {
+    warnings.push(
+      "CRON_SECRET not set — the daily subscription lifecycle cron will return 401 until configured"
+    );
+  } else if (isPlaceholder(readEnv("CRON_SECRET")!)) {
+    warnings.push("CRON_SECRET is still a placeholder");
+  }
+
   try {
     getMonimeEnv();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (readEnv("MONIME_API_KEY") || readEnv("MONIME_SPACE_ID")) {
-      errors.push(message);
+    if (
+      readEnv("MONIME_API_KEY") ||
+      readEnv("MONIME_SPACE_ID") ||
+      readEnv("MONIME_WEBHOOK_SECRET")
+    ) {
+      warnings.push(`Monime payment configuration issue: ${message}`);
     } else {
       warnings.push("Monime payments not configured (optional until checkout is enabled)");
     }
