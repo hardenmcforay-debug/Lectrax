@@ -1,0 +1,194 @@
+@keyframes lecturer-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lecturer-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lecturer-subscription-glow {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.34;
+    transform: scale(1.05);
+  }
+}
+
+.lecturer-page-enter {
+  animation: lecturer-fade-in 0.35s ease-out;
+}
+
+.lecturer-stagger > * {
+  animation: lecturer-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lecturer-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.lecturer-stagger > *:nth-child(2) {
+  animation-delay: 65ms;
+}
+.lecturer-stagger > *:nth-child(3) {
+  animation-delay: 130ms;
+}
+.lecturer-stagger > *:nth-child(4) {
+  animation-delay: 195ms;
+}
+.lecturer-stagger > *:nth-child(5) {
+  animation-delay: 260ms;
+}
+.lecturer-stagger > *:nth-child(6) {
+  animation-delay: 325ms;
+}
+.lecturer-stagger > *:nth-child(7) {
+  animation-delay: 390ms;
+}
+.lecturer-stagger > *:nth-child(8) {
+  animation-delay: 455ms;
+}
+
+.lecturer-header-enter {
+  animation: lecturer-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lecturer-card-interactive {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.lecturer-card-interactive:hover {
+  transform: translateY(-2px);
+}
+
+.lecturer-nav-link {
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.lecturer-nav-link:hover {
+  transform: translateX(3px);
+}
+
+.lecturer-nav-link[data-active="true"] {
+  transform: none;
+}
+
+.lecturer-nested-item-interactive {
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.lecturer-nested-item-interactive:hover {
+  transform: translateX(2px);
+}
+
+.lecturer-subscription-glow {
+  animation: lecturer-subscription-glow 8s ease-in-out infinite;
+}
+
+/* ── Lecturer mobile bottom navigation ──────────────────── */
+
+.lecturer-bottom-nav-bar {
+  background: linear-gradient(180deg, #0b3d91 0%, #0a3580 100%);
+  border-top-left-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
+  box-shadow:
+    0 -8px 32px -8px rgba(11, 61, 145, 0.35),
+    0 -2px 8px -2px rgba(15, 23, 42, 0.12);
+}
+
+.lecturer-bottom-nav-item:active {
+  transform: scale(0.96);
+}
+
+@keyframes lecturer-menu-backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lecturer-menu-drawer-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.lecturer-mobile-menu-backdrop {
+  animation: lecturer-menu-backdrop-fade-in 0.2s ease-out both;
+}
+
+.lecturer-mobile-menu-drawer {
+  animation: lecturer-menu-drawer-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* PWA standalone: always use mobile navigation chrome */
+html[data-pwa-standalone="true"] .lecturer-desktop-sidebar {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .lecturer-mobile-header,
+html[data-pwa-standalone="true"] .lecturer-mobile-nav {
+  display: flex !important;
+}
+
+html[data-pwa-standalone="true"] .lecturer-portal-content {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  padding-top: calc(4.25rem + env(safe-area-inset-top));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lecturer-page-enter,
+  .lecturer-stagger > *,
+  .lecturer-header-enter,
+  .lecturer-subscription-glow {
+    animation: none !important;
+  }
+
+  .lecturer-card-interactive,
+  .lecturer-card-interactive:hover,
+  .lecturer-nav-link,
+  .lecturer-nav-link:hover,
+  .lecturer-nested-item-interactive,
+  .lecturer-nested-item-interactive:hover,
+  .lecturer-bottom-nav-item:active {
+    transform: none !important;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .lecturer-mobile-menu-backdrop,
+  .lecturer-mobile-menu-drawer {
+    animation: none !important;
+  }
+}

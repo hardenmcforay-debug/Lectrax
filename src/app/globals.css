@@ -1,0 +1,289 @@
+@import "tailwindcss";
+@import "./student-portal-animations.css";
+@import "./lecturer-portal-animations.css";
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-primary: #0b3d91;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #10b981;
+  --color-accent-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-border: #e2e8f0;
+  --color-card: #ffffff;
+  --color-destructive: #ef4444;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #0b3d91 0%, #0f5bb5 50%, #10b981 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes auth-page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-page-enter {
+  animation: auth-page-enter 0.4s ease-out both;
+}
+
+.auth-fade-in {
+  animation: auth-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-fade-in-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.auth-fade-in-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.auth-primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.auth-social-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Full-viewport authentication shell */
+.auth-route-root {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.auth-shell {
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.auth-shell-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.auth-branding-content {
+  min-height: 0;
+}
+
+.auth-form-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.auth-illustration-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.auth-illustration-wrap svg {
+  height: auto;
+  width: 100%;
+  max-height: min(22vh, 180px);
+}
+
+@media (min-width: 1024px) {
+  .auth-illustration-wrap svg {
+    max-height: min(26vh, 200px);
+  }
+}
+
+@media (max-width: 767px) {
+  .auth-route-root {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .auth-shell {
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+}
+
+/* PWA installed app: form-only auth (login / signup) */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .auth-branding-panel,
+  .auth-form-decorations,
+  .auth-form-marketing-copy {
+    display: none !important;
+  }
+
+  .auth-route-root {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .auth-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    flex-direction: column;
+  }
+
+  .auth-form-panel {
+    background: #ffffff;
+  }
+
+  .auth-pwa-form-inner {
+    min-height: 100dvh;
+    justify-content: flex-start;
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+
+  .auth-form-content {
+    max-width: 24rem;
+  }
+
+  .auth-form-content .auth-form-header {
+    text-align: center;
+  }
+
+  .auth-form-content form {
+    text-align: left;
+  }
+}
+
+html[data-pwa-standalone="true"] .auth-branding-panel,
+html[data-pwa-standalone="true"] .auth-form-decorations,
+html[data-pwa-standalone="true"] .auth-form-marketing-copy {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .auth-route-root {
+  height: auto;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html[data-pwa-standalone="true"] .auth-shell {
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  flex-direction: column;
+}
+
+html[data-pwa-standalone="true"] .auth-form-panel {
+  background: #ffffff;
+}
+
+html[data-pwa-standalone="true"] .auth-pwa-form-inner {
+  min-height: 100dvh;
+  justify-content: flex-start;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+}
+
+html[data-pwa-standalone="true"] .auth-form-content {
+  max-width: 24rem;
+}
+
+html[data-pwa-standalone="true"] .auth-form-content .auth-form-header {
+  text-align: center;
+}
+
+html[data-pwa-standalone="true"] .auth-form-content form {
+  text-align: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-page-enter,
+  .auth-fade-in {
+    animation: none !important;
+  }
+
+  .auth-primary-btn:hover:not(:disabled),
+  .auth-social-btn:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
+
+/* Low Data Mode — reduce motion, blur, and decorative rendering cost */
+html.low-data-mode {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html.low-data-mode .glass-card {
+  backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+html.low-data-mode .gradient-hero {
+  background: #0b3d91;
+}
+
+html.low-data-mode .student-page-enter,
+html.low-data-mode .student-stagger > *,
+html.low-data-mode .student-header-enter,
+html.low-data-mode .student-hero-enter,
+html.low-data-mode .student-hero-float,
+html.low-data-mode .student-hero-float-delayed,
+html.low-data-mode .student-hero-glow,
+html.low-data-mode .student-hero-shimmer,
+html.low-data-mode .lecturer-page-enter,
+html.low-data-mode .lecturer-stagger > *,
+html.low-data-mode .lecturer-header-enter,
+html.low-data-mode .landing-float {
+  animation: none !important;
+}
+
+html.low-data-mode .student-card-interactive:hover,
+html.low-data-mode .student-nav-link:hover,
+html.low-data-mode .lecturer-card-interactive:hover {
+  transform: none !important;
+}

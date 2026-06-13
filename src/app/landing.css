@@ -1,0 +1,325 @@
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.landing-fade-up {
+  animation: landing-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-fade-up-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.landing-fade-up-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.landing-fade-up-delay-3 {
+  animation-delay: 0.3s;
+}
+
+.landing-float {
+  animation: landing-float 6s ease-in-out infinite;
+}
+
+.landing-nav-glass {
+  background: #ffffff;
+}
+
+.hero-section {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.hero-gradient,
+.hero-portal-core {
+  background: linear-gradient(145deg, #0f3d91 0%, #1e4fad 45%, #2563eb 100%);
+}
+
+.hero-grid,
+.hero-portal-core::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.hero-grid {
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
+}
+
+/* ── Hero portal halo ───────────────────────────────────── */
+
+.hero-portal-stage {
+  overflow: visible;
+}
+
+.hero-portal {
+  overflow: visible;
+  isolation: isolate;
+}
+
+/* Secondary faint glow — deepest layer */
+.hero-halo-ambient {
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(34, 211, 238, 0.09) 0%,
+    rgba(59, 130, 246, 0.06) 35%,
+    rgba(147, 197, 253, 0.03) 55%,
+    transparent 72%
+  );
+  filter: blur(32px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-halo-ambient-secondary {
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(34, 211, 238, 0.05) 40%,
+    transparent 65%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-halo-pulse-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Diffused outer glow layers */
+.hero-halo-glow-outer {
+  position: absolute;
+  inset: -16%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 44%,
+    rgba(34, 211, 238, 0.18) 58%,
+    rgba(59, 130, 246, 0.12) 68%,
+    rgba(255, 255, 255, 0.04) 74%,
+    transparent 82%
+  );
+  filter: blur(22px);
+  pointer-events: none;
+}
+
+.hero-halo-glow-mid {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 50%,
+    rgba(56, 189, 248, 0.22) 62%,
+    rgba(96, 165, 250, 0.15) 70%,
+    rgba(255, 255, 255, 0.07) 76%,
+    transparent 84%
+  );
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+.hero-halo-glow-inner {
+  position: absolute;
+  inset: -2%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 54%,
+    rgba(103, 232, 249, 0.25) 64%,
+    rgba(255, 255, 255, 0.12) 70%,
+    transparent 78%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.hero-portal-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+/* Thick outer glowing ring */
+.hero-portal-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 4px;
+  background: conic-gradient(
+    from 210deg,
+    rgba(34, 211, 238, 0.85),
+    rgba(56, 189, 248, 0.8),
+    rgba(96, 165, 250, 0.75),
+    rgba(186, 230, 253, 0.9),
+    rgba(147, 197, 253, 0.8),
+    rgba(34, 211, 238, 0.85)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  box-shadow:
+    0 0 8px rgba(34, 211, 238, 0.45),
+    0 0 18px rgba(56, 189, 248, 0.35),
+    0 0 32px rgba(59, 130, 246, 0.25),
+    0 0 48px rgba(96, 165, 250, 0.15),
+    inset 0 0 12px rgba(34, 211, 238, 0.12);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Thin bright inner ring */
+.hero-portal-ring-inner {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 4px rgba(255, 255, 255, 0.4),
+    0 0 10px rgba(34, 211, 238, 0.35),
+    0 0 16px rgba(56, 189, 248, 0.2),
+    inset 0 0 8px rgba(34, 211, 238, 0.1);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Portal core — matches hero section background */
+.hero-portal-core {
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.04);
+}
+
+.hero-portal-core::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-portal-core-inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.hero-portal-core--image {
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.06);
+}
+
+.hero-feature-card {
+  transition: transform 0.25s ease;
+}
+
+.hero-feature-card:hover {
+  transform: translateY(-4px);
+}
+
+.landing-feature-card {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -12px rgba(11, 61, 145, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+.landing-icon-bg {
+  background-color: var(--color-primary);
+  color: #cbd5e1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-fade-up,
+  .landing-float {
+    animation: none !important;
+  }
+
+  .landing-feature-card:hover,
+  .hero-feature-card:hover {
+    transform: none;
+  }
+}
