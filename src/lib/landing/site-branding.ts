@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicReadClient } from "@/lib/supabase/server";
 
 export const LANDING_ASSETS_BUCKET = "landing-assets";
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
@@ -58,7 +58,7 @@ export function buildSiteLogoStoragePath(ext: string): string {
 }
 
 async function getBrandingSetting(key: string): Promise<BrandingImageSetting | null> {
-  const supabase = await createClient();
+  const supabase = await createPublicReadClient();
   const { data, error } = await supabase
     .from("site_settings")
     .select("value, updated_at")

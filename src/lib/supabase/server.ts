@@ -36,6 +36,13 @@ export async function createClient() {
   );
 }
 
+/** Cookie-free client for public reads during static generation (no auth session). */
+export async function createPublicReadClient() {
+  const { createClient } = await import("@supabase/supabase-js");
+  const { url, anonKey } = getPublicSupabaseEnv();
+  return createClient(url, anonKey, { auth: { persistSession: false } });
+}
+
 export async function createServiceClient() {
   const { createClient } = await import("@supabase/supabase-js");
   const { url } = getPublicSupabaseEnv();
