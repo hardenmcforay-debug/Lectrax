@@ -209,7 +209,7 @@ export function AttendanceSessionPanel({
         window.clearInterval(refreshTimerRef.current);
       }
     };
-  }, [activeSession?.id, refreshQr]);
+  }, [activeSession, refreshQr]);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -217,7 +217,7 @@ export function AttendanceSessionPanel({
 
     presentLoadedForSessionRef.current = activeSession.id;
     void syncPresentRecords(activeSession.id, "loadPresentStudents:initial");
-  }, [activeSession?.id, syncPresentRecords]);
+  }, [activeSession, syncPresentRecords]);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -257,7 +257,7 @@ export function AttendanceSessionPanel({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [activeSession?.id, onAttendanceChange]);
+  }, [activeSession, onAttendanceChange]);
 
   async function startAttendance() {
     setError(null);

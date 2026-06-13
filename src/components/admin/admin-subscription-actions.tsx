@@ -136,7 +136,7 @@ export function AdminSubscriptionActions({
 }
 
 /** @deprecated Use AdminSubscriptionActions */
-export function AdminExtendSubscriptionButton(_props: { subscriptionId: string }) {
+export function AdminExtendSubscriptionButton({}: { subscriptionId: string }) {
   return (
     <span className="text-xs text-muted-foreground">Use subscription actions (profile-based)</span>
   );

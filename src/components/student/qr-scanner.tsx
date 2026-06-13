@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { EXPIRED_QR_MESSAGE } from "@/lib/attendance/constants";
@@ -28,6 +28,15 @@ type ScanResponse = {
   code?: string;
 };
 
+function extractToken(urlOrToken: string): string {
+  try {
+    const url = new URL(urlOrToken);
+    return url.searchParams.get("token") ?? urlOrToken;
+  } catch {
+    return urlOrToken;
+  }
+}
+
 export function QRScanner() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<string>("Ready to scan");
@@ -42,16 +51,7 @@ export function QRScanner() {
   > | null>(null);
   const processedRef = useRef(false);
 
-  function extractToken(urlOrToken: string): string {
-    try {
-      const url = new URL(urlOrToken);
-      return url.searchParams.get("token") ?? urlOrToken;
-    } catch {
-      return urlOrToken;
-    }
-  }
-
-  async function submitToken(token: string, options?: { afterTransfer?: boolean }) {
+  const submitToken = useCallback(async (token: string, options?: { afterTransfer?: boolean }) => {
     if (!options?.afterTransfer && processedRef.current) return;
     if (!options?.afterTransfer) {
       processedRef.current = true;
@@ -98,7 +98,7 @@ export function QRScanner() {
     } finally {
       setSubmitting(false);
     }
-  }
+  }, []);
 
   async function handleTransferDevice() {
     setTransferring(true);
@@ -134,7 +134,7 @@ export function QRScanner() {
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) void submitToken(token);
-  }, [searchParams]);
+  }, [searchParams, submitToken]);
 
   async function startScanner() {
     setScanning(true);
