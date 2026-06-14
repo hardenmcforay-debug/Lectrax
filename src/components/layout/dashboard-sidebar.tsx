@@ -10,6 +10,7 @@ import {
   getActiveStudentNavHref,
   STUDENT_NAV_ITEMS,
   STUDENT_SETTINGS_HREF,
+  type StudentNavItem,
 } from "@/lib/student/navigation";
 import {
   getActiveLecturerNavHref,
@@ -18,6 +19,8 @@ import {
 } from "@/lib/lecturer/navigation";
 import { ADMIN_NAV_ITEMS, getActiveAdminNavHref } from "@/lib/admin/navigation";
 import type { UserRole } from "@/types/database";
+import { SidebarNotificationBadge } from "@/components/student/nav-notification-badge";
+import { useStudentNotifications } from "@/components/student/student-notifications-provider";
 
 const NAV_BY_ROLE: Record<UserRole, typeof LECTURER_NAV_ITEMS> = {
   lecturer: LECTURER_NAV_ITEMS,
@@ -44,6 +47,7 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const nav = NAV_BY_ROLE[role];
+  const { counts: studentNotificationCounts } = useStudentNotifications();
   const isLecturer = role === "lecturer";
   const isStudent = role === "student";
   const isAdmin = role === "platform_admin";
@@ -103,6 +107,10 @@ export function DashboardSidebar({
         {nav.map((item) => {
           const Icon = item.icon;
           const active = activeHref === item.href;
+          const studentItem = isStudent ? (item as StudentNavItem) : null;
+          const notificationCount = studentItem?.notificationType
+            ? studentNotificationCounts[studentItem.notificationType]
+            : 0;
           return (
             <Link
               key={item.href}
@@ -123,6 +131,7 @@ export function DashboardSidebar({
             >
               <Icon className={isLecturer ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4"} />
               <span className={cn("truncate", isLecturer && "leading-none")}>{item.label}</span>
+              {isStudent ? <SidebarNotificationBadge count={notificationCount} /> : null}
             </Link>
           );
         })}

@@ -5,6 +5,7 @@ import {
   resolvePostLoginRedirect,
   getLoginFailureUrl,
 } from "@/lib/auth/roles";
+import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -18,6 +19,10 @@ export async function GET(request: Request) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      if (user) {
+        await syncStudentCollegeIdFromSignupMetadata(supabase, user);
+      }
 
       const { data: profile } = user
         ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()

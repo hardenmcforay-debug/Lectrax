@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { createServiceClient, createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import {
-  ensureManualAssignmentSubmission,
+  ensureAssignmentSubmissionForGrading,
   getClassAssignmentForLecturer,
 } from "@/lib/lecturer/class-assignments";
 import { testScoresBulkSchema } from "@/lib/validations";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import {
+  getClassSessionLabel,
+  notifyStudentsByEnrollmentIds,
+} from "@/lib/student/notifications";
 
 export async function PUT(
   request: Request,
@@ -75,12 +79,10 @@ export async function PUT(
 
   const service = await createServiceClient();
 
-  let manualEnrollmentIds = new Set<string>();
-
   if (touchedEnrollmentIds.length > 0) {
     const { data: enrollments } = await service
       .from("enrollments")
-      .select("id, is_manual")
+      .select("id")
       .eq("class_session_id", classSessionId)
       .in("id", touchedEnrollmentIds);
 
@@ -89,10 +91,6 @@ export async function PUT(
     if (invalid) {
       return NextResponse.json({ error: "Invalid enrollment for this class" }, { status: 400 });
     }
-
-    manualEnrollmentIds = new Set(
-      (enrollments ?? []).filter((e) => e.is_manual).map((e) => e.id as string)
-    );
   }
 
   const { data: assignmentSubmissions } = await service
@@ -109,23 +107,8 @@ export async function PUT(
     (enrollmentId) => !submissionByEnrollmentId.has(enrollmentId)
   );
 
-  const missingNonManualSubmissionIds = missingSubmissionEnrollmentIds.filter(
-    (enrollmentId) => !manualEnrollmentIds.has(enrollmentId)
-  );
-
-  if (missingNonManualSubmissionIds.length > 0) {
-    return NextResponse.json(
-      {
-        error:
-          "Registered students must submit a PDF before they can be graded. Manual students may be graded without a submission.",
-        invalidEnrollmentIds: missingNonManualSubmissionIds,
-      },
-      { status: 400 }
-    );
-  }
-
   for (const enrollmentId of missingSubmissionEnrollmentIds) {
-    const submissionId = await ensureManualAssignmentSubmission(service, assignment, enrollmentId);
+    const submissionId = await ensureAssignmentSubmissionForGrading(service, assignment, enrollmentId);
     submissionByEnrollmentId.set(enrollmentId, submissionId);
   }
 
@@ -166,6 +149,19 @@ export async function PUT(
         { status: 500 }
       );
     }
+
+    const classLabel = await getClassSessionLabel(service, classSessionId);
+    void notifyStudentsByEnrollmentIds(
+      service,
+      scores.map((entry) => entry.enrollmentId),
+      {
+        classSessionId,
+        type: "grade",
+        referenceId: assignmentId,
+        title: "Grade updated",
+        message: `Your grade for "${assignment.title}" in ${classLabel} has been updated.`,
+      }
+    );
   }
 
   return NextResponse.json({

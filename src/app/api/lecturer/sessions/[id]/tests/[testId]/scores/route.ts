@@ -4,6 +4,10 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassTestForLecturer } from "@/lib/lecturer/class-tests";
 import { testScoresBulkSchema } from "@/lib/validations";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import {
+  getClassSessionLabel,
+  notifyStudentsByEnrollmentIds,
+} from "@/lib/student/notifications";
 
 export async function PUT(
   request: Request,
@@ -135,6 +139,19 @@ export async function PUT(
         { status: 500 }
       );
     }
+
+    const classLabel = await getClassSessionLabel(service, classSessionId);
+    void notifyStudentsByEnrollmentIds(
+      service,
+      scores.map((entry) => entry.enrollmentId),
+      {
+        classSessionId,
+        type: "grade",
+        referenceId: testId,
+        title: "Grade updated",
+        message: `Your score for "${test.title}" in ${classLabel} has been updated.`,
+      }
+    );
   }
 
   return NextResponse.json({

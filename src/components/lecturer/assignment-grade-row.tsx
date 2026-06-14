@@ -20,7 +20,6 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
   isDirty,
   disabled,
   hasSubmission,
-  canGrade,
   onChange,
   onOpenPdf,
 }: {
@@ -36,7 +35,6 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
   isDirty: boolean;
   disabled: boolean;
   hasSubmission: boolean;
-  canGrade: boolean;
   onChange: (enrollmentId: string, value: string) => void;
   onOpenPdf: (enrollmentId: string) => void;
 }) {
@@ -47,13 +45,13 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
     [enrollmentId, onChange]
   );
 
-  const status = canGrade
-    ? savedGrade !== null
-      ? "Graded"
-      : isManual && !hasSubmission
+  const status = savedGrade !== null
+    ? "Graded"
+    : hasSubmission
+      ? "Submitted"
+      : isManual
         ? "Manual"
-        : "Submitted"
-    : "Not submitted";
+        : "No submission";
 
   return (
     <TableRow className={isDirty ? "bg-amber-50/50" : undefined}>
@@ -107,7 +105,7 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
             placeholder={`0–${maxScore}`}
             value={value}
             onChange={handleChange}
-            disabled={disabled || !canGrade}
+            disabled={disabled}
           />
           <span className="text-xs text-muted-foreground">/ {maxScore}</span>
         </div>

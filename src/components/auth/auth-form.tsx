@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { redirectAfterAuth } from "@/lib/auth/roles";
 import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
+import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
 
 const authInputClass =
@@ -238,6 +239,8 @@ export function SignupForm() {
       return;
     }
 
+    const collegeId = data.collegeId?.trim() || undefined;
+
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -245,7 +248,7 @@ export function SignupForm() {
         data: {
           full_name: data.fullName,
           role: data.role,
-          college_id: data.collegeId,
+          college_id: collegeId,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -263,6 +266,7 @@ export function SignupForm() {
     }
 
     if (signUpData.session) {
+      await syncStudentCollegeIdFromSignupMetadata(supabase, user);
       router.refresh();
       const resolvedRole = await resolveClientRoleAfterAuth(supabase);
 

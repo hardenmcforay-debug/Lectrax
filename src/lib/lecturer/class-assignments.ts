@@ -16,7 +16,6 @@ export interface AssignmentGradeRow {
   fileName: string | null;
   submittedAt: string | null;
   hasSubmission: boolean;
-  canGrade: boolean;
   grade: number | null;
 }
 
@@ -42,21 +41,21 @@ export async function getClassAssignmentForLecturer(
   return data as Assignment | null;
 }
 
-/** Create or return a grade-only submission row for a manual student (no PDF). */
-export async function ensureManualAssignmentSubmission(
+/** Create or return a grade-only submission row when the student has no PDF. */
+export async function ensureAssignmentSubmissionForGrading(
   supabase: SupabaseClient,
   assignment: Pick<Assignment, "id" | "lecturer_id" | "class_session_id">,
   enrollmentId: string
 ): Promise<string> {
   const { data: enrollment, error: enrollmentError } = await supabase
     .from("enrollments")
-    .select("id, is_manual")
+    .select("id, student_id, is_manual")
     .eq("id", enrollmentId)
     .eq("class_session_id", assignment.class_session_id)
     .maybeSingle();
 
-  if (enrollmentError || !enrollment?.is_manual) {
-    throw new Error("Only manual students can be graded without a submission.");
+  if (enrollmentError || !enrollment) {
+    throw new Error("Enrollment not found for this class.");
   }
 
   const { data: existing } = await supabase
@@ -73,10 +72,12 @@ export async function ensureManualAssignmentSubmission(
     .insert({
       assignment_id: assignment.id,
       enrollment_id: enrollmentId,
-      student_id: null,
+      student_id: enrollment.is_manual ? null : (enrollment.student_id as string),
       lecturer_id: assignment.lecturer_id,
       class_session_id: assignment.class_session_id,
-      file_name: "No submission (manual student)",
+      file_name: enrollment.is_manual
+        ? "No submission (manual student)"
+        : "No submission (lecturer graded)",
       file_size: 0,
       storage_path: null,
       submission_status: "locked",
@@ -85,11 +86,14 @@ export async function ensureManualAssignmentSubmission(
     .single();
 
   if (insertError || !created?.id) {
-    throw new Error(insertError?.message ?? "Could not create manual grade record.");
+    throw new Error(insertError?.message ?? "Could not create grade record.");
   }
 
   return created.id as string;
 }
+
+/** @deprecated Use ensureAssignmentSubmissionForGrading */
+export const ensureManualAssignmentSubmission = ensureAssignmentSubmissionForGrading;
 
 /** Delete an assignment, its submission PDFs in storage, and all related grades. */
 export async function deleteClassAssignment(
@@ -207,7 +211,6 @@ export async function getAssignmentGradeEntryData(
       fileName: submission?.file_name ?? null,
       submittedAt: submission?.submitted_at ?? null,
       hasSubmission: Boolean(submission?.storage_path),
-      canGrade: Boolean(submission?.storage_path) || e.is_manual,
       grade,
     };
   });

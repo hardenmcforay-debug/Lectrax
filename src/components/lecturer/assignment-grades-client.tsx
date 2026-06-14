@@ -321,8 +321,8 @@ export function AssignmentGradesClient({
 
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Review student PDFs, enter grades, then optionally delete all
-            submissions once marking is complete.
+            Review student PDFs, enter grades for all enrolled students (including those
+            who did not submit), then optionally delete all submissions once marking is complete.
           </p>
         </CardContent>
       </Card>
@@ -408,7 +408,6 @@ export function AssignmentGradesClient({
                       isDirty={dirtyByEnrollment.has(row.enrollmentId)}
                       disabled={saving || deleting}
                       hasSubmission={row.hasSubmission}
-                      canGrade={row.canGrade}
                       onChange={updateGrade}
                       onOpenPdf={(id) => void openPdf(id)}
                     />

@@ -11,6 +11,10 @@ import {
 import { buildRotatedQRToken, buildScanUrl } from "@/lib/attendance/qr-rotation";
 import { getAttendanceSessionNumber } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import {
+  getClassSessionLabel,
+  notifyEnrolledStudentsInClass,
+} from "@/lib/student/notifications";
 
 const startSchema = z.object({
   classSessionId: z.string().uuid(),
@@ -164,6 +168,14 @@ export async function POST(request: Request) {
   );
 
   const appUrl = resolveAppUrl(request);
+
+  const classLabel = await getClassSessionLabel(service, classSessionId);
+  void notifyEnrolledStudentsInClass(service, classSessionId, {
+    type: "attendance",
+    referenceId: session.id,
+    title: "Attendance is open",
+    message: `QR attendance is now open for ${classLabel}. Open Scan to mark present.`,
+  });
 
   return NextResponse.json({
     session: {

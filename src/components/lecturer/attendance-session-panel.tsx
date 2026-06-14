@@ -523,15 +523,15 @@ export function AttendanceSessionPanel({
               )}
 
               {qrImage && (
-                <div className="flex flex-col items-center">
+                <div className="flex w-full flex-col items-center">
                   {/* eslint-disable-next-line @next/next/no-img-element -- dynamic QR data URL refreshed in-session */}
                   <img
                     key={qrVersion}
                     src={qrImage}
                     alt="Attendance QR"
-                    className="rounded-lg border transition-opacity duration-300"
+                    className="w-full max-w-[400px] rounded-lg border bg-white p-2 shadow-sm transition-opacity duration-300"
                   />
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="mt-3 max-w-[400px] text-center text-xs text-muted-foreground">
                     Secure attendance verification is active. Each student may check in once using the current QR code.
                   </p>
                 </div>

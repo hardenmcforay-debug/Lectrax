@@ -6,12 +6,14 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import type { StudentNotificationType } from "@/lib/student/notifications";
 
 export type StudentNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   shortLabel?: string;
+  notificationType?: StudentNotificationType;
 };
 
 export const STUDENT_NAV_ITEMS: StudentNavItem[] = [
@@ -21,14 +23,22 @@ export const STUDENT_NAV_ITEMS: StudentNavItem[] = [
     label: "Academic Overview",
     shortLabel: "Overview",
     icon: BarChart3,
+    notificationType: "grade",
   },
   { href: "/student/join", label: "Join Class", shortLabel: "Join", icon: Users },
-  { href: "/student/scan", label: "Scan QR", shortLabel: "Scan", icon: QrCode },
+  {
+    href: "/student/scan",
+    label: "Scan QR",
+    shortLabel: "Scan",
+    icon: QrCode,
+    notificationType: "attendance",
+  },
   {
     href: "/student/assignments",
     label: "Assignments",
     shortLabel: "Tasks",
     icon: ClipboardList,
+    notificationType: "assignment",
   },
 ];
 

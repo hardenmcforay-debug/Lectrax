@@ -8,6 +8,10 @@ import {
   requireWritableSubscription,
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
+import {
+  getClassSessionLabel,
+  notifyEnrolledStudentsInClass,
+} from "@/lib/student/notifications";
 
 const assignmentSchema = z.object({
   title: z.string().min(1),
@@ -99,6 +103,14 @@ export async function POST(
   if (error || !assignment) {
     return NextResponse.json({ error: error?.message ?? "Could not create assignment" }, { status: 500 });
   }
+
+  const classLabel = await getClassSessionLabel(service, classSessionId);
+  void notifyEnrolledStudentsInClass(service, classSessionId, {
+    type: "assignment",
+    referenceId: assignment.id,
+    title: "New assignment",
+    message: `"${parsed.data.title.trim()}" was posted for ${classLabel}.`,
+  });
 
   return NextResponse.json({ assignment });
 }

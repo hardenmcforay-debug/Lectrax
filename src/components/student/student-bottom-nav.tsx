@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getActiveStudentNavHref, STUDENT_NAV_ITEMS } from "@/lib/student/navigation";
+import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
+import { useStudentNotifications } from "@/components/student/student-notifications-provider";
 
 export function StudentBottomNav() {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
   const activeHref = getActiveStudentNavHref(pathname);
+  const { counts } = useStudentNotifications();
 
   return (
     <nav
@@ -20,6 +23,7 @@ export function StudentBottomNav() {
         {STUDENT_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = activeHref === item.href;
+          const badgeCount = item.notificationType ? counts[item.notificationType] : 0;
 
           return (
             <Link
@@ -43,11 +47,12 @@ export function StudentBottomNav() {
               />
               <span
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-200",
+                  "relative flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-200",
                   active ? "bg-emerald-500/20 text-emerald-300" : "text-inherit"
                 )}
               >
                 <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+                <NavNotificationBadge count={badgeCount} />
               </span>
               <span className="max-w-full truncate leading-none">{item.shortLabel ?? item.label}</span>
             </Link>
