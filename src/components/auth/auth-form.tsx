@@ -17,9 +17,9 @@ import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
 
 const authInputClass =
-  "h-11 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:text-base";
+  "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
 
-const authLabelClass = "text-sm font-medium text-slate-700";
+const authLabelClass = "text-xs font-medium text-slate-700 md:text-sm";
 
 export function LoginForm() {
   const router = useRouter();
@@ -109,14 +109,16 @@ export function LoginForm() {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <div className="auth-form-header mb-4 text-center md:mb-5 md:text-left">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Welcome Back</h2>
+      <div className="auth-form-header mb-3 text-center md:mb-5 md:text-left">
+        <h2 className="text-balance text-lg font-bold tracking-tight text-slate-900 md:text-xl lg:text-2xl">
+          Welcome Back
+        </h2>
         <p className="auth-form-marketing-copy mt-1 text-sm text-slate-500">
           Sign in to manage your academic workspace with Lectrax.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 text-left">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="email" className={authLabelClass}>
             Email
@@ -146,19 +148,19 @@ export function LoginForm() {
           {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
         </div>
 
-        <div className="flex items-center justify-between">
-          <label className="flex cursor-pointer items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex min-w-0 cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+              className="h-4 w-4 shrink-0 rounded border-slate-300 text-primary focus:ring-primary/30"
             />
-            <span className="text-sm text-slate-600">Remember me</span>
+            <span className="text-xs text-slate-600 md:text-sm">Remember me</span>
           </label>
           <Link
             href="/forgot-password"
-            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+            className="shrink-0 text-xs font-medium text-primary transition-colors hover:text-primary/80 md:text-sm"
           >
             Forgot password?
           </Link>
@@ -174,13 +176,13 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="auth-primary-btn h-11 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:text-base"
+          className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
           {isSubmitting ? "Signing in..." : "Sign In"}
         </Button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-500 md:mt-5">
+      <p className="mt-3 text-center text-xs text-slate-500 md:mt-5 md:text-sm">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="font-semibold text-primary transition-colors hover:text-primary/80">
           Sign Up
@@ -289,14 +291,16 @@ export function SignupForm() {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <div className="auth-form-header mb-3 text-center md:mb-4 md:text-left">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Create Your Account</h2>
+      <div className="auth-form-header mb-2 text-center md:mb-4 md:text-left">
+        <h2 className="text-balance text-lg font-bold tracking-tight text-slate-900 md:text-xl lg:text-2xl">
+          Create Your Account
+        </h2>
         <p className="auth-form-marketing-copy mt-1 text-sm text-slate-500">
           Welcome to Lectrax. Create your account and start managing academic activities efficiently.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 text-left">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
         <div className="space-y-1.5">
           <Label className={authLabelClass}>Account type</Label>
           <Select
@@ -317,7 +321,7 @@ export function SignupForm() {
           <input type="hidden" {...register("role")} />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="fullName" className={authLabelClass}>
               Full Name
@@ -363,7 +367,7 @@ export function SignupForm() {
           </div>
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="password" className={authLabelClass}>
               Password
@@ -404,13 +408,13 @@ export function SignupForm() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="auth-primary-btn h-11 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:text-base"
+          className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
           {isSubmitting ? "Creating account..." : "Create Account"}
         </Button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-500 md:mt-5">
+      <p className="mt-3 text-center text-xs text-slate-500 md:mt-5 md:text-sm">
         Already have an account?{" "}
         <Link href="/login" className="font-semibold text-primary transition-colors hover:text-primary/80">
           Sign In

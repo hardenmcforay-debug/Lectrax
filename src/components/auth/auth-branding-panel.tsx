@@ -4,7 +4,7 @@ import { APP_NAME } from "@/lib/constants";
 
 export function AuthBrandingPanel() {
   return (
-    <div className="auth-branding-panel auth-shell-panel relative flex h-[36vh] shrink-0 flex-col overflow-hidden bg-gradient-to-br from-[#0B3D91] via-[#0F4DA8] to-[#0A3580] md:h-full md:w-[45%] lg:w-[42%]">
+    <div className="auth-branding-panel auth-shell-panel relative hidden shrink-0 flex-col overflow-hidden bg-gradient-to-br from-[#0B3D91] via-[#0F4DA8] to-[#0A3580] md:flex md:h-full md:w-[45%] lg:w-[42%]">
       <div className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full bg-[#10B981]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -right-16 h-72 w-72 rounded-full bg-[#10B981]/18 blur-3xl" />
       <div className="pointer-events-none absolute left-1/4 top-1/3 h-40 w-40 rounded-full bg-[#10B981]/10 blur-2xl" />

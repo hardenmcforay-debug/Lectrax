@@ -94,162 +94,96 @@ export function LandingPricing() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        <LandingReveal className="mx-auto max-w-2xl text-center">
-
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-
+        <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
+          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
             Simple and Transparent Pricing
-
           </h2>
-
-          <p className="mt-4 text-lg text-slate-600">
-
+          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
             Start free. Upgrade when your institution needs more capacity and premium capabilities.
-
           </p>
-
         </LandingReveal>
 
 
 
-        <LandingStagger className="mt-14 grid gap-8 lg:grid-cols-2">
-
+        <LandingStagger className="mt-10 grid gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           <LandingStaggerItem>
-
-            <div className="h-full rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-
-              <h3 className="text-xl font-bold text-slate-900">Free Plan</h3>
-
-              <p className="mt-2 text-4xl font-bold text-slate-900">
-
+            <div className="h-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6 lg:p-8">
+              <h3 className="text-lg font-bold text-slate-900 sm:text-xl">Free Plan</h3>
+              <p className="mt-1.5 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-4xl">
                 $0
-
-                <span className="text-base font-normal text-slate-500"> / forever</span>
-
+                <span className="text-sm font-normal text-slate-500 sm:text-base"> / forever</span>
               </p>
-
-              <ul className="mt-8 space-y-3">
-
+              <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {freeFeatures.map((f) => (
-
-                  <li key={f} className="flex items-start gap-3 text-sm text-slate-600">
-
-                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent/10">
-
-                      <Check className="h-3 w-3 text-accent" aria-hidden />
-
+                  <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
+                    <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-accent/10 sm:h-5 sm:w-5">
+                      <Check className="h-2.5 w-2.5 text-accent sm:h-3 sm:w-3" aria-hidden />
                     </div>
-
-                    {f}
-
+                    <span className="text-pretty leading-snug">{f}</span>
                   </li>
-
                 ))}
-
               </ul>
-
-              <Button variant="outline" className="mt-8 w-full rounded-xl" asChild>
-
+              <Button variant="outline" className="mt-5 h-10 w-full rounded-xl text-sm sm:mt-6 lg:mt-8" asChild>
                 <Link href="/signup?role=lecturer">Get Started Free</Link>
-
               </Button>
-
             </div>
-
           </LandingStaggerItem>
-
-
 
           <LandingStaggerItem>
-
-            <div className="relative h-full rounded-2xl border-2 border-accent bg-white p-8 shadow-lg ring-1 ring-accent/20">
-
-              <Badge variant="accent" className="absolute -top-3 left-8">
-
+            <div className="relative h-full rounded-xl border-2 border-accent bg-white p-4 shadow-lg ring-1 ring-accent/20 sm:rounded-2xl sm:p-6 lg:p-8">
+              <Badge variant="accent" className="absolute -top-2.5 left-4 text-[10px] sm:-top-3 sm:left-6 sm:text-xs lg:left-8">
                 Recommended
-
               </Badge>
-
-              <h3 className="text-xl font-bold text-slate-900">Standard Plan</h3>
-
-              <p className="mt-2 text-sm text-slate-600">Lectrax Premium, full platform access</p>
-
-              <ul className="mt-8 space-y-3">
-
+              <h3 className="text-lg font-bold text-slate-900 sm:text-xl">Standard Plan</h3>
+              <p className="mt-1.5 text-pretty text-xs leading-relaxed text-slate-600 sm:mt-2 sm:text-sm">
+                Lectrax Premium, full platform access
+              </p>
+              <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {standardFeatures.map((f) => (
-
-                  <li key={f} className="flex items-start gap-3 text-sm text-slate-600">
-
-                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent/10">
-
-                      <Check className="h-3 w-3 text-accent" aria-hidden />
-
+                  <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
+                    <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-accent/10 sm:h-5 sm:w-5">
+                      <Check className="h-2.5 w-2.5 text-accent sm:h-3 sm:w-3" aria-hidden />
                     </div>
-
-                    {f}
-
+                    <span className="text-pretty leading-snug">{f}</span>
                   </li>
-
                 ))}
-
               </ul>
-
-              <Button variant="accent" className="mt-8 w-full rounded-xl" asChild>
-
+              <Button variant="accent" className="mt-5 h-10 w-full rounded-xl text-sm sm:mt-6 lg:mt-8" asChild>
                 <Link href="/signup?role=lecturer">Upgrade to Standard</Link>
-
               </Button>
-
             </div>
-
           </LandingStaggerItem>
-
         </LandingStagger>
 
-
-
-        <LandingStagger className="mt-12 grid gap-6 md:grid-cols-3">
-
+        <LandingStagger className="mt-8 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3 md:mt-12 md:gap-4">
           {billingOptions.map((plan) => (
-
             <LandingStaggerItem key={plan.id}>
-
               <div
-
                 className={cn(
-
-                  "h-full rounded-xl border bg-white p-6 text-center",
-
+                  "flex h-full flex-col items-center rounded-lg border bg-white p-2.5 text-center sm:rounded-xl sm:p-4 md:p-6",
                   plan.recommended ? "border-accent ring-2 ring-accent/30" : "border-slate-200"
-
                 )}
-
               >
-
-                {plan.recommended && (
-
-                  <Badge variant="accent" className="mb-3">
-
+                {plan.recommended ? (
+                  <Badge variant="accent" className="mb-1.5 px-1.5 py-0 text-[9px] sm:mb-2 sm:px-2 sm:py-0.5 sm:text-xs">
                     Best Value
-
                   </Badge>
-
+                ) : (
+                  <span className="mb-1.5 block h-[18px] sm:mb-2 sm:h-5" aria-hidden />
                 )}
-
-                <p className="font-semibold text-slate-900">{plan.label}</p>
-
-                <p className="mt-2 text-3xl font-bold text-primary">${plan.price}</p>
-
-                <p className="mt-1 text-sm text-slate-500">{plan.description}</p>
-
+                <p className="text-balance text-[11px] font-semibold leading-tight text-slate-900 sm:text-sm md:text-base">
+                  {plan.label}
+                </p>
+                <p className="mt-1 text-xl font-bold text-primary sm:mt-1.5 sm:text-2xl md:mt-2 md:text-3xl">
+                  ${plan.price}
+                </p>
+                <p className="mt-0.5 text-pretty text-[10px] leading-snug text-slate-500 sm:mt-1 sm:text-xs md:text-sm">
+                  {plan.description}
+                </p>
               </div>
-
             </LandingStaggerItem>
-
           ))}
-
         </LandingStagger>
-
       </div>
 
     </section>

@@ -38,20 +38,13 @@ export function LandingBenefits() {
 
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
 
-          <LandingReveal>
-
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-
+          <LandingReveal className="px-1 sm:px-0">
+            <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
               Why Lecturers Choose Lectrax
-
             </h2>
-
-            <p className="mt-4 text-lg text-slate-600">
-
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
               Trusted by educators who need enterprise-grade reliability without enterprise-level
-
               complexity.
-
             </p>
 
 

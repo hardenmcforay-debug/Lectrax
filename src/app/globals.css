@@ -135,6 +135,7 @@ body {
   .auth-route-root {
     height: auto;
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -142,9 +143,54 @@ body {
   .auth-shell {
     height: auto;
     min-height: 100vh;
+    min-height: 100dvh;
     max-height: none;
     overflow-x: hidden;
     overflow-y: visible;
+    flex-direction: column;
+  }
+
+  .auth-shell .auth-form-panel {
+    min-height: 100dvh;
+    max-height: none;
+  }
+
+  .auth-form-marketing-copy {
+    display: none !important;
+  }
+
+  .auth-form-panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-pwa-form-inner {
+    min-height: min(100dvh, 100%);
+    justify-content: flex-start;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .auth-form-content {
+    width: 100%;
+    max-width: min(100%, 22rem);
+  }
+
+  .auth-form-content .auth-form-header {
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .auth-form-content .auth-form-header h2 {
+    font-size: 1.125rem;
+    line-height: 1.35;
+  }
+
+  .auth-form-content form {
+    text-align: left;
   }
 }
 

@@ -100,52 +100,35 @@ export function LandingFeatures() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        <LandingReveal className="mx-auto max-w-2xl text-center">
-
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-
+        <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
+          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
             Everything You Need to Manage Academic Activities
-
           </h2>
-
-          <p className="mt-4 text-lg text-slate-600">
-
-            A complete toolkit for lecturers, departments, and institutions. designed for clarity,
-
+          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
+            A complete toolkit for lecturers, departments, and institutions. Designed for clarity,
             speed, and accuracy.
-
           </p>
-
         </LandingReveal>
 
 
 
-        <LandingStagger className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-
+        <LandingStagger className="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-4 lg:grid-cols-3 lg:gap-6">
           {features.map(({ icon: Icon, title, description }) => (
-
             <LandingStaggerItem key={title}>
-
-              <article className="landing-feature-card h-full rounded-2xl border border-slate-200/80 bg-white p-6">
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-
-                  <Icon className="h-6 w-6 text-white" />
-
+              <article className="landing-feature-card flex h-full flex-col rounded-xl border border-slate-200/80 bg-white p-3 sm:rounded-2xl sm:p-5 lg:p-6">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary sm:h-11 sm:w-11 sm:rounded-xl lg:h-12 lg:w-12">
+                  <Icon className="h-4 w-4 text-white sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                 </div>
-
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">{title}</h3>
-
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
-
+                <h3 className="mt-3 text-balance text-sm font-semibold leading-snug text-slate-900 sm:mt-4 sm:text-base lg:mt-5 lg:text-lg">
+                  {title}
+                </h3>
+                <p className="mt-1.5 text-pretty text-xs leading-relaxed text-slate-600 sm:mt-2 sm:text-sm">
+                  {description}
+                </p>
               </article>
-
             </LandingStaggerItem>
-
           ))}
-
         </LandingStagger>
-
       </div>
 
     </section>
