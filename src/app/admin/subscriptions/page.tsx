@@ -29,7 +29,7 @@ export default async function AdminSubscriptionsPage() {
       title="Manage Subscriptions"
       description="View and manage lecturer subscription plans, grace periods, and expirations"
     >
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 admin-stat-grid admin-stat-grid--cols-4">
         <StatCard title="Active Premium" value={activePremium.length} icon={CreditCard} />
         <StatCard title="Free Plan" value={freePlan.length} icon={Gift} />
         <StatCard title="Grace Period" value={gracePeriod.length} icon={AlertTriangle} />

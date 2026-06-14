@@ -135,6 +135,13 @@ export async function updateSession(request: NextRequest) {
 
     const roleHome = getDashboardPath(role);
 
+    if (pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = roleHome;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
     if (AUTH_ROUTES.includes(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = roleHome;

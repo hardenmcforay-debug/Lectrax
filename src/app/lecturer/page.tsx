@@ -94,27 +94,29 @@ export default async function LecturerDashboard() {
     >
       <SubscriptionStatusBanner display={display} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="portal-stat-grid">
+        <div className="order-1 col-span-2 min-w-0 lg:order-3 lg:col-span-1">
+          <SubscriptionDashboardCard display={display} />
+        </div>
         <StatCard
           title="Class Sessions"
           value={sessionCount ?? 0}
           icon={BookOpen}
           titleClassName={lecturerDashboardCardHeadingClass}
-          className={lecturerPortalCardClass}
+          className={`order-2 lg:order-1 ${lecturerPortalCardClass}`}
         />
         <StatCard
           title="Total Students"
           value={studentCount ?? 0}
           icon={Users}
           titleClassName={lecturerDashboardCardHeadingClass}
-          className={lecturerPortalCardClass}
+          className={`order-3 lg:order-2 ${lecturerPortalCardClass}`}
         />
-        <SubscriptionDashboardCard display={display} />
       </div>
 
       <LecturerAnalyticsSection subscription={subscription} attendanceData={attendanceData} />
 
-      <Card className={`mt-8 ${lecturerPortalCardClass}`}>
+      <Card className={`portal-section ${lecturerPortalCardClass}`}>
         <CardHeader>
           <CardTitle className={lecturerDashboardCardHeadingClass}>Recent Sessions</CardTitle>
         </CardHeader>

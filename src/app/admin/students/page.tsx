@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDataPageSize } from "@/lib/low-data/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { StatCard } from "@/components/shared/stat-card";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -35,7 +36,7 @@ export default async function AdminStudentsPage({
       title="Students"
       description="Monitor registered students across the platform"
     >
-      <div className="mb-6 max-w-xs">
+      <div className="admin-stat-grid mb-6 w-full">
         <StatCard title="Total students" value={total} icon={GraduationCap} />
       </div>
 
@@ -43,7 +44,7 @@ export default async function AdminStudentsPage({
         <TablePagination basePath="/admin/students" page={page} pageSize={pageSize} total={total} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <AdminTableScroll aria-label="Students table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -72,7 +73,7 @@ export default async function AdminStudentsPage({
             ))}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableScroll>
     </DashboardShell>
   );
 }

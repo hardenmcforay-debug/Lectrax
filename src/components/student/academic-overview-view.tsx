@@ -29,8 +29,8 @@ function CourseOverviewSection({ course }: { course: CourseAcademicOverview }) {
           <Badge variant="secondary">Enrolled</Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border bg-card">
+      <CardContent className="min-w-0">
+        <div className="portal-table-scroll rounded-lg border bg-card">
           <Table className="w-full min-w-[44rem]">
             <TableHeader>
               <TableRow>

@@ -26,7 +26,12 @@ export function LecturerPortalShell({
   const useGreetingHeader = headerVariant === "lecturer-greeting";
 
   const desktopHeaderClass =
-    !disableEnterAnimation ? "lecturer-header-enter mb-6" : "mb-6";
+    !disableEnterAnimation ? "lecturer-header-enter portal-page-header" : "portal-page-header";
+
+  const mobilePageDescription =
+    showHeader && description ? (
+      <p className="portal-page-description lg:hidden">{description}</p>
+    ) : null;
 
   const desktopHeaderContent =
     showHeader && title ? (
@@ -54,15 +59,10 @@ export function LecturerPortalShell({
       <DashboardSidebar role="lecturer" className="lecturer-desktop-sidebar hidden lg:flex" />
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <LecturerMobileHeader />
-        <div
-          className={cn(
-            "lecturer-portal-content min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
-            "px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-[calc(4.25rem+env(safe-area-inset-top))]",
-            "lg:px-5 lg:pb-5 lg:pt-5"
-          )}
-        >
+        <div className="lecturer-portal-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <LecturerPageEnter disableEnterAnimation={disableEnterAnimation}>
             {desktopHeaderContent}
+            {mobilePageDescription}
             {children}
           </LecturerPageEnter>
         </div>

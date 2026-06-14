@@ -16,7 +16,7 @@ export function LecturerBottomNav() {
       className="lecturer-mobile-nav fixed inset-x-0 bottom-0 z-50 flex lg:hidden"
       aria-label="Lecturer navigation"
     >
-      <div className="lecturer-bottom-nav-bar mx-auto flex w-full max-w-lg items-stretch justify-around px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+      <div className="portal-bottom-nav-bar lecturer-bottom-nav-bar flex w-full items-stretch justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
         {LECTURER_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = activeHref === item.href;

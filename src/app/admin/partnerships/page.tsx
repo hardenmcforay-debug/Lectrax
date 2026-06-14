@@ -46,7 +46,7 @@ export default async function AdminPartnershipsPage() {
         </div>
       ) : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 admin-stat-grid admin-stat-grid--cols-4">
         <StatCard title="Total Inquiries" value={all.length} icon={Building2} />
         <StatCard title="New" value={newInquiries.length} icon={Bell} />
         <StatCard title="In Progress" value={inDiscussion.length} icon={MessageSquare} />

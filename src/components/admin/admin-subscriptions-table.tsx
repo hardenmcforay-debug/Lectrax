@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdminSubscriptionActions } from "@/components/admin/admin-subscription-actions";
@@ -51,7 +52,7 @@ export function AdminSubscriptionsTable({ lecturers }: { lecturers: AdminSubscri
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <AdminTableScroll aria-label="Subscriptions table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -118,7 +119,7 @@ export function AdminSubscriptionsTable({ lecturers }: { lecturers: AdminSubscri
             )}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableScroll>
     </div>
   );
 }

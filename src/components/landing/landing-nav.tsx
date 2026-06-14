@@ -131,12 +131,12 @@ export function LandingNav() {
   return (
     <header
       className={cn(
-        "top-0 left-0 right-0 z-50 transition-all duration-300",
+        "landing-nav-safe top-0 left-0 right-0 z-50 transition-all duration-300",
         isHome ? "fixed" : "sticky",
         transparent ? "bg-transparent" : "landing-nav-glass bg-white"
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="landing-nav-inner mx-auto flex h-16 max-w-7xl items-center justify-between">
         <Logo iconWithBackground variant={transparent ? "light" : "default"} />
 
         <nav
@@ -175,7 +175,7 @@ export function LandingNav() {
       {mobileOpen && (
         <div
           className={cn(
-            "border-t px-4 py-4 md:hidden",
+            "landing-nav-inner border-t py-4 md:hidden",
             transparent
               ? "border-white/10 bg-[#0F3D91]/95 backdrop-blur-md"
               : "border-slate-200/60 bg-white/95"

@@ -78,7 +78,7 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
     <section className="hero-section relative flex min-h-screen flex-col overflow-hidden">
       <HeroBackground />
 
-      <div className="relative z-[1] mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pb-28 pt-24 sm:px-6 sm:pb-32 sm:pt-28 lg:px-8">
+      <div className="landing-hero-safe relative z-[1] mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pb-28 sm:px-6 sm:pb-32 lg:px-8">
         <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
           <div className="order-1 hidden md:block lg:order-none">
             <HeroVisual imageUrl={heroImageUrl} />
@@ -101,7 +101,7 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
             </motion.p>
 
             <motion.div
-              className="mt-8 grid grid-cols-4 gap-2 sm:gap-3"
+              className="mt-8 grid grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-3"
               {...(reducedMotion ? {} : fadeUp(0.2))}
             >
               {FEATURE_HIGHLIGHTS.map((item) => {
@@ -109,14 +109,16 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
                 return (
                 <motion.div
                   key={item.title}
-                  className="hero-feature-card group rounded-lg p-2 text-center sm:rounded-xl sm:p-3.5 sm:text-left"
+                  className="hero-feature-card group min-w-0 rounded-lg p-1.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
                   whileHover={reducedMotion ? undefined : { y: -4 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20 sm:mx-0 sm:mb-2 sm:h-9 sm:w-9 sm:rounded-lg">
-                    <Icon className="h-3.5 w-3.5 text-emerald-300 sm:h-4 sm:w-4" />
+                  <div className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
+                    <Icon className="h-3 w-3 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                   </div>
-                  <p className="text-[10px] font-semibold leading-tight text-white sm:text-sm">{item.title}</p>
+                  <p className="text-[9px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
+                    {item.title}
+                  </p>
                 </motion.div>
               );
               })}

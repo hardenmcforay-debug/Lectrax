@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDataPageSize } from "@/lib/low-data/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { StatCard } from "@/components/shared/stat-card";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { formatChargeAmount } from "@/lib/subscription/payment-currency";
 import { DollarSign, Clock, CheckCircle2 } from "lucide-react";
 
 export default async function AdminPaymentsPage({
@@ -49,8 +51,8 @@ export default async function AdminPaymentsPage({
       title="Revenue & Payments"
       description="Track subscription payments, revenue, and payment history"
     >
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <StatCard title="Total revenue" value={`$${revenue.toFixed(2)}`} icon={DollarSign} />
+      <div className="mb-6 admin-stat-grid admin-stat-grid--cols-3">
+        <StatCard title="Total revenue" value={formatChargeAmount(revenue, "SLE")} icon={DollarSign} />
         <StatCard title="Completed" value={completedCount} icon={CheckCircle2} />
         <StatCard title="Pending" value={pendingCount ?? 0} icon={Clock} />
       </div>
@@ -59,7 +61,7 @@ export default async function AdminPaymentsPage({
         <TablePagination basePath="/admin/payments" page={page} pageSize={pageSize} total={total} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <AdminTableScroll aria-label="Payments table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -81,7 +83,7 @@ export default async function AdminPaymentsPage({
                     <p className="text-xs text-muted-foreground">{profile?.email}</p>
                   </TableCell>
                   <TableCell>{(p.billing_plan ?? p.plan).toString().replace("_", " ")}</TableCell>
-                  <TableCell className="font-medium">${Number(p.amount).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">{formatChargeAmount(Number(p.amount), "SLE")}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -116,7 +118,7 @@ export default async function AdminPaymentsPage({
             )}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableScroll>
     </DashboardShell>
   );
 }

@@ -35,7 +35,7 @@ export default async function StudentDashboard() {
         displayName={displayName}
         collegeId={profile?.college_id ?? null}
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="portal-stat-grid">
         <StatCard
           title="Enrolled Classes"
           value={courses.length}

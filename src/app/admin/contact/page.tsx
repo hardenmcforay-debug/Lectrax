@@ -26,7 +26,7 @@ export default async function AdminContactPage() {
       title="Contact Messages"
       description="Review and respond to general contact inquiries from the public contact page"
     >
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 admin-stat-grid admin-stat-grid--cols-4">
         <StatCard title="Total Messages" value={all.length} icon={Inbox} />
         <StatCard title="New" value={newMessages.length} icon={Mail} />
         <StatCard title="In Progress" value={inProgress.length} icon={MessageSquare} />

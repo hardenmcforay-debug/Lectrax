@@ -215,7 +215,7 @@ export function SubscriptionPageContent({
         </Card>
       )}
 
-      <div className="mb-8 grid gap-4 md:grid-cols-2">
+      <div className="portal-stat-grid mb-8">
         <Card className={lecturerPortalCardClass}>
           <CardHeader>
             <CardTitle>Current Plan</CardTitle>
@@ -250,7 +250,7 @@ export function SubscriptionPageContent({
       {canSelfSubscribe && (
         <>
           <h2 className="mb-4 text-lg font-semibold">Upgrade to Lectrax Premium</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="portal-stat-grid">
             {plans.map((plan) => (
               <Card
                 key={plan.id}

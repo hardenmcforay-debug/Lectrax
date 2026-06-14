@@ -1,9 +1,8 @@
-const CACHE_VERSION = "lectrax-v1";
+const CACHE_VERSION = "lectrax-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const STATIC_ASSETS = [
-  "/",
   "/offline",
   "/manifest.json",
   "/icons/icon.svg",
@@ -16,6 +15,7 @@ const STATIC_ASSETS = [
 const CACHEABLE_EXTENSIONS = /\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico)$/i;
 
 const NEVER_CACHE_PATTERNS = [
+  /^\/$/,
   /^\/api\//,
   /supabase\.co/,
   /\/auth\//,
@@ -127,6 +127,16 @@ async function networkFirst(request) {
 
 async function networkFirstNavigation(request) {
   const url = new URL(request.url);
+
+  if (url.pathname === "/") {
+    try {
+      return await fetch(request);
+    } catch {
+      const offlinePage = await caches.match("/offline");
+      if (offlinePage) return offlinePage;
+      throw new Error("Network unavailable");
+    }
+  }
 
   try {
     const response = await fetch(request);

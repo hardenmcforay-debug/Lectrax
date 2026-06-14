@@ -1,11 +1,19 @@
+import { redirect } from "next/navigation";
 import { LoginFailedBanner } from "@/components/auth/login-failed-banner";
 import { LandingPage } from "@/components/landing/landing-page";
+import { AuthLaunchGate } from "@/components/pwa/auth-launch-gate";
+import { getAuthenticatedHomeRedirect } from "@/lib/auth/resolve-authenticated-home";
 import { getLandingHeroImageUrl } from "@/lib/landing/hero-image";
 import "./landing.css";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const dashboardPath = await getAuthenticatedHomeRedirect();
+  if (dashboardPath) {
+    redirect(dashboardPath);
+  }
+
   let heroImageUrl: string | null = null;
   try {
     heroImageUrl = await getLandingHeroImageUrl();
@@ -14,9 +22,9 @@ export default async function HomePage() {
   }
 
   return (
-    <>
+    <AuthLaunchGate>
       <LoginFailedBanner />
       <LandingPage heroImageUrl={heroImageUrl} />
-    </>
+    </AuthLaunchGate>
   );
 }

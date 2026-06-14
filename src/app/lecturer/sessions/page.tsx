@@ -29,7 +29,7 @@ export default async function SessionsPage() {
           </Link>
         </Button>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="portal-stat-grid">
         {(sessions ?? []).map((s) => (
           <Link key={s.id} href={`/lecturer/sessions/${s.id}`}>
             <Card className={cn(lecturerPortalCardClass, "h-full transition-shadow hover:shadow-[0_8px_28px_-6px_rgba(15,23,42,0.14)]")}>

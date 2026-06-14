@@ -53,7 +53,7 @@ export const MyClassesCard = memo(function MyClassesCard({ courses }: { courses:
   return (
     <Card
       ref={cardRef}
-      className={`relative mt-8 ${studentDashboardCardClass} ${open ? "z-30" : ""}`}
+      className={`portal-section relative ${studentDashboardCardClass} ${open ? "z-30" : ""}`}
     >
       <CardHeader>
         <CardTitle className={studentDashboardCardHeadingClass}>My Classes</CardTitle>

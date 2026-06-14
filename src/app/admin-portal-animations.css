@@ -1,0 +1,89 @@
+@keyframes admin-menu-backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes admin-menu-drawer-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.admin-mobile-menu-backdrop {
+  animation: admin-menu-backdrop-fade-in 0.2s ease-out both;
+}
+
+.admin-mobile-menu-drawer {
+  animation: admin-menu-drawer-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.admin-mobile-nav-link:active {
+  transform: scale(0.99);
+}
+
+.admin-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+}
+
+/* Let the outer shell own horizontal scroll (Table adds a nested overflow wrapper). */
+.admin-table-scroll > div {
+  overflow: visible !important;
+  width: max-content;
+  min-width: 100%;
+}
+
+.admin-table-scroll table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.admin-table-scroll th,
+.admin-table-scroll td {
+  white-space: nowrap;
+}
+
+.admin-portal-content .rounded-lg.border.bg-white {
+  min-width: 0;
+}
+
+/* PWA standalone: always use mobile admin navigation */
+html[data-pwa-standalone="true"] .admin-desktop-sidebar {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .admin-desktop-header {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .admin-mobile-header {
+  display: flex !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-mobile-menu-backdrop,
+  .admin-mobile-menu-drawer {
+    animation: none !important;
+  }
+
+  .admin-mobile-nav-link:active {
+    transform: none !important;
+  }
+}

@@ -155,7 +155,7 @@ export function LandingPricing() {
           </LandingStaggerItem>
         </LandingStagger>
 
-        <LandingStagger className="mt-8 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3 md:mt-12 md:gap-4">
+        <LandingStagger className="mt-8 grid grid-cols-1 gap-3 min-[400px]:grid-cols-3 sm:mt-10 sm:gap-3 md:mt-12 md:gap-4">
           {billingOptions.map((plan) => (
             <LandingStaggerItem key={plan.id}>
               <div

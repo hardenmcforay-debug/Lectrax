@@ -42,7 +42,7 @@ export default async function AdminDashboard() {
       title="Platform Admin"
       description="Manage lecturers, subscriptions, revenue, and platform activity"
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="admin-stat-grid admin-stat-grid--cols-4">
         <StatCard title="Total Lecturers" value={stats.totalLecturers} icon={Users} />
         <StatCard title="Total Students" value={stats.totalStudents} icon={GraduationCap} />
         <StatCard
@@ -63,14 +63,14 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="admin-stat-grid admin-stat-grid--cols-3 mt-4">
         <StatCard title="Class Sessions" value={stats.totalSessions} icon={BookOpen} subtitle="Platform-wide" />
         <StatCard title="Free Plans" value={stats.freeSubscriptions} icon={CreditCard} subtitle="Manual overrides" />
         <StatCard title="Expired Plans" value={stats.expiredSubscriptions} icon={Activity} subtitle="Needs renewal" />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
+      <div className="portal-section grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="min-w-0 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-base">Admin actions</CardTitle>
           </CardHeader>
@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
+        <Card className="min-w-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Recent platform activity</CardTitle>
             <Link href="/admin/audit" className="text-xs text-primary hover:underline">
@@ -120,7 +120,7 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
+        <Card className="min-w-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Recent payments</CardTitle>
             <Link href="/admin/payments" className="text-xs text-primary hover:underline">
@@ -140,7 +140,7 @@ export default async function AdminDashboard() {
                         <p className="text-sm font-medium">{profile?.full_name ?? "Lecturer"}</p>
                         <p className="text-xs text-muted-foreground">{p.plan?.replace("_", " ")}</p>
                       </div>
-                      <Badge variant="accent">${Number(p.amount).toFixed(2)}</Badge>
+                      <Badge variant="accent">{formatChargeAmount(Number(p.amount), "SLE")}</Badge>
                     </li>
                   );
                 })}

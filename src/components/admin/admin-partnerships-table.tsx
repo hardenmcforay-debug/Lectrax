@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +120,7 @@ export function AdminPartnershipsTable({
         />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <AdminTableScroll aria-label="Partnerships table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -217,7 +218,7 @@ export function AdminPartnershipsTable({
             )}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableScroll>
     </div>
   );
 }

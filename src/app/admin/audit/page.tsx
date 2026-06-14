@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDataPageSize } from "@/lib/low-data/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ export default async function AdminAuditPage({
         <TablePagination basePath="/admin/audit" page={page} pageSize={pageSize} total={total} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <AdminTableScroll aria-label="Audit logs table">
         <Table>
           <TableHeader>
             <TableRow>
@@ -85,7 +86,7 @@ export default async function AdminAuditPage({
             )}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableScroll>
     </DashboardShell>
   );
 }

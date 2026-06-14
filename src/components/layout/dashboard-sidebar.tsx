@@ -2,20 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  BarChart3,
-  CreditCard,
-  Users,
-  Settings,
-  LogOut,
-  ClipboardList,
-  DollarSign,
-  GraduationCap,
-  Building2,
-  Mail,
-  Sparkles,
-} from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -29,25 +16,13 @@ import {
   LECTURER_NAV_ITEMS,
   LECTURER_SETTINGS_HREF,
 } from "@/lib/lecturer/navigation";
+import { ADMIN_NAV_ITEMS, getActiveAdminNavHref } from "@/lib/admin/navigation";
 import type { UserRole } from "@/types/database";
-
-const ADMIN_NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/lecturers", label: "Lecturers", icon: Users },
-  { href: "/admin/students", label: "Students", icon: GraduationCap },
-  { href: "/admin/partnerships", label: "Partnerships", icon: Building2 },
-  { href: "/admin/contact", label: "Contact", icon: Mail },
-  { href: "/admin/landing", label: "Logo & Landing", icon: Sparkles },
-  { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { href: "/admin/payments", label: "Payments", icon: DollarSign },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/audit", label: "Audit Logs", icon: ClipboardList },
-];
 
 const NAV_BY_ROLE: Record<UserRole, typeof LECTURER_NAV_ITEMS> = {
   lecturer: LECTURER_NAV_ITEMS,
   student: STUDENT_NAV_ITEMS,
-  platform_admin: ADMIN_NAV,
+  platform_admin: ADMIN_NAV_ITEMS,
 };
 
 /** Longest matching href wins so parent routes are not active on nested paths. */
@@ -87,12 +62,14 @@ export function DashboardSidebar({
         (pathname === LECTURER_SETTINGS_HREF || pathname.startsWith(`${LECTURER_SETTINGS_HREF}/`)
           ? LECTURER_SETTINGS_HREF
           : null)
-      : getActiveNavHref(
-          pathname,
-          footerSettingsHref
-            ? [...nav.map((n) => n.href), footerSettingsHref]
-            : nav.map((n) => n.href)
-        );
+      : isAdmin
+        ? getActiveAdminNavHref(pathname)
+        : getActiveNavHref(
+            pathname,
+            footerSettingsHref
+              ? [...nav.map((n) => n.href), footerSettingsHref]
+              : nav.map((n) => n.href)
+          );
 
   async function handleLogout() {
     const supabase = createClient();
