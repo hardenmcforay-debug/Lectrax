@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getSupabaseConfigError } from "@/lib/supabase/client";
 import { loginSchema, signupSchema, type LoginInput, type SignupInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { redirectAfterAuth } from "@/lib/auth/roles";
-import { platformFetch } from "@/lib/api/fetch";
-import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
 
 const authInputClass =
@@ -23,6 +22,7 @@ const authInputClass =
 const authLabelClass = "text-sm font-medium text-slate-700";
 
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(() => {
@@ -57,13 +57,26 @@ export function LoginForm() {
     setError(null);
     setInfo(null);
 
+    const configError = getSupabaseConfigError();
+    if (configError) {
+      setError(configError);
+      return;
+    }
+
     if (rememberMe) {
       localStorage.setItem("lectrax_remember_email", data.email);
     } else {
       localStorage.removeItem("lectrax_remember_email");
     }
 
-    const supabase = createClient();
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Authentication is unavailable.");
+      return;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
@@ -82,28 +95,15 @@ export function LoginForm() {
       return;
     }
 
-    const roleResult = await platformFetch<{ role?: string; error?: string }>("/api/auth/role", {
-      credentials: "include",
-    });
+    router.refresh();
+    const role = await resolveClientRoleAfterAuth(supabase);
 
-    if (!roleResult.ok) {
-      if (roleResult.error.category === "auth") {
-        await supabase.auth.signOut();
-        setError(roleResult.error.userMessage);
-        return;
-      }
-
-      setError(`${ERROR_MESSAGES.supabase.title}. ${ERROR_MESSAGES.supabase.description}`);
-      return;
-    }
-
-    if (!roleResult.data.role) {
+    if (!role) {
       await supabase.auth.signOut();
       setError("Could not verify your account. Please try again or contact support.");
       return;
     }
 
-    const role = roleResult.data.role as "platform_admin" | "lecturer" | "student";
     redirectAfterAuth(role, searchParams.get("redirect"));
   }
 
@@ -215,9 +215,27 @@ export function SignupForm() {
     defaultValues: { role: defaultRole },
   });
 
+  useEffect(() => {
+    setValue("role", role);
+  }, [role, setValue]);
+
   async function onSubmit(data: SignupInput) {
     setError(null);
-    const supabase = createClient();
+
+    const configError = getSupabaseConfigError();
+    if (configError) {
+      setError(configError);
+      return;
+    }
+
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Authentication is unavailable.");
+      return;
+    }
+
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -243,22 +261,10 @@ export function SignupForm() {
     }
 
     if (signUpData.session) {
-      const roleResult = await platformFetch<{ role?: string; error?: string }>("/api/auth/role", {
-        credentials: "include",
-      });
+      router.refresh();
+      const resolvedRole = await resolveClientRoleAfterAuth(supabase);
 
-      if (!roleResult.ok) {
-        if (roleResult.error.category === "auth") {
-          await supabase.auth.signOut();
-          setError(roleResult.error.userMessage);
-          return;
-        }
-
-        setError(`${ERROR_MESSAGES.supabase.title}. ${ERROR_MESSAGES.supabase.description}`);
-        return;
-      }
-
-      if (!roleResult.data.role) {
+      if (!resolvedRole) {
         await supabase.auth.signOut();
         setError(
           "Account created but sign-in failed. Please sign in with your new credentials."
@@ -266,8 +272,7 @@ export function SignupForm() {
         return;
       }
 
-      const role = roleResult.data.role as "platform_admin" | "lecturer" | "student";
-      if (role === "student") {
+      if (resolvedRole === "student") {
         void fetch("/api/attendance/device/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -275,7 +280,7 @@ export function SignupForm() {
         });
       }
 
-      redirectAfterAuth(role);
+      redirectAfterAuth(resolvedRole);
       return;
     }
 
@@ -309,7 +314,7 @@ export function SignupForm() {
               <SelectItem value="student">Student</SelectItem>
             </SelectContent>
           </Select>
-          <input type="hidden" {...register("role")} value={role} />
+          <input type="hidden" {...register("role")} />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
