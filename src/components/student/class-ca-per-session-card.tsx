@@ -60,7 +60,11 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
   return (
     <Card
       ref={cardRef}
-      className={`relative h-full ${studentDashboardCardClass} ${open ? "z-30" : ""}`}
+      className={cn(
+        "relative col-span-2 h-full min-w-0 lg:col-span-1",
+        studentDashboardCardClass,
+        open && "z-30"
+      )}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className={cn("text-sm text-muted-foreground", studentDashboardCardHeadingClass)}>

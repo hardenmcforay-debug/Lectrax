@@ -34,11 +34,11 @@ export function StudentPortalShell({
     ) : null;
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-50">
+    <div className="portal-shell-root flex h-dvh overflow-hidden bg-slate-50">
       <DashboardSidebar role="student" className="student-desktop-sidebar hidden lg:flex" />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="portal-mobile-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <StudentMobileHeader />
-        <div className="student-portal-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="student-portal-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain">
           <StudentPageEnter>
             {inlineHeaderContent}
             {children}

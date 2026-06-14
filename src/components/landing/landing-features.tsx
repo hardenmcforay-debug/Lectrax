@@ -112,17 +112,17 @@ export function LandingFeatures() {
 
 
 
-        <LandingStagger className="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+        <LandingStagger className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
           {features.map(({ icon: Icon, title, description }) => (
             <LandingStaggerItem key={title}>
-              <article className="landing-feature-card flex h-full flex-col rounded-xl border border-slate-200/80 bg-white p-3 sm:rounded-2xl sm:p-5 lg:p-6">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary sm:h-11 sm:w-11 sm:rounded-xl lg:h-12 lg:w-12">
-                  <Icon className="h-4 w-4 text-white sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+              <article className="landing-feature-card flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-5 lg:p-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary lg:h-12 lg:w-12">
+                  <Icon className="h-5 w-5 text-white lg:h-6 lg:w-6" />
                 </div>
-                <h3 className="mt-3 text-balance text-sm font-semibold leading-snug text-slate-900 sm:mt-4 sm:text-base lg:mt-5 lg:text-lg">
+                <h3 className="mt-4 text-balance text-base font-semibold leading-snug text-slate-900 lg:mt-5 lg:text-lg">
                   {title}
                 </h3>
-                <p className="mt-1.5 text-pretty text-xs leading-relaxed text-slate-600 sm:mt-2 sm:text-sm">
+                <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600">
                   {description}
                 </p>
               </article>

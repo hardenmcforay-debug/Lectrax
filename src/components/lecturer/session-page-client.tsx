@@ -328,7 +328,7 @@ export function SessionPageClient({
 
   return (
     <Tabs defaultValue={defaultTab}>
-      <TabsList className="mb-6 flex flex-wrap">
+      <TabsList className="mb-6 flex flex-wrap gap-1 max-lg:mb-10">
         <TabsTrigger value="info">Info</TabsTrigger>
         <TabsTrigger value="students">Students</TabsTrigger>
         <TabsTrigger value="attendance">Attendance</TabsTrigger>
@@ -688,7 +688,7 @@ export function SessionPageClient({
         </Dialog>
       </TabsContent>
 
-      <TabsContent value="ca">
+      <TabsContent value="ca" className="mt-8 max-lg:mt-12 max-lg:pt-2 lg:mt-2">
         <CaStructurePanel
           session={session}
           semester={semester}

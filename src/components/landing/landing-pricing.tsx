@@ -155,29 +155,29 @@ export function LandingPricing() {
           </LandingStaggerItem>
         </LandingStagger>
 
-        <LandingStagger className="mt-8 grid grid-cols-1 gap-3 min-[400px]:grid-cols-3 sm:mt-10 sm:gap-3 md:mt-12 md:gap-4">
+        <LandingStagger className="mt-8 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-3 md:mt-12 md:gap-4">
           {billingOptions.map((plan) => (
             <LandingStaggerItem key={plan.id}>
               <div
                 className={cn(
-                  "flex h-full flex-col items-center rounded-lg border bg-white p-2.5 text-center sm:rounded-xl sm:p-4 md:p-6",
+                  "flex h-full min-w-0 flex-col items-center rounded-xl border bg-white p-3 text-center sm:rounded-2xl sm:p-4 md:p-6",
                   plan.recommended ? "border-accent ring-2 ring-accent/30" : "border-slate-200"
                 )}
               >
                 {plan.recommended ? (
-                  <Badge variant="accent" className="mb-1.5 px-1.5 py-0 text-[9px] sm:mb-2 sm:px-2 sm:py-0.5 sm:text-xs">
+                  <Badge variant="accent" className="mb-2 px-1.5 py-0 text-[10px] sm:mb-2 sm:px-2 sm:py-0.5 sm:text-xs">
                     Best Value
                   </Badge>
                 ) : (
-                  <span className="mb-1.5 block h-[18px] sm:mb-2 sm:h-5" aria-hidden />
+                  <span className="mb-2 block h-[18px] sm:h-5" aria-hidden />
                 )}
-                <p className="text-balance text-[11px] font-semibold leading-tight text-slate-900 sm:text-sm md:text-base">
+                <p className="text-balance text-xs font-semibold leading-tight text-slate-900 sm:text-sm md:text-base">
                   {plan.label}
                 </p>
-                <p className="mt-1 text-xl font-bold text-primary sm:mt-1.5 sm:text-2xl md:mt-2 md:text-3xl">
+                <p className="mt-1.5 text-xl font-bold text-primary sm:mt-2 sm:text-2xl md:text-3xl">
                   ${plan.price}
                 </p>
-                <p className="mt-0.5 text-pretty text-[10px] leading-snug text-slate-500 sm:mt-1 sm:text-xs md:text-sm">
+                <p className="mt-1 text-pretty text-[11px] leading-snug text-slate-500 sm:text-xs md:text-sm">
                   {plan.description}
                 </p>
               </div>

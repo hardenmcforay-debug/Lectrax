@@ -101,7 +101,7 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
             </motion.p>
 
             <motion.div
-              className="mt-8 grid grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-3"
+              className="mt-8 grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3"
               {...(reducedMotion ? {} : fadeUp(0.2))}
             >
               {FEATURE_HIGHLIGHTS.map((item) => {
@@ -109,14 +109,14 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
                 return (
                 <motion.div
                   key={item.title}
-                  className="hero-feature-card group min-w-0 rounded-lg p-1.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
+                  className="hero-feature-card group min-w-0 rounded-lg p-2.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
                   whileHover={reducedMotion ? undefined : { y: -4 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
-                    <Icon className="h-3 w-3 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
+                  <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
+                    <Icon className="h-3.5 w-3.5 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                   </div>
-                  <p className="text-[9px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
+                  <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
                     {item.title}
                   </p>
                 </motion.div>

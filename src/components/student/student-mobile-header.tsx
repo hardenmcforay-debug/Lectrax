@@ -43,7 +43,7 @@ export function StudentMobileHeader() {
   }
 
   return (
-    <header className="student-mobile-header fixed inset-x-0 top-0 z-50 flex lg:hidden">
+    <header className="student-mobile-header portal-mobile-header z-[60] flex shrink-0 lg:hidden">
       <div className="portal-mobile-header-bar flex w-full items-center justify-between border-b border-slate-200/80 bg-white/95 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <Logo href="/student" className="text-primary" iconClassName="h-7 w-7" labelClassName="text-lg" />
 

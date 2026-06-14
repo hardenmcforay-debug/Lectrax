@@ -1,34 +1,79 @@
 /* Shared mobile/PWA layout tokens and utilities for all Lectrax portals */
 
 :root {
-  --portal-header-offset: 4.75rem;
-  --portal-bottom-nav-offset: 6rem;
   --portal-page-gap: 1.25rem;
   --portal-section-gap: 1.5rem;
 }
 
-/* Portal scroll areas */
+/* Mobile portal shell: header + scrollable content + bottom nav */
+@media (max-width: 1023px) {
+  .portal-shell-root {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .portal-mobile-header {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 60;
+  }
+
+  .portal-mobile-bottom-nav {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 60;
+  }
+
+  .student-portal-content,
+  .lecturer-portal-content {
+    position: relative;
+    z-index: 0;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    scroll-padding-top: 1rem;
+    scroll-padding-bottom: 1rem;
+  }
+}
+
+/* Portal scroll areas — horizontal safe area + desktop padding */
 .student-portal-content,
 .lecturer-portal-content,
 .admin-portal-content {
   min-width: 0;
   padding-left: max(1rem, env(safe-area-inset-left, 0px));
   padding-right: max(1rem, env(safe-area-inset-right, 0px));
-  padding-top: calc(var(--portal-header-offset) + env(safe-area-inset-top, 0px) + 0.5rem);
-}
-
-.student-portal-content,
-.lecturer-portal-content {
-  padding-bottom: calc(var(--portal-bottom-nav-offset) + env(safe-area-inset-bottom, 0px));
-  scroll-padding-bottom: calc(var(--portal-bottom-nav-offset) + env(safe-area-inset-bottom, 0px));
 }
 
 .admin-portal-content {
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   scroll-padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 1024px) {
+  .portal-shell-root {
+    position: relative;
+    height: 100dvh;
+  }
+
   .student-portal-content,
   .lecturer-portal-content,
   .admin-portal-content {
@@ -177,13 +222,7 @@ html[data-pwa-standalone="true"] .admin-portal-content {
   padding-right: max(1rem, env(safe-area-inset-right, 0px));
 }
 
-html[data-pwa-standalone="true"] .student-portal-content,
-html[data-pwa-standalone="true"] .lecturer-portal-content {
-  padding-bottom: calc(var(--portal-bottom-nav-offset) + env(safe-area-inset-bottom, 0px));
-  padding-top: calc(var(--portal-header-offset) + env(safe-area-inset-top, 0px) + 0.5rem);
-}
-
 html[data-pwa-standalone="true"] .admin-portal-content {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
-  padding-top: calc(var(--portal-header-offset) + env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
 }

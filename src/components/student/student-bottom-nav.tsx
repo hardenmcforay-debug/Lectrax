@@ -13,7 +13,7 @@ export function StudentBottomNav() {
 
   return (
     <nav
-      className="student-mobile-nav fixed inset-x-0 bottom-0 z-50 flex lg:hidden"
+      className="student-mobile-nav portal-mobile-bottom-nav z-[60] flex shrink-0 lg:hidden"
       aria-label="Student navigation"
     >
       <div className="portal-bottom-nav-bar student-bottom-nav-bar flex w-full items-stretch justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
