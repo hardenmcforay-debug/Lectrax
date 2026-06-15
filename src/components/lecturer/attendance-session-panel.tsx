@@ -112,7 +112,9 @@ export function AttendanceSessionPanel({
   const [unmarking, setUnmarking] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef(false);
-  const refreshQrRef = useRef<(attendanceSessionId: string) => Promise<boolean>>(async () => false);
+  const refreshQrRef = useRef<
+    (attendanceSessionId: string, source?: string) => Promise<boolean>
+  >(async () => false);
   const presentLoadedForSessionRef = useRef<string | null>(null);
   const skipInitialRefreshRef = useRef(false);
 

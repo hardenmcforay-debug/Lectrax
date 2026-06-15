@@ -56,7 +56,7 @@ const SESSION_TAB_ITEMS = [
   { value: "attendance", label: "Attendance" },
   { value: "assignments", label: "Assignments" },
   { value: "ca", label: "CA" },
-  { value: "audit", label: "Audit", premium: true },
+  { value: "audit", label: "Audit" },
 ] as const;
 
 function SessionTabsPlaceholder({
@@ -66,7 +66,7 @@ function SessionTabsPlaceholder({
   defaultTab: string;
   showAuditLogs: boolean;
 }) {
-  const tabs = SESSION_TAB_ITEMS.filter((tab) => !tab.premium || showAuditLogs);
+  const tabs = SESSION_TAB_ITEMS.filter((tab) => tab.value !== "audit" || showAuditLogs);
 
   return (
     <div className="space-y-6" aria-busy="true" aria-label="Loading session tabs">

@@ -74,7 +74,6 @@ export function isNetworkAuthError(error: unknown): boolean {
 
   if (isTransientError(error)) {
     const message = getErrorMessage(error);
-    const name = getErrorName(error);
     if (CREDENTIAL_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
       return false;
     }
