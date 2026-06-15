@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { attendanceDeviceIdentitySchema } from "@/lib/attendance/device-verification";
+import {
+  attendanceDeviceIdentitySchema,
+  deviceBoundToOtherAccountResponse,
+} from "@/lib/attendance/device-verification";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -35,6 +38,10 @@ export async function POST(request: Request) {
 
   if (status === "not_student") {
     return NextResponse.json({ error: "Only students can register attendance devices" }, { status: 403 });
+  }
+
+  if (status === "device_owned_by_other") {
+    return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
   }
 
   if (status === "already_registered") {

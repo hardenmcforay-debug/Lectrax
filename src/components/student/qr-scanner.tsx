@@ -203,6 +203,16 @@ export function QRScanner() {
           variant: "error",
         });
         processedRef.current = false;
+      } else if (data.code === DEVICE_VERIFICATION_CODES.DEVICE_BOUND_TO_OTHER_ACCOUNT) {
+        setStatus({
+          title: DEVICE_MESSAGES.deviceBoundToOtherAccount.title,
+          description: data.detail ?? data.message ?? DEVICE_MESSAGES.deviceBoundToOtherAccount.detail,
+          variant: "error",
+        });
+        setPendingToken(null);
+        setShowVerificationDialog(false);
+        setShowTransferConfirm(false);
+        processedRef.current = false;
       } else if (data.code === DEVICE_VERIFICATION_CODES.VERIFICATION_REQUIRED) {
         setPendingToken(extractToken(token));
         setShowVerificationDialog(true);
@@ -251,6 +261,17 @@ export function QRScanner() {
       const data = (await res.json()) as ScanResponse;
 
       if (!res.ok) {
+        if (data.code === DEVICE_VERIFICATION_CODES.DEVICE_BOUND_TO_OTHER_ACCOUNT) {
+          setStatus({
+            title: DEVICE_MESSAGES.deviceBoundToOtherAccount.title,
+            description:
+              data.detail ?? data.message ?? DEVICE_MESSAGES.deviceBoundToOtherAccount.detail,
+            variant: "error",
+          });
+          setPendingToken(null);
+          return;
+        }
+
         setStatus({
           title: data.error ?? "Device transfer failed",
           variant: "error",

@@ -15,6 +15,7 @@ import {
   attendanceDeviceIdentitySchema,
   DEVICE_MESSAGES,
   DEVICE_VERIFICATION_CODES,
+  deviceBoundToOtherAccountResponse,
   type DeviceVerificationStatus,
 } from "@/lib/attendance/device-verification";
 
@@ -199,6 +200,22 @@ export async function POST(request: Request) {
 
   const status = verificationStatus as DeviceVerificationStatus;
 
+  if (status === "device_owned_by_other") {
+    await logAudit({
+      action: "attendance_scan_blocked_device_bound",
+      entityType: "device_registration",
+      classSessionId: payload.classSessionId,
+      metadata: {
+        student_id: user.id,
+        device_identifier: deviceIdentifier,
+        device_fingerprint: deviceFingerprint,
+        attendance_session_id: payload.attendanceSessionId,
+      },
+    });
+
+    return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
+  }
+
   if (status === "revoked_device") {
     return NextResponse.json(
       {
@@ -233,7 +250,28 @@ export async function POST(request: Request) {
       }
     );
 
-    if (registerError || registerStatus !== "registered") {
+    if (registerError) {
+      return NextResponse.json({ error: registerError.message }, { status: 400 });
+    }
+
+    if (registerStatus === "device_owned_by_other") {
+      await logAudit({
+        action: "attendance_scan_blocked_device_bound",
+        entityType: "device_registration",
+        classSessionId: payload.classSessionId,
+        metadata: {
+          student_id: user.id,
+          device_identifier: deviceIdentifier,
+          device_fingerprint: deviceFingerprint,
+          attendance_session_id: payload.attendanceSessionId,
+          source: "first_scan_bootstrap",
+        },
+      });
+
+      return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
+    }
+
+    if (registerStatus !== "registered") {
       return NextResponse.json(
         { error: "Attendance device registration required before scanning." },
         { status: 403 }

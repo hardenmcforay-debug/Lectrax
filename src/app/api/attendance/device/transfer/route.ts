@@ -4,6 +4,8 @@ import { logAudit } from "@/lib/audit";
 import {
   attendanceDeviceIdentitySchema,
   DEVICE_MESSAGES,
+  deviceBoundToOtherAccountResponse,
+  isDeviceOwnedByOtherError,
 } from "@/lib/attendance/device-verification";
 
 export async function POST(request: Request) {
@@ -33,6 +35,9 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    if (isDeviceOwnedByOtherError(error.message)) {
+      return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const DEVICE_VERIFICATION_CODES = {
   VERIFICATION_REQUIRED: "DEVICE_VERIFICATION_REQUIRED",
   ACCESS_REVOKED: "DEVICE_ACCESS_REVOKED",
+  DEVICE_BOUND_TO_OTHER_ACCOUNT: "DEVICE_BOUND_TO_OTHER_ACCOUNT",
 } as const;
 
 export type DeviceVerificationStatus =
@@ -10,7 +11,8 @@ export type DeviceVerificationStatus =
   | "new_device"
   | "revoked_device"
   | "no_device"
-  | "not_student";
+  | "not_student"
+  | "device_owned_by_other";
 
 export const attendanceDeviceIdentitySchema = z.object({
   deviceFingerprint: z.string().min(8),
@@ -38,4 +40,24 @@ export const DEVICE_MESSAGES = {
     detail:
       "Attendance scanning is no longer available on this device because attendance access has been transferred to another device.",
   },
+  deviceBoundToOtherAccount: {
+    title: "Device Already Registered",
+    description:
+      "Another student account is already registered to this device for attendance. You cannot mark attendance on this device.",
+    detail:
+      "Sign in with your account on your own device, or ask your lecturer to mark your attendance manually.",
+  },
 } as const;
+
+export function isDeviceOwnedByOtherError(message: string): boolean {
+  return /DEVICE_OWNED_BY_OTHER_ACCOUNT|device_owned_by_other/i.test(message);
+}
+
+export function deviceBoundToOtherAccountResponse() {
+  return {
+    error: DEVICE_MESSAGES.deviceBoundToOtherAccount.title,
+    code: DEVICE_VERIFICATION_CODES.DEVICE_BOUND_TO_OTHER_ACCOUNT,
+    message: DEVICE_MESSAGES.deviceBoundToOtherAccount.description,
+    detail: DEVICE_MESSAGES.deviceBoundToOtherAccount.detail,
+  };
+}
