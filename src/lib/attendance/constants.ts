@@ -1,5 +1,5 @@
 /** How long each QR token remains valid (seconds). Matches refresh interval — only one token valid at a time. */
-export const QR_TOKEN_TTL_SECONDS = 60;
+export const QR_TOKEN_TTL_SECONDS = 5;
 
 /** How often the lecturer UI refreshes the displayed QR code (milliseconds). */
 export const QR_REFRESH_INTERVAL_MS = QR_TOKEN_TTL_SECONDS * 1000;
