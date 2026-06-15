@@ -22,7 +22,7 @@ export function AdminPortalShell({
   return (
     <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
       <DashboardSidebar role="platform_admin" className="admin-desktop-sidebar hidden lg:flex" />
-      <main className="portal-mobile-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
         <AdminMobileHeader title={title} />
         {showHeader && title && (
           <div className="admin-desktop-header hidden shrink-0 border-b bg-white px-8 py-5 lg:block xl:py-6">
@@ -32,7 +32,7 @@ export function AdminPortalShell({
             )}
           </div>
         )}
-        <div className="admin-portal-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="admin-portal-content min-h-0 min-w-0">
           {showHeader && description && (
             <p className="portal-page-description lg:hidden">{description}</p>
           )}

@@ -36,11 +36,11 @@ export function StudentPortalShell({
 
   return (
     <StudentNotificationsProvider>
-      <div className="portal-shell-root flex h-dvh overflow-hidden bg-slate-50">
+      <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
         <DashboardSidebar role="student" className="student-desktop-sidebar hidden lg:flex" />
-        <main className="portal-mobile-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
           <StudentMobileHeader />
-          <div className="student-portal-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="student-portal-content min-h-0 min-w-0">
             <StudentPageEnter>
               {inlineHeaderContent}
               {children}
