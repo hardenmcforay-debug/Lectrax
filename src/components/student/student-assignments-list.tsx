@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import type { StudentAssignmentListItem } from "@/lib/student/assignment-queries";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
+import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { useAssignmentPastDeadline } from "@/lib/assignments/use-assignment-past-deadline";
 
 function StudentAssignmentListCard({ assignment }: { assignment: StudentAssignmentListItem }) {
@@ -25,11 +26,7 @@ function StudentAssignmentListCard({ assignment }: { assignment: StudentAssignme
 
   const deadlineBadge = useMemo(() => {
     if (submissionStatus === "not_submitted") {
-      return pastDeadline ? (
-        <Badge variant="outline">Closed</Badge>
-      ) : (
-        <Badge variant="secondary">Open</Badge>
-      );
+      return <AssignmentOpenClosedBadge isOpen={!pastDeadline} />;
     }
     return null;
   }, [pastDeadline, submissionStatus]);
@@ -61,9 +58,7 @@ function StudentAssignmentListCard({ assignment }: { assignment: StudentAssignme
             )}
             {submissionStatus === "locked" && (
               <div className="flex items-center gap-2">
-                <Badge variant="outline">
-                  {assignment.gradeDisplay ? "Locked" : "Closed"}
-                </Badge>
+                <AssignmentOpenClosedBadge isOpen={false} />
                 {assignment.gradeDisplay && (
                   <p className="text-sm font-medium">{assignment.gradeDisplay}</p>
                 )}

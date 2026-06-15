@@ -186,6 +186,57 @@
   padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
 
+/* PWA / installed app: mobile chrome on first paint (no JS wait) */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .portal-shell-root {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .student-desktop-sidebar,
+  .lecturer-desktop-sidebar {
+    display: none !important;
+  }
+
+  .portal-mobile-only {
+    display: flex !important;
+  }
+}
+
+html[data-pwa-standalone="true"] .portal-shell-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html[data-pwa-standalone="true"] .student-desktop-sidebar,
+html[data-pwa-standalone="true"] .lecturer-desktop-sidebar {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .portal-mobile-only {
+  display: flex !important;
+}
+
+/* Mobile chrome: visible on small screens and in PWA standalone */
+.portal-mobile-only {
+  display: flex;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  html:not([data-pwa-standalone="true"]) .portal-mobile-only {
+    display: none;
+  }
+}
+
 /* Landing safe areas */
 .landing-nav-safe {
   padding-top: env(safe-area-inset-top, 0px);

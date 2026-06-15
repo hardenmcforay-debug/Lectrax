@@ -13,7 +13,7 @@ export function LecturerBottomNav() {
 
   return (
     <nav
-      className="lecturer-mobile-nav portal-mobile-bottom-nav z-[60] flex shrink-0 lg:hidden"
+      className="lecturer-mobile-nav portal-mobile-bottom-nav portal-mobile-only z-[60]"
       aria-label="Lecturer navigation"
     >
       <div className="portal-bottom-nav-bar lecturer-bottom-nav-bar flex w-full items-stretch justify-around pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">

@@ -10,6 +10,7 @@ import { formatFileSize, MAX_SUBMISSION_FILE_SIZE } from "@/lib/assignments/stor
 import type { StudentAssignmentDetailData } from "@/lib/student/assignment-queries";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
+import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { useAssignmentPastDeadline } from "@/lib/assignments/use-assignment-past-deadline";
 import {
   ASSIGNMENT_CLOSED_MESSAGE,
@@ -119,11 +120,8 @@ export function StudentAssignmentDetailClient({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {!submission && !pastDeadline && (
-              <Badge variant="secondary">Open</Badge>
-            )}
-            {!submission && pastDeadline && (
-              <Badge variant="outline">Closed</Badge>
+            {!submission && (
+              <AssignmentOpenClosedBadge isOpen={!pastDeadline} />
             )}
             {submissionStatus === "not_submitted" && pastDeadline && (
               <Badge variant="outline">Submission deadline reached</Badge>
@@ -132,7 +130,7 @@ export function StudentAssignmentDetailClient({
               <Badge variant="secondary">Submitted</Badge>
             )}
             {submissionStatus === "locked" && submission && (
-              <Badge variant="outline">Closed</Badge>
+              <AssignmentOpenClosedBadge isOpen={false} />
             )}
             {submissionStatus === "graded" && <Badge variant="accent">Graded</Badge>}
             {gradeDisplay && <span className="font-medium">{gradeDisplay}</span>}

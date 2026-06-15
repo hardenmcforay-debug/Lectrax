@@ -16,20 +16,31 @@ import { redirectAfterAuth } from "@/lib/auth/roles";
 import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
+import { AuthErrorNotice } from "@/components/auth/auth-error-notice";
+import type { AuthUserMessage } from "@/lib/errors/auth-messages";
+import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
+import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
 
 const authInputClass =
   "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
 
 const authLabelClass = "text-xs font-medium text-slate-700 md:text-sm";
 
+function toAuthMessage(title: string, description: string, retryable = false): AuthUserMessage {
+  return { title, description, retryable };
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState<string | null>(() => {
+  const [error, setError] = useState<AuthUserMessage | null>(() => {
     const authError = searchParams.get("error");
     if (authError === "auth") {
-      return "Sign in failed. Please check your email and password.";
+      return toAuthMessage(
+        "Sign In Failed",
+        "Sign in failed. Please check your email and password."
+      );
     }
     return null;
   });
@@ -60,7 +71,12 @@ export function LoginForm() {
 
     const configError = getSupabaseConfigError();
     if (configError) {
-      setError(configError);
+      setError(
+        toAuthMessage(
+          "Service Temporarily Unavailable",
+          "Authentication is not configured. Please contact support."
+        )
+      );
       return;
     }
 
@@ -70,42 +86,62 @@ export function LoginForm() {
       localStorage.removeItem("lectrax_remember_email");
     }
 
-    let supabase;
     try {
-      supabase = createClient();
+      let supabase;
+      try {
+        supabase = createClient();
+      } catch (cause) {
+        setError(mapAuthError(cause, "login", "auth.login.createClient"));
+        return;
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (authError) {
+        await supabase.auth.signOut();
+        setError(
+          mapSupabaseAuthError(authError, "login", "auth.login.signIn") ?? {
+            title: "Sign In Failed",
+            description: "Sign in failed. Please check your email and password.",
+            retryable: false,
+          }
+        );
+        return;
+      }
+
+      const user = authData.user;
+      if (!user) {
+        await supabase.auth.signOut();
+        setError(
+          toAuthMessage("Sign In Failed", "Sign in failed. Please try again.", true)
+        );
+        return;
+      }
+
+      router.refresh();
+      const { role, networkFailure } = await resolveClientRoleAfterAuth(supabase);
+
+      if (!role) {
+        await supabase.auth.signOut();
+        setError(
+          networkFailure
+            ? getAuthNetworkMessage("session")
+            : toAuthMessage(
+                "Sign In Failed",
+                "Could not verify your account. Please try again or contact support.",
+                true
+              )
+        );
+        return;
+      }
+
+      redirectAfterAuth(role, searchParams.get("redirect"));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Authentication is unavailable.");
-      return;
+      setError(mapAuthError(cause, "login", "auth.login.unhandled"));
     }
-
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-
-    if (authError) {
-      await supabase.auth.signOut();
-      setError(authError.message || "Sign in failed. Please check your email and password.");
-      return;
-    }
-
-    const user = authData.user;
-    if (!user) {
-      await supabase.auth.signOut();
-      setError("Sign in failed. Please try again.");
-      return;
-    }
-
-    router.refresh();
-    const role = await resolveClientRoleAfterAuth(supabase);
-
-    if (!role) {
-      await supabase.auth.signOut();
-      setError("Could not verify your account. Please try again or contact support.");
-      return;
-    }
-
-    redirectAfterAuth(role, searchParams.get("redirect"));
   }
 
   return (
@@ -171,7 +207,7 @@ export function LoginForm() {
           <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{info}</p>
         )}
         {error && (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-destructive">{error}</p>
+          <AuthErrorNotice error={error} onRetry={() => setError(null)} />
         )}
 
         <Button
@@ -197,13 +233,21 @@ export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") === "lecturer" ? "lecturer" : "student";
-  const [error, setError] = useState<string | null>(() => {
+  const [error, setError] = useState<AuthUserMessage | null>(() => {
     const signupError = searchParams.get("error");
     if (signupError === "signup") {
-      return "Could not create your account. Please try again.";
+      return toAuthMessage(
+        "Request Failed",
+        "Could not create your account. Please try again.",
+        true
+      );
     }
     if (signupError === "auth") {
-      return "Account verification failed. Please try creating your account again.";
+      return toAuthMessage(
+        "Request Failed",
+        "Account verification failed. Please try creating your account again.",
+        true
+      );
     }
     return null;
   });
@@ -227,70 +271,99 @@ export function SignupForm() {
 
     const configError = getSupabaseConfigError();
     if (configError) {
-      setError(configError);
+      setError(
+        toAuthMessage(
+          "Service Temporarily Unavailable",
+          "Authentication is not configured. Please contact support."
+        )
+      );
       return;
     }
 
-    let supabase;
     try {
-      supabase = createClient();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Authentication is unavailable.");
-      return;
-    }
+      let supabase;
+      try {
+        supabase = createClient();
+      } catch (cause) {
+        setError(mapAuthError(cause, "signup", "auth.signup.createClient"));
+        return;
+      }
 
-    const collegeId = data.collegeId?.trim() || undefined;
+      const collegeId = data.collegeId?.trim() || undefined;
 
-    const { data: signUpData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.fullName,
-          role: data.role,
-          college_id: collegeId,
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            full_name: data.fullName,
+            role: data.role,
+            college_id: collegeId,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+      });
 
-    if (authError) {
-      setError(authError.message || "Could not create your account. Please try again.");
-      return;
-    }
-
-    const user = signUpData.user;
-    if (!user) {
-      setError("Account could not be created. Please check your details and try again.");
-      return;
-    }
-
-    if (signUpData.session) {
-      await syncStudentCollegeIdFromSignupMetadata(supabase, user);
-      router.refresh();
-      const resolvedRole = await resolveClientRoleAfterAuth(supabase);
-
-      if (!resolvedRole) {
-        await supabase.auth.signOut();
+      if (authError) {
         setError(
-          "Account created but sign-in failed. Please sign in with your new credentials."
+          mapSupabaseAuthError(authError, "signup", "auth.signup.signUp") ?? {
+            title: "Request Failed",
+            description: "Could not create your account. Please try again.",
+            retryable: true,
+          }
         );
         return;
       }
 
-      if (resolvedRole === "student") {
-        void fetch("/api/attendance/device/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(getAttendanceDeviceIdentity()),
-        });
+      const user = signUpData.user;
+      if (!user) {
+        setError(
+          toAuthMessage(
+            "Request Failed",
+            "Account could not be created. Please check your details and try again.",
+            true
+          )
+        );
+        return;
       }
 
-      redirectAfterAuth(resolvedRole);
-      return;
-    }
+      if (signUpData.session) {
+        await syncStudentCollegeIdFromSignupMetadata(supabase, user);
+        router.refresh();
+        const { role: resolvedRole, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
-    router.push("/login?message=confirm-email");
+        if (!resolvedRole) {
+          await supabase.auth.signOut();
+          setError(
+            networkFailure
+              ? getAuthNetworkMessage("session")
+              : toAuthMessage(
+                  "Request Failed",
+                  "Account created but sign-in failed. Please sign in with your new credentials.",
+                  true
+                )
+          );
+          return;
+        }
+
+        if (resolvedRole === "student") {
+          void fetch("/api/attendance/device/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(getAttendanceDeviceIdentity()),
+          }).catch(() => {
+            // Device registration is best-effort after signup.
+          });
+        }
+
+        redirectAfterAuth(resolvedRole);
+        return;
+      }
+
+      router.push("/login?message=confirm-email");
+    } catch (cause) {
+      setError(mapAuthError(cause, "signup", "auth.signup.unhandled"));
+    }
   }
 
   return (
@@ -406,7 +479,7 @@ export function SignupForm() {
         </div>
 
         {error && (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-destructive">{error}</p>
+          <AuthErrorNotice error={error} onRetry={() => setError(null)} />
         )}
 
         <Button

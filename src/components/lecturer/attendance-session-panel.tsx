@@ -28,7 +28,6 @@ import {
   formatAttendanceDate,
   formatAttendanceTime,
   formatSessionDurationLabel,
-  QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
 import {
@@ -94,6 +93,10 @@ export function AttendanceSessionPanel({
   const [durationMinutes, setDurationMinutes] = useState(
     String(DEFAULT_SESSION_DURATION_MINUTES)
   );
+  const [activeSessionDurationMinutes, setActiveSessionDurationMinutes] = useState<number | null>(
+    null
+  );
+  const [qrExpiresAt, setQrExpiresAt] = useState<number | null>(null);
   const [qrVersion, setQrVersion] = useState(0);
   const [unmarkTarget, setUnmarkTarget] = useState<{
     enrollmentId: string;
@@ -101,12 +104,23 @@ export function AttendanceSessionPanel({
   } | null>(null);
   const [unmarking, setUnmarking] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
+  const refreshingRef = useRef(false);
   const presentLoadedForSessionRef = useRef<string | null>(null);
   const skipInitialRefreshRef = useRef(false);
 
   const presentCount = presentRecords.size;
   const totalStudents = rows.length;
   const notMarkedCount = Math.max(0, totalStudents - presentCount);
+
+  useEffect(() => {
+    if (!activeSession || activeSessionDurationMinutes) return;
+    const start = new Date(activeSession.created_at).getTime();
+    const end = new Date(activeSession.session_expires_at).getTime();
+    const minutes = Math.round((end - start) / 60_000);
+    if (minutes > 0) {
+      setActiveSessionDurationMinutes(minutes);
+    }
+  }, [activeSession, activeSessionDurationMinutes]);
 
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
     const res = await fetch(
@@ -147,6 +161,9 @@ export function AttendanceSessionPanel({
 
   const refreshQr = useCallback(
     async (attendanceSessionId: string) => {
+      if (refreshingRef.current) return false;
+      refreshingRef.current = true;
+
       try {
         const res = await fetch("/api/attendance/refresh", {
           method: "POST",
@@ -157,14 +174,17 @@ export function AttendanceSessionPanel({
         const data = (await res.json().catch(() => ({}))) as {
           qrPayload?: string;
           sessionExpiresAt?: string;
+          tokenExpiresAt?: string;
           error?: string;
         };
 
         if (res.status === 410) {
           setActiveSession(null);
           setQrImage(null);
+          setQrExpiresAt(null);
           setPresentRecords(new Map());
           presentLoadedForSessionRef.current = null;
+          setActiveSessionDurationMinutes(null);
           setError("Attendance session has ended.");
           router.refresh();
           return false;
@@ -176,6 +196,9 @@ export function AttendanceSessionPanel({
         }
 
         void renderQr(data.qrPayload);
+        if (data.tokenExpiresAt) {
+          setQrExpiresAt(new Date(data.tokenExpiresAt).getTime());
+        }
         if (data.sessionExpiresAt) {
           setActiveSession((prev) =>
             prev ? { ...prev, session_expires_at: data.sessionExpiresAt! } : prev
@@ -186,6 +209,8 @@ export function AttendanceSessionPanel({
       } catch {
         setError("Network error while refreshing QR code.");
         return false;
+      } finally {
+        refreshingRef.current = false;
       }
     },
     [renderQr, router]
@@ -199,17 +224,27 @@ export function AttendanceSessionPanel({
     } else {
       void refreshQr(activeSession.id);
     }
+  }, [activeSession, refreshQr]);
 
-    refreshTimerRef.current = window.setInterval(() => {
-      void refreshQr(activeSession.id);
-    }, QR_REFRESH_INTERVAL_MS);
+  useEffect(() => {
+    if (!activeSession || !qrExpiresAt) return;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((qrExpiresAt - Date.now()) / 1000));
+      if (remaining === 0) {
+        void refreshQr(activeSession.id);
+      }
+    };
+
+    tick();
+    refreshTimerRef.current = window.setInterval(tick, 1000);
 
     return () => {
       if (refreshTimerRef.current) {
         window.clearInterval(refreshTimerRef.current);
       }
     };
-  }, [activeSession, refreshQr]);
+  }, [activeSession, qrExpiresAt, refreshQr]);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -278,6 +313,7 @@ export function AttendanceSessionPanel({
         session?: ActiveAttendanceSession & { session_expires_at: string };
         sessionNumber?: number;
         qrPayload?: string;
+        tokenExpiresAt?: string;
         error?: string;
       };
 
@@ -290,6 +326,7 @@ export function AttendanceSessionPanel({
       setPresentRecords(new Map());
       logPresentRecords("startAttendance", new Map());
       skipInitialRefreshRef.current = true;
+      setActiveSessionDurationMinutes(Number(durationMinutes));
       setActiveSession({
         id: data.session.id,
         title: data.session.title,
@@ -298,6 +335,9 @@ export function AttendanceSessionPanel({
         session_expires_at: data.session.session_expires_at,
       });
       setSessionNumber(data.sessionNumber ?? null);
+      if (data.tokenExpiresAt) {
+        setQrExpiresAt(new Date(data.tokenExpiresAt).getTime());
+      }
       void renderQr(data.qrPayload);
     } catch {
       setError("Network error. Check your connection and try again.");
@@ -315,6 +355,8 @@ export function AttendanceSessionPanel({
 
     setActiveSession(null);
     setQrImage(null);
+    setQrExpiresAt(null);
+    setActiveSessionDurationMinutes(null);
     setPresentRecords(new Map());
     presentLoadedForSessionRef.current = null;
     onAttendanceChange?.();
@@ -484,7 +526,7 @@ export function AttendanceSessionPanel({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Select a session duration between 5 and 60 minutes.
+                  Choose how long students can check in. Default is 10 minutes.
                 </p>
               </div>
               <Button onClick={() => void startAttendance()} disabled={starting} variant="accent">
@@ -532,7 +574,8 @@ export function AttendanceSessionPanel({
                     className="w-full max-w-[400px] rounded-lg border bg-white p-2 shadow-sm transition-opacity duration-300"
                   />
                   <p className="mt-3 max-w-[400px] text-center text-xs text-muted-foreground">
-                    Secure attendance verification is active. Each student may check in once using the current QR code.
+                    <span className="font-medium text-foreground">Attendance Window:</span>{" "}
+                    {activeSessionDurationMinutes ?? durationMinutes} Minutes
                   </p>
                 </div>
               )}

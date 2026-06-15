@@ -15,6 +15,11 @@ const APPLE_SPLASH_SCREENS = [
 export function PwaHeadLinks() {
   return (
     <>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var d=document.documentElement,m=window.matchMedia;if(m("(display-mode: standalone)").matches||m("(display-mode: fullscreen)").matches||window.navigator.standalone===true){d.dataset.pwaStandalone="true";}}catch(e){}})();`,
+        }}
+      />
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
         <link key={href} rel="apple-touch-startup-image" href={href} media={media} />
       ))}

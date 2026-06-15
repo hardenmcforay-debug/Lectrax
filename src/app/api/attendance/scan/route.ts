@@ -2,13 +2,81 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { verifyQRToken, hashQRToken } from "@/lib/qr-token";
 import { logAudit } from "@/lib/audit";
-import { EXPIRED_QR_MESSAGE, isAttendanceSessionOpen } from "@/lib/attendance/constants";
+import {
+  ATTENDANCE_ALREADY_RECORDED_MESSAGE,
+  ATTENDANCE_ALREADY_RECORDED_TITLE,
+  ATTENDANCE_RECORDED_MESSAGE,
+  ATTENDANCE_RECORDED_TITLE,
+  EXPIRED_QR_MESSAGE,
+  EXPIRED_QR_TITLE,
+  isAttendanceSessionOpen,
+} from "@/lib/attendance/constants";
 import {
   attendanceDeviceIdentitySchema,
   DEVICE_MESSAGES,
   DEVICE_VERIFICATION_CODES,
   type DeviceVerificationStatus,
 } from "@/lib/attendance/device-verification";
+
+type DuplicateScanContext = {
+  userId: string;
+  attendanceSessionId: string;
+  classSessionId: string;
+  enrollmentId: string;
+  deviceFingerprint: string;
+  browserFingerprint: string;
+  deviceIdentifier: string;
+  existingRecordId?: string;
+  existingMarkedAt?: string | null;
+};
+
+async function respondDuplicateAttendance(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  context: DuplicateScanContext
+) {
+  let recordId = context.existingRecordId;
+  let markedAt = context.existingMarkedAt ?? null;
+
+  if (!markedAt) {
+    const { data: existingRecord } = await supabase
+      .from("attendance_records")
+      .select("id, marked_at")
+      .eq("attendance_session_id", context.attendanceSessionId)
+      .eq("enrollment_id", context.enrollmentId)
+      .maybeSingle();
+
+    recordId = existingRecord?.id ?? recordId;
+    markedAt = existingRecord?.marked_at ?? null;
+  }
+
+  await logAudit({
+    action: "duplicate_attendance_scan_attempt",
+    entityType: "attendance_record",
+    entityId: recordId,
+    classSessionId: context.classSessionId,
+    metadata: {
+      student_id: context.userId,
+      attendance_session_id: context.attendanceSessionId,
+      enrollment_id: context.enrollmentId,
+      class_session_id: context.classSessionId,
+      device_identifier: context.deviceIdentifier,
+      device_fingerprint: context.deviceFingerprint,
+      browser_fingerprint: context.browserFingerprint,
+      scanned_at: new Date().toISOString(),
+    },
+  });
+
+  return NextResponse.json(
+    {
+      error: ATTENDANCE_ALREADY_RECORDED_TITLE,
+      message: ATTENDANCE_ALREADY_RECORDED_MESSAGE,
+      code: "ATTENDANCE_ALREADY_RECORDED",
+      alreadyRecorded: true,
+      recordedAt: markedAt,
+    },
+    { status: 409 }
+  );
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -39,7 +107,14 @@ export async function POST(request: Request) {
   const payload = verifyQRToken(token);
 
   if (!payload) {
-    return NextResponse.json({ error: EXPIRED_QR_MESSAGE, message: EXPIRED_QR_MESSAGE }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: EXPIRED_QR_TITLE,
+        message: EXPIRED_QR_MESSAGE,
+        code: "QR_EXPIRED",
+      },
+      { status: 400 }
+    );
   }
 
   const { data: attSession } = await supabase
@@ -65,7 +140,11 @@ export async function POST(request: Request) {
 
   if (!isCurrentToken || !tokenNotExpired) {
     return NextResponse.json(
-      { error: EXPIRED_QR_MESSAGE, message: EXPIRED_QR_MESSAGE },
+      {
+        error: EXPIRED_QR_TITLE,
+        message: EXPIRED_QR_MESSAGE,
+        code: "QR_EXPIRED",
+      },
       { status: 400 }
     );
   }
@@ -86,16 +165,23 @@ export async function POST(request: Request) {
 
   const { data: existing } = await supabase
     .from("attendance_records")
-    .select("id")
+    .select("id, marked_at")
     .eq("attendance_session_id", payload.attendanceSessionId)
     .eq("enrollment_id", enrollment.id)
     .maybeSingle();
 
   if (existing) {
-    return NextResponse.json(
-      { error: "Attendance Already Recorded", message: "Attendance Already Recorded" },
-      { status: 409 }
-    );
+    return respondDuplicateAttendance(supabase, {
+      userId: user.id,
+      attendanceSessionId: payload.attendanceSessionId,
+      classSessionId: payload.classSessionId,
+      enrollmentId: enrollment.id,
+      deviceFingerprint,
+      browserFingerprint,
+      deviceIdentifier,
+      existingRecordId: existing.id,
+      existingMarkedAt: existing.marked_at,
+    });
   }
 
   const { data: verificationStatus, error: verifyError } = await supabase.rpc(
@@ -195,10 +281,15 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23505") {
-      return NextResponse.json(
-        { error: "Attendance Already Recorded", message: "Attendance Already Recorded" },
-        { status: 409 }
-      );
+      return respondDuplicateAttendance(supabase, {
+        userId: user.id,
+        attendanceSessionId: payload.attendanceSessionId,
+        classSessionId: payload.classSessionId,
+        enrollmentId: enrollment.id,
+        deviceFingerprint,
+        browserFingerprint,
+        deviceIdentifier,
+      });
     }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
@@ -219,7 +310,9 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    message: "Attendance Recorded Successfully",
+    message: ATTENDANCE_RECORDED_TITLE,
+    description: ATTENDANCE_RECORDED_MESSAGE,
+    recordedAt: record.marked_at,
     record,
   });
 }

@@ -150,16 +150,6 @@
   animation: lecturer-menu-drawer-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* PWA standalone: always use mobile navigation chrome */
-html[data-pwa-standalone="true"] .lecturer-desktop-sidebar {
-  display: none !important;
-}
-
-html[data-pwa-standalone="true"] .lecturer-mobile-header,
-html[data-pwa-standalone="true"] .lecturer-mobile-nav {
-  display: flex !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lecturer-page-enter,
   .lecturer-stagger > *,

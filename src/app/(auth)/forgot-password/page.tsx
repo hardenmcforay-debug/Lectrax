@@ -8,20 +8,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthErrorNotice } from "@/components/auth/auth-error-notice";
+import type { AuthUserMessage } from "@/lib/errors/auth-messages";
+import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<AuthUserMessage | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-    });
-    if (err) setError(err.message);
-    else setSent(true);
+    setError(null);
+    setSubmitting(true);
+
+    try {
+      const supabase = createClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+
+      if (resetError) {
+        setError(
+          mapSupabaseAuthError(resetError, "password-reset", "auth.passwordReset") ?? {
+            title: "Request Failed",
+            description: "Could not send the reset link. Please try again.",
+            retryable: true,
+          }
+        );
+        return;
+      }
+
+      setSent(true);
+    } catch (cause) {
+      setError(mapAuthError(cause, "password-reset", "auth.passwordReset.unhandled"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -41,11 +65,19 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full">
-                Send reset link
+              {error && (
+                <AuthErrorNotice error={error} onRetry={() => setError(null)} />
+              )}
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? "Sending..." : "Send reset link"}
               </Button>
             </form>
           )}

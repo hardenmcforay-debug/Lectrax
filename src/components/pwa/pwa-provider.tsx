@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { isStandaloneMode } from "@/lib/pwa/detect";
 
 export function PwaProvider() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isStandaloneMode()) {
       document.documentElement.dataset.pwaStandalone = "true";
     }

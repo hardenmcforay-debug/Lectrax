@@ -191,6 +191,10 @@ export function sanitizeErrorMessage(message: string | undefined | null): string
     return getMessageForCode("UNKNOWN").description;
   }
 
+  if (/failed to fetch|networkerror|err_network|fetcherror|connection refused/i.test(message)) {
+    return getMessageForCode("NETWORK_FAILURE").description;
+  }
+
   const unsafePatterns = [
     /supabase/i,
     /postgres/i,

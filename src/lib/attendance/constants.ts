@@ -1,21 +1,20 @@
 /** How long each QR token remains valid (seconds). Matches refresh interval — only one token valid at a time. */
-export const QR_TOKEN_TTL_SECONDS = 20;
+export const QR_TOKEN_TTL_SECONDS = 30;
 
 /** How often the lecturer UI refreshes the displayed QR code (milliseconds). */
-export const QR_REFRESH_INTERVAL_MS = 20_000;
+export const QR_REFRESH_INTERVAL_MS = QR_TOKEN_TTL_SECONDS * 1000;
+
+export const QR_REFRESH_INTERVAL_SECONDS = QR_TOKEN_TTL_SECONDS;
 
 /** Default overall attendance collection window (minutes). */
-export const DEFAULT_SESSION_DURATION_MINUTES = 15;
+export const DEFAULT_SESSION_DURATION_MINUTES = 10;
 
 /** Minimum/maximum attendance collection window (minutes). */
 export const MIN_SESSION_DURATION_MINUTES = 5;
 export const MAX_SESSION_DURATION_MINUTES = 60;
 
-/** Every selectable session length from 5 through 60 minutes. */
-export const SESSION_DURATION_OPTIONS: number[] = Array.from(
-  { length: MAX_SESSION_DURATION_MINUTES - MIN_SESSION_DURATION_MINUTES + 1 },
-  (_, index) => MIN_SESSION_DURATION_MINUTES + index
-);
+/** Selectable attendance window lengths for classroom sessions. */
+export const SESSION_DURATION_OPTIONS: number[] = [5, 10, 15, 20, 30, 45, 60];
 
 export function formatSessionDurationLabel(minutes: number): string {
   const defaultTag =
@@ -23,9 +22,21 @@ export function formatSessionDurationLabel(minutes: number): string {
   return `${minutes} min${defaultTag}`;
 }
 
+export const EXPIRED_QR_TITLE = "QR Code Expired";
+
 /** Shown when a student scans a screenshot, photo, or any non-current QR token. */
 export const EXPIRED_QR_MESSAGE =
-  "This QR code has expired. Please scan the current QR code.";
+  "This QR code is no longer valid. Please scan the latest QR code displayed by your lecturer.";
+
+export const ATTENDANCE_ALREADY_RECORDED_TITLE = "Attendance Already Recorded";
+
+export const ATTENDANCE_ALREADY_RECORDED_MESSAGE =
+  "Your attendance for this class session has already been successfully recorded.";
+
+export const ATTENDANCE_RECORDED_TITLE = "Attendance Recorded Successfully";
+
+export const ATTENDANCE_RECORDED_MESSAGE =
+  "Your attendance has been successfully recorded.";
 
 export function isAttendanceSessionOpen(session: {
   is_active: boolean;

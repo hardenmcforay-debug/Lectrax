@@ -177,16 +177,6 @@
   animation: student-menu-backdrop-fade-in 0.18s ease-out both;
 }
 
-/* PWA standalone: always use mobile navigation chrome */
-html[data-pwa-standalone="true"] .student-desktop-sidebar {
-  display: none !important;
-}
-
-html[data-pwa-standalone="true"] .student-mobile-header,
-html[data-pwa-standalone="true"] .student-mobile-nav {
-  display: flex !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .student-page-enter,
   .student-stagger > *,

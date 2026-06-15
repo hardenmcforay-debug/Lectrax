@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { CourseAcademicOverview } from "@/lib/student/academic-overview";
 import {
   studentDashboardCardClass,
+  studentDashboardCaScoreClass,
   studentDashboardCardHeadingClass,
   studentDashboardDropdownClass,
 } from "@/components/student/student-dashboard-styles";
@@ -29,7 +30,7 @@ function CourseCALine({ course }: { course: CoursePreview }) {
         <span className="font-medium">{course.courseCode}</span>
         <span className="text-muted-foreground"> · {course.courseTitle}</span>
       </p>
-      <span className="text-right text-sm font-bold tabular-nums">{course.totalCADisplay}</span>
+      <span className={studentDashboardCaScoreClass}>{course.totalCADisplay}</span>
     </li>
   );
 }

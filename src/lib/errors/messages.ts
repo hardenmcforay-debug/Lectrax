@@ -9,7 +9,7 @@ export const ERROR_MESSAGES: Record<
     description: "Please sign in to continue.",
   },
   network: {
-    title: "Connection Lost",
+    title: "Connection Error",
     description: "Please check your internet connection and try again.",
   },
   supabase: {
@@ -35,9 +35,9 @@ export const ERROR_MESSAGES: Record<
   },
 };
 
-export const OFFLINE_MODE_MESSAGE = "You're currently offline.";
+export const OFFLINE_MODE_MESSAGE = "You're Offline";
 export const OFFLINE_MODE_SUBMESSAGE =
-  "Some features may be unavailable until your connection is restored.";
+  "Please reconnect to the internet and try again.";
 
 export function getMessageForCode(code: PlatformErrorCode): {
   title: string;

@@ -46,6 +46,7 @@ import {
 import type { CAWeights } from "@/lib/ca/constants";
 import type { AttendancePresentStudent } from "@/lib/lecturer/attendance-sessions";
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
+import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { isPastDeadline } from "@/lib/assignments/deadline";
 
 export type SessionAssignmentSummary = {
@@ -598,15 +599,15 @@ export function SessionPageClient({
             </Card>
           ) : (
             <ul className="space-y-3">
-              {assignments.map((assignment) => (
+              {assignments.map((assignment) => {
+                const assignmentOpen = !isPastDeadline(assignment.deadline);
+                return (
                 <li key={assignment.id} className="rounded-lg border bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium">{assignment.title}</p>
-                        {isPastDeadline(assignment.deadline) && (
-                          <Badge variant="outline">Closed</Badge>
-                        )}
+                        <AssignmentOpenClosedBadge isOpen={assignmentOpen} />
                       </div>
                       {assignment.description && (
                         <p className="mt-1 text-sm text-muted-foreground">{assignment.description}</p>
@@ -637,7 +638,8 @@ export function SessionPageClient({
                     </div>
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           )}
         </div>

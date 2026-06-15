@@ -2,8 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { EXPIRED_QR_MESSAGE } from "@/lib/attendance/constants";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import {
+  ATTENDANCE_ALREADY_RECORDED_MESSAGE,
+  ATTENDANCE_ALREADY_RECORDED_TITLE,
+  ATTENDANCE_RECORDED_MESSAGE,
+  ATTENDANCE_RECORDED_TITLE,
+  EXPIRED_QR_MESSAGE,
+  EXPIRED_QR_TITLE,
+  formatAttendanceDate,
+  formatAttendanceTime,
+} from "@/lib/attendance/constants";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
 import {
   DEVICE_MESSAGES,
@@ -24,8 +33,23 @@ import { studentDashboardCardClass } from "@/components/student/student-dashboar
 type ScanResponse = {
   error?: string;
   message?: string;
+  description?: string;
   detail?: string;
   code?: string;
+  recordedAt?: string | null;
+  alreadyRecorded?: boolean;
+};
+
+type ScanStatus = {
+  title: string;
+  description?: string;
+  recordedAt?: string | null;
+  variant: "idle" | "loading" | "success" | "duplicate" | "error";
+};
+
+const READY_STATUS: ScanStatus = {
+  title: "Ready to scan",
+  variant: "idle",
 };
 
 function extractToken(urlOrToken: string): string {
@@ -37,9 +61,68 @@ function extractToken(urlOrToken: string): string {
   }
 }
 
+function ScanResultNotice({ status }: { status: ScanStatus }) {
+  if (status.variant === "idle" || status.variant === "loading") {
+    return (
+      <div className="flex items-start gap-2">
+        {status.variant === "loading" && (
+          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
+        )}
+        <p className="text-sm text-muted-foreground">{status.title}</p>
+      </div>
+    );
+  }
+
+  if (status.variant === "error") {
+    return (
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-destructive">{status.title}</p>
+        {status.description && (
+          <p className="text-sm text-destructive">{status.description}</p>
+        )}
+      </div>
+    );
+  }
+
+  const isDuplicate = status.variant === "duplicate";
+
+  return (
+    <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden />
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-green-800">{status.title}</p>
+            {status.description && (
+              <p className="text-sm text-green-700">{status.description}</p>
+            )}
+          </div>
+          {status.recordedAt && (
+            <div className="space-y-0.5 border-t border-green-200 pt-2 text-sm text-green-700">
+              <p>
+                <span className="font-medium text-green-800">Attendance Recorded At:</span>{" "}
+                {formatAttendanceTime(status.recordedAt)}
+              </p>
+              <p>
+                <span className="font-medium text-green-800">Date:</span>{" "}
+                {formatAttendanceDate(status.recordedAt)}
+              </p>
+            </div>
+          )}
+          {isDuplicate && !status.recordedAt && (
+            <p className="text-xs text-green-700">
+              No duplicate attendance was created.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function QRScanner() {
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<string>("Ready to scan");
+  const [status, setStatus] = useState<ScanStatus>(READY_STATUS);
   const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
@@ -57,7 +140,7 @@ export function QRScanner() {
       processedRef.current = true;
     }
     setSubmitting(true);
-    setStatus("Verifying attendance...");
+    setStatus({ title: "Verifying attendance...", variant: "loading" });
 
     try {
       const identity = getAttendanceDeviceIdentity();
@@ -74,26 +157,59 @@ export function QRScanner() {
       const data = (await res.json()) as ScanResponse;
 
       if (res.ok) {
-        setStatus("Attendance Recorded Successfully");
+        setStatus({
+          title: data.message ?? ATTENDANCE_RECORDED_TITLE,
+          description: data.description ?? ATTENDANCE_RECORDED_MESSAGE,
+          recordedAt: data.recordedAt ?? null,
+          variant: "success",
+        });
         setPendingToken(null);
         setShowVerificationDialog(false);
         setShowTransferConfirm(false);
-      } else if (res.status === 409) {
-        setStatus("Attendance Already Recorded");
+      } else if (res.status === 409 || data.code === "ATTENDANCE_ALREADY_RECORDED") {
+        setStatus({
+          title: data.error ?? ATTENDANCE_ALREADY_RECORDED_TITLE,
+          description: data.message ?? ATTENDANCE_ALREADY_RECORDED_MESSAGE,
+          recordedAt: data.recordedAt ?? null,
+          variant: "duplicate",
+        });
+      } else if (data.code === "QR_EXPIRED") {
+        setStatus({
+          title: data.error ?? EXPIRED_QR_TITLE,
+          description: data.message ?? EXPIRED_QR_MESSAGE,
+          variant: "error",
+        });
+        processedRef.current = false;
       } else if (data.code === DEVICE_VERIFICATION_CODES.VERIFICATION_REQUIRED) {
         setPendingToken(extractToken(token));
         setShowVerificationDialog(true);
-        setStatus("Attendance device verification required");
+        setStatus({
+          title: "Attendance device verification required",
+          variant: "idle",
+        });
         processedRef.current = false;
       } else if (data.code === DEVICE_VERIFICATION_CODES.ACCESS_REVOKED) {
-        setStatus(data.detail ?? data.message ?? DEVICE_MESSAGES.accessRevoked.detail);
+        setStatus({
+          title: DEVICE_MESSAGES.accessRevoked.title,
+          description: data.detail ?? data.message ?? DEVICE_MESSAGES.accessRevoked.detail,
+          variant: "error",
+        });
         processedRef.current = false;
       } else {
-        setStatus(data.error ?? data.message ?? "Scan failed");
+        setStatus({
+          title: data.error ?? data.message ?? "Scan failed",
+          description:
+            data.message && data.error && data.message !== data.error ? data.message : undefined,
+          variant: "error",
+        });
         processedRef.current = false;
       }
     } catch {
-      setStatus("Network error. Please try again.");
+      setStatus({
+        title: "Network error",
+        description: "Please check your connection and try again.",
+        variant: "error",
+      });
       processedRef.current = false;
     } finally {
       setSubmitting(false);
@@ -112,20 +228,30 @@ export function QRScanner() {
       const data = (await res.json()) as ScanResponse;
 
       if (!res.ok) {
-        setStatus(data.error ?? "Device transfer failed");
+        setStatus({
+          title: data.error ?? "Device transfer failed",
+          variant: "error",
+        });
         return;
       }
 
       setShowTransferConfirm(false);
       setShowVerificationDialog(false);
-      setStatus(DEVICE_MESSAGES.transferSuccess);
+      setStatus({
+        title: DEVICE_MESSAGES.transferSuccess,
+        variant: "success",
+      });
 
       if (pendingToken) {
         processedRef.current = false;
         await submitToken(pendingToken, { afterTransfer: true });
       }
     } catch {
-      setStatus("Network error during device transfer. Please try again.");
+      setStatus({
+        title: "Network error",
+        description: "Device transfer failed. Please try again.",
+        variant: "error",
+      });
     } finally {
       setTransferring(false);
     }
@@ -160,12 +286,6 @@ export function QRScanner() {
     }
   }
 
-  const isSuccess = status === "Attendance Recorded Successfully";
-  const isDuplicate = status === "Attendance Already Recorded";
-  const isExpired = status === EXPIRED_QR_MESSAGE;
-  const isRevoked = status === DEVICE_MESSAGES.accessRevoked.detail;
-  const isTransferSuccess = status === DEVICE_MESSAGES.transferSuccess;
-
   return (
     <>
       <Card className={studentDashboardCardClass}>
@@ -173,22 +293,7 @@ export function QRScanner() {
           <CardTitle>Scan Attendance</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            {submitting && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-            <p
-              className={`text-sm ${
-                isSuccess || isTransferSuccess
-                  ? "font-medium text-green-700"
-                  : isDuplicate
-                    ? "font-medium text-amber-700"
-                    : isExpired || isRevoked
-                      ? "font-medium text-destructive"
-                      : "text-muted-foreground"
-              }`}
-            >
-              {status}
-            </p>
-          </div>
+          <ScanResultNotice status={status} />
           <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-lg" />
           {!scanning ? (
             <Button variant="accent" onClick={() => void startScanner()} disabled={submitting}>
@@ -215,7 +320,7 @@ export function QRScanner() {
                 setShowVerificationDialog(false);
                 setPendingToken(null);
                 processedRef.current = false;
-                setStatus("Ready to scan");
+                setStatus(READY_STATUS);
               }}
             >
               Cancel

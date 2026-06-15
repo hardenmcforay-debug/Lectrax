@@ -43,12 +43,17 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
         }
 
         setState("redirecting");
-        const role = await resolveClientRoleAfterAuth(supabase);
+        const { role, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
         if (cancelled) return;
 
         if (role) {
           window.location.replace(getDashboardPath(role));
+          return;
+        }
+
+        if (networkFailure) {
+          setState("guest");
           return;
         }
 
