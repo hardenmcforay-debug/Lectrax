@@ -28,6 +28,7 @@ import {
   formatAttendanceDate,
   formatAttendanceTime,
   formatSessionDurationLabel,
+  QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
 import {
@@ -53,6 +54,12 @@ export type ActiveAttendanceSession = {
 };
 
 const DEBUG_ATTENDANCE_COUNT = process.env.NODE_ENV === "development";
+const DEBUG_QR_REFRESH = process.env.NODE_ENV === "development";
+
+function logQrRefresh(source: string, detail?: Record<string, unknown>) {
+  if (!DEBUG_QR_REFRESH) return;
+  console.debug("[QrRefresh]", { source, at: new Date().toISOString(), ...detail });
+}
 
 function logPresentRecords(source: string, records: PresentRecordMap, detail?: Record<string, unknown>) {
   if (!DEBUG_ATTENDANCE_COUNT) return;
@@ -105,8 +112,11 @@ export function AttendanceSessionPanel({
   const [unmarking, setUnmarking] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef(false);
+  const refreshQrRef = useRef<(attendanceSessionId: string) => Promise<boolean>>(async () => false);
   const presentLoadedForSessionRef = useRef<string | null>(null);
   const skipInitialRefreshRef = useRef(false);
+
+  const activeSessionId = activeSession?.id ?? null;
 
   const presentCount = presentRecords.size;
   const totalStudents = rows.length;
@@ -160,9 +170,13 @@ export function AttendanceSessionPanel({
   }, []);
 
   const refreshQr = useCallback(
-    async (attendanceSessionId: string) => {
-      if (refreshingRef.current) return false;
+    async (attendanceSessionId: string, source = "unknown") => {
+      if (refreshingRef.current) {
+        logQrRefresh("skipped:in-flight", { attendanceSessionId, source });
+        return false;
+      }
       refreshingRef.current = true;
+      logQrRefresh("start", { attendanceSessionId, source });
 
       try {
         const res = await fetch("/api/attendance/refresh", {
@@ -192,22 +206,33 @@ export function AttendanceSessionPanel({
 
         if (!res.ok || !data.qrPayload) {
           setError(data.error ?? "Could not refresh QR code.");
+          setQrExpiresAt(Date.now() + QR_REFRESH_INTERVAL_MS);
+          logQrRefresh("failed", { attendanceSessionId, source, status: res.status });
           return false;
         }
 
         void renderQr(data.qrPayload);
-        if (data.tokenExpiresAt) {
-          setQrExpiresAt(new Date(data.tokenExpiresAt).getTime());
-        }
+        const nextExpiresAt = data.tokenExpiresAt
+          ? new Date(data.tokenExpiresAt).getTime()
+          : Date.now() + QR_REFRESH_INTERVAL_MS;
+        setQrExpiresAt(nextExpiresAt);
         if (data.sessionExpiresAt) {
-          setActiveSession((prev) =>
-            prev ? { ...prev, session_expires_at: data.sessionExpiresAt! } : prev
-          );
+          setActiveSession((prev) => {
+            if (!prev || prev.session_expires_at === data.sessionExpiresAt) return prev;
+            return { ...prev, session_expires_at: data.sessionExpiresAt! };
+          });
         }
         setError(null);
+        logQrRefresh("success", {
+          attendanceSessionId,
+          source,
+          tokenExpiresAt: data.tokenExpiresAt ?? new Date(nextExpiresAt).toISOString(),
+        });
         return true;
       } catch {
         setError("Network error while refreshing QR code.");
+        setQrExpiresAt(Date.now() + QR_REFRESH_INTERVAL_MS);
+        logQrRefresh("error", { attendanceSessionId, source });
         return false;
       } finally {
         refreshingRef.current = false;
@@ -216,35 +241,55 @@ export function AttendanceSessionPanel({
     [renderQr, router]
   );
 
+  refreshQrRef.current = refreshQr;
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current !== null) {
+      logQrRefresh("timer:cleared", { timerId: refreshTimerRef.current });
+      window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleNextRefresh = useCallback(
+    (attendanceSessionId: string, expiresAt: number) => {
+      clearRefreshTimer();
+      const delay = Math.max(0, expiresAt - Date.now());
+      logQrRefresh("timer:scheduled", {
+        attendanceSessionId,
+        delayMs: delay,
+        expiresAt: new Date(expiresAt).toISOString(),
+      });
+      refreshTimerRef.current = window.setTimeout(() => {
+        refreshTimerRef.current = null;
+        void refreshQrRef.current(attendanceSessionId, "interval");
+      }, delay);
+    },
+    [clearRefreshTimer]
+  );
+
   useEffect(() => {
-    if (!activeSession) return;
+    if (!activeSessionId) return;
 
     if (skipInitialRefreshRef.current) {
       skipInitialRefreshRef.current = false;
-    } else {
-      void refreshQr(activeSession.id);
+      return;
     }
-  }, [activeSession, refreshQr]);
+
+    void refreshQrRef.current(activeSessionId, "session-open");
+  }, [activeSessionId]);
 
   useEffect(() => {
-    if (!activeSession || !qrExpiresAt) return;
+    if (!activeSessionId || !qrExpiresAt) return;
 
-    const tick = () => {
-      const remaining = Math.max(0, Math.ceil((qrExpiresAt - Date.now()) / 1000));
-      if (remaining === 0) {
-        void refreshQr(activeSession.id);
-      }
-    };
+    scheduleNextRefresh(activeSessionId, qrExpiresAt);
 
-    tick();
-    refreshTimerRef.current = window.setInterval(tick, 1000);
+    return clearRefreshTimer;
+  }, [activeSessionId, qrExpiresAt, scheduleNextRefresh, clearRefreshTimer]);
 
-    return () => {
-      if (refreshTimerRef.current) {
-        window.clearInterval(refreshTimerRef.current);
-      }
-    };
-  }, [activeSession, qrExpiresAt, refreshQr]);
+  useEffect(() => {
+    return clearRefreshTimer;
+  }, [clearRefreshTimer]);
 
   useEffect(() => {
     if (!activeSession) return;

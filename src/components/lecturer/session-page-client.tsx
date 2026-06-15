@@ -48,6 +48,45 @@ import type { AttendancePresentStudent } from "@/lib/lecturer/attendance-session
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
 import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { isPastDeadline } from "@/lib/assignments/deadline";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
+
+const SESSION_TAB_ITEMS = [
+  { value: "info", label: "Info" },
+  { value: "students", label: "Students" },
+  { value: "attendance", label: "Attendance" },
+  { value: "assignments", label: "Assignments" },
+  { value: "ca", label: "CA" },
+  { value: "audit", label: "Audit", premium: true },
+] as const;
+
+function SessionTabsPlaceholder({
+  defaultTab,
+  showAuditLogs,
+}: {
+  defaultTab: string;
+  showAuditLogs: boolean;
+}) {
+  const tabs = SESSION_TAB_ITEMS.filter((tab) => !tab.premium || showAuditLogs);
+
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading session tabs">
+      <div className="mb-6 inline-flex h-10 flex-wrap items-center justify-center gap-1 rounded-md bg-muted p-1 text-muted-foreground max-lg:mb-10">
+        {tabs.map((tab) => (
+          <span
+            key={tab.value}
+            className={cn(
+              "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium",
+              tab.value === defaultTab && "bg-background text-foreground shadow-sm"
+            )}
+          >
+            {tab.label}
+          </span>
+        ))}
+      </div>
+      <div className="min-h-[240px] animate-pulse rounded-lg bg-muted/40" />
+    </div>
+  );
+}
 
 export type SessionAssignmentSummary = {
   id: string;
@@ -95,6 +134,7 @@ export function SessionPageClient({
   subscriptionPlan?: SubscriptionTier;
 }) {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [manualName, setManualName] = useState("");
   const [manualCollegeId, setManualCollegeId] = useState("");
   const [manualError, setManualError] = useState<string | null>(null);
@@ -325,6 +365,10 @@ export function SessionPageClient({
     } finally {
       setAddingManual(false);
     }
+  }
+
+  if (!hydrated) {
+    return <SessionTabsPlaceholder defaultTab={defaultTab} showAuditLogs={showAuditLogs} />;
   }
 
   return (
