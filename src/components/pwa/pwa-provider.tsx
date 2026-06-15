@@ -3,14 +3,42 @@
 import { useLayoutEffect } from "react";
 import { isStandaloneMode } from "@/lib/pwa/detect";
 
+function applyStandaloneDataset() {
+  if (isStandaloneMode()) {
+    document.documentElement.dataset.pwaStandalone = "true";
+  }
+}
+
 export function PwaProvider() {
   useLayoutEffect(() => {
-    if (isStandaloneMode()) {
-      document.documentElement.dataset.pwaStandalone = "true";
+    applyStandaloneDataset();
+
+    const handleResume = () => {
+      applyStandaloneDataset();
+    };
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        applyStandaloneDataset();
+      }
+    };
+
+    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return () => {
+        window.removeEventListener("pageshow", handleResume);
+        document.removeEventListener("visibilitychange", handleVisibility);
+      };
     }
 
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV === "development") return;
+    if (process.env.NODE_ENV === "development") {
+      return () => {
+        window.removeEventListener("pageshow", handleResume);
+        document.removeEventListener("visibilitychange", handleVisibility);
+      };
+    }
 
     const register = async () => {
       try {
@@ -25,6 +53,11 @@ export function PwaProvider() {
     } else {
       window.addEventListener("load", register, { once: true });
     }
+
+    return () => {
+      window.removeEventListener("pageshow", handleResume);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   return null;

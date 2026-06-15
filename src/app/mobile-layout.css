@@ -3,6 +3,7 @@
 :root {
   --portal-page-gap: 1.25rem;
   --portal-section-gap: 1.5rem;
+  --portal-bottom-nav-height: 4.5rem;
 }
 
 /* Mobile portal shell: header + scrollable content + bottom nav */
@@ -198,7 +199,8 @@
   }
 
   .student-desktop-sidebar,
-  .lecturer-desktop-sidebar {
+  .lecturer-desktop-sidebar,
+  .admin-desktop-sidebar {
     display: none !important;
   }
 
@@ -217,7 +219,8 @@ html[data-pwa-standalone="true"] .portal-shell-root {
 }
 
 html[data-pwa-standalone="true"] .student-desktop-sidebar,
-html[data-pwa-standalone="true"] .lecturer-desktop-sidebar {
+html[data-pwa-standalone="true"] .lecturer-desktop-sidebar,
+html[data-pwa-standalone="true"] .admin-desktop-sidebar {
   display: none !important;
 }
 
@@ -225,15 +228,33 @@ html[data-pwa-standalone="true"] .portal-mobile-only {
   display: flex !important;
 }
 
-/* Mobile chrome: visible on small screens and in PWA standalone */
+/* Mobile chrome: visible on small screens and in installed PWA */
 .portal-mobile-only {
   display: flex;
   flex-shrink: 0;
 }
 
+/* Desktop browser only: hide mobile header/nav on large screens */
 @media (min-width: 1024px) {
-  html:not([data-pwa-standalone="true"]) .portal-mobile-only {
+  .portal-mobile-only {
     display: none;
+  }
+}
+
+/* Keep bottom nav pinned to the viewport on phones and in PWA */
+@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
+  .portal-mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60;
+  }
+
+  .student-portal-content,
+  .lecturer-portal-content {
+    padding-bottom: calc(1rem + var(--portal-bottom-nav-height, 4.5rem) + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(1rem + var(--portal-bottom-nav-height, 4.5rem) + env(safe-area-inset-bottom, 0px));
   }
 }
 

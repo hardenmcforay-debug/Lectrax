@@ -17,7 +17,7 @@ export function PwaHeadLinks() {
     <>
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var d=document.documentElement,m=window.matchMedia;if(m("(display-mode: standalone)").matches||m("(display-mode: fullscreen)").matches||window.navigator.standalone===true){d.dataset.pwaStandalone="true";}}catch(e){}})();`,
+          __html: `(function(){var w=window;function m(){try{var d=document.documentElement,n=w.navigator,q=w.matchMedia;if(q("(display-mode: standalone)").matches||q("(display-mode: fullscreen)").matches||(n&&n.standalone===true)){d.dataset.pwaStandalone="true";}}catch(e){}}m();w.addEventListener("pageshow",m);document.addEventListener("visibilitychange",function(){if(!document.hidden)m();});})();`,
         }}
       />
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
