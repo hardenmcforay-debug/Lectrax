@@ -3,7 +3,6 @@
 :root {
   --portal-page-gap: 1.25rem;
   --portal-section-gap: 1.5rem;
-  --portal-bottom-nav-height: 4.5rem;
 }
 
 /* Mobile portal shell: header + scrollable content + bottom nav */
@@ -37,7 +36,8 @@
   }
 
   .student-portal-content,
-  .lecturer-portal-content {
+  .lecturer-portal-content,
+  .admin-portal-content {
     position: relative;
     z-index: 0;
     flex: 1;
@@ -45,7 +45,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     touch-action: pan-y;
     padding-top: 1rem;
     padding-bottom: 1rem;
@@ -73,11 +73,26 @@
   .portal-shell-root {
     position: relative;
     height: 100dvh;
+    overflow: hidden;
+  }
+
+  .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .student-portal-content,
   .lecturer-portal-content,
   .admin-portal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
     padding: 2rem;
     scroll-padding-bottom: 2rem;
   }
@@ -207,6 +222,24 @@
   .portal-mobile-only {
     display: flex !important;
   }
+
+  .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .student-portal-content,
+  .lecturer-portal-content,
+  .admin-portal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 html[data-pwa-standalone="true"] .portal-shell-root {
@@ -238,23 +271,6 @@ html[data-pwa-standalone="true"] .portal-mobile-only {
 @media (min-width: 1024px) {
   .portal-mobile-only {
     display: none;
-  }
-}
-
-/* Keep bottom nav pinned to the viewport on phones and in PWA */
-@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
-  .portal-mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 60;
-  }
-
-  .student-portal-content,
-  .lecturer-portal-content {
-    padding-bottom: calc(1rem + var(--portal-bottom-nav-height, 4.5rem) + env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: calc(1rem + var(--portal-bottom-nav-height, 4.5rem) + env(safe-area-inset-bottom, 0px));
   }
 }
 

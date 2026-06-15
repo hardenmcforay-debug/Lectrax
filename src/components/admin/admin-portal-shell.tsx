@@ -20,9 +20,9 @@ export function AdminPortalShell({
   const showHeader = headerVariant !== "hidden";
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-50">
+    <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
       <DashboardSidebar role="platform_admin" className="admin-desktop-sidebar hidden lg:flex" />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="portal-mobile-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdminMobileHeader title={title} />
         {showHeader && title && (
           <div className="admin-desktop-header hidden shrink-0 border-b bg-white px-8 py-5 lg:block xl:py-6">
