@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import {
   ATTENDANCE_ALREADY_RECORDED_MESSAGE,
   ATTENDANCE_ALREADY_RECORDED_TITLE,
@@ -84,7 +84,35 @@ function ScanResultNotice({ status }: { status: ScanStatus }) {
     );
   }
 
-  const isDuplicate = status.variant === "duplicate";
+  if (status.variant === "duplicate") {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-red-800">{status.title}</p>
+              {status.description && (
+                <p className="text-sm text-red-700">{status.description}</p>
+              )}
+            </div>
+            {status.recordedAt && (
+              <div className="space-y-0.5 border-t border-red-200 pt-2 text-sm text-red-700">
+                <p>
+                  <span className="font-medium text-red-800">Attendance Recorded At:</span>{" "}
+                  {formatAttendanceTime(status.recordedAt)}
+                </p>
+                <p>
+                  <span className="font-medium text-red-800">Date:</span>{" "}
+                  {formatAttendanceDate(status.recordedAt)}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
@@ -108,11 +136,6 @@ function ScanResultNotice({ status }: { status: ScanStatus }) {
                 {formatAttendanceDate(status.recordedAt)}
               </p>
             </div>
-          )}
-          {isDuplicate && !status.recordedAt && (
-            <p className="text-xs text-green-700">
-              No duplicate attendance was created.
-            </p>
           )}
         </div>
       </div>
