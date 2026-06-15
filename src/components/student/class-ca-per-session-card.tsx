@@ -37,13 +37,20 @@ function CourseCALine({ course }: { course: CoursePreview }) {
 
 export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
   courses,
+  onDropdownOpenChange,
 }: {
   courses: CoursePreview[];
+  onDropdownOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const showDropdown = courses.length > PREVIEW_LIMIT;
   const previewCourses = showDropdown ? courses.slice(0, PREVIEW_LIMIT) : courses;
+  const extraCount = courses.length - PREVIEW_LIMIT;
+
+  useEffect(() => {
+    onDropdownOpenChange?.(open);
+  }, [open, onDropdownOpenChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +69,9 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
     <Card
       ref={cardRef}
       className={cn(
-        "relative col-span-2 h-full min-w-0 lg:col-span-1",
+        "relative col-span-2 h-full min-w-0 overflow-visible lg:col-span-1",
         studentDashboardCardClass,
-        open && "z-30"
+        open && "z-50"
       )}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -73,7 +80,7 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
         </CardTitle>
         <ClipboardList className="h-4 w-4 shrink-0 text-accent" />
       </CardHeader>
-      <CardContent className="relative">
+      <CardContent className={cn("relative", open && "overflow-visible")}>
         {courses.length === 0 ? (
           <p className="text-xs text-muted-foreground">Join a class to see CA scores.</p>
         ) : (
@@ -94,7 +101,9 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
                 aria-expanded={open}
                 aria-controls="ca-overview-dropdown"
               >
-                <span>View all {courses.length} classes</span>
+                <span>
+                  {extraCount} more {extraCount === 1 ? "class" : "classes"}
+                </span>
                 <ChevronDown
                   className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
                 />
@@ -106,10 +115,13 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
         {open && showDropdown && (
           <div
             id="ca-overview-dropdown"
-            className={`absolute inset-x-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-md border px-3 py-2 shadow-lg ${studentDashboardDropdownClass}`}
+            className={cn(
+              "absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border px-3 py-2 shadow-lg",
+              studentDashboardDropdownClass
+            )}
           >
             <ul className="space-y-2">
-              {courses.map((course) => (
+              {courses.slice(PREVIEW_LIMIT).map((course) => (
                 <CourseCALine key={course.enrollmentId} course={course} />
               ))}
             </ul>

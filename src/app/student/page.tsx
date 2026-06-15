@@ -5,15 +5,8 @@ import {
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { OfflineCacheWriter } from "@/components/errors/offline-cache-writer";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { StatCard } from "@/components/shared/stat-card";
-import { ClassCAPerSessionCard } from "@/components/student/class-ca-per-session-card";
-import { MyClassesCard } from "@/components/student/my-classes-card";
+import { StudentDashboardBody } from "@/components/student/student-dashboard-body";
 import { StudentDashboardHero } from "@/components/student/student-dashboard-hero";
-import {
-  studentDashboardCardClass,
-  studentDashboardCardHeadingClass,
-} from "@/components/student/student-dashboard-styles";
-import { BookOpen, FileText } from "lucide-react";
 import { getDisplayName } from "@/lib/auth/display-name";
 
 export const dynamic = "force-dynamic";
@@ -35,29 +28,11 @@ export default async function StudentDashboard() {
         displayName={displayName}
         collegeId={profile?.college_id ?? null}
       />
-      <div className="portal-stat-grid">
-        <StatCard
-          title="Enrolled Classes"
-          value={courses.length}
-          icon={BookOpen}
-          className={studentDashboardCardClass}
-          titleClassName={studentDashboardCardHeadingClass}
-        />
-        <StatCard
-          title="Assignment Submissions"
-          value={submittedCount}
-          icon={FileText}
-          subtitle={
-            totalAssignments > 0
-              ? `${submittedCount} of ${totalAssignments} submitted`
-              : "No assignments yet"
-          }
-          className={studentDashboardCardClass}
-          titleClassName={studentDashboardCardHeadingClass}
-        />
-        <ClassCAPerSessionCard courses={courses} />
-      </div>
-      <MyClassesCard courses={courses} />
+      <StudentDashboardBody
+        courses={courses}
+        submittedCount={submittedCount}
+        totalAssignments={totalAssignments}
+      />
     </DashboardShell>
   );
 }
