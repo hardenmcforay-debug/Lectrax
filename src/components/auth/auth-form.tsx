@@ -121,7 +121,6 @@ export function LoginForm() {
         return;
       }
 
-      router.refresh();
       const { role, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
       if (!role) {
@@ -329,7 +328,6 @@ export function SignupForm() {
 
       if (signUpData.session) {
         await syncStudentCollegeIdFromSignupMetadata(supabase, user);
-        router.refresh();
         const { role: resolvedRole, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
         if (!resolvedRole) {

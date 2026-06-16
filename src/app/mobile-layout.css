@@ -6,6 +6,68 @@
   --portal-bottom-nav-height: 4.25rem;
 }
 
+/* ── Portal shell: always use mobile grid + chrome when shell is mounted ── */
+.portal-shell-root .portal-mobile-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.portal-shell-root .portal-mobile-header {
+  grid-row: 1;
+  position: relative;
+  z-index: 60;
+  touch-action: none;
+}
+
+.portal-shell-root .portal-mobile-bottom-nav {
+  grid-row: 3;
+  position: relative;
+  z-index: 60;
+  box-sizing: content-box;
+}
+
+.portal-shell-root .student-portal-content,
+.portal-shell-root .lecturer-portal-content,
+.portal-shell-root .admin-portal-content {
+  grid-row: 2;
+  position: relative;
+  z-index: 0;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
+.portal-shell-root .portal-mobile-only {
+  display: flex !important;
+  flex-shrink: 0;
+}
+
+html[data-pwa-standalone="true"] .portal-shell-root .portal-mobile-only,
+html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
+  display: flex !important;
+}
+
+/* Desktop browser only: hide mobile chrome inside portal shell */
+@media (min-width: 1024px) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+  html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-only {
+    display: none !important;
+  }
+
+  html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 /* ── Lock document scroll on portal pages (mobile + installed PWA) ── */
 @media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
   html:has(.portal-shell-root),

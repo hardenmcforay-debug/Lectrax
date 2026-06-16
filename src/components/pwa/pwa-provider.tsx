@@ -1,25 +1,19 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { isStandaloneMode } from "@/lib/pwa/detect";
-
-function applyStandaloneDataset() {
-  if (isStandaloneMode()) {
-    document.documentElement.dataset.pwaStandalone = "true";
-  }
-}
+import { applyPortalChromeMarks } from "@/lib/pwa/portal-chrome";
 
 export function PwaProvider() {
   useLayoutEffect(() => {
-    applyStandaloneDataset();
+    applyPortalChromeMarks();
 
     const handleResume = () => {
-      applyStandaloneDataset();
+      applyPortalChromeMarks();
     };
 
     const handleVisibility = () => {
       if (!document.hidden) {
-        applyStandaloneDataset();
+        applyPortalChromeMarks();
       }
     };
 

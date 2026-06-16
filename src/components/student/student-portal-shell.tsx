@@ -6,6 +6,7 @@ import { StudentPageEnter } from "@/components/student/student-portal-motion";
 import { StudentBottomNav } from "@/components/student/student-bottom-nav";
 import { StudentMobileHeader } from "@/components/student/student-mobile-header";
 import { StudentNotificationsProvider } from "@/components/student/student-notifications-provider";
+import { PortalLayoutGate } from "@/components/pwa/portal-layout-gate";
 
 type StudentPortalShellProps = {
   title?: string;
@@ -35,20 +36,22 @@ export function StudentPortalShell({
     ) : null;
 
   return (
-    <StudentNotificationsProvider>
-      <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
-        <DashboardSidebar role="student" className="student-desktop-sidebar hidden lg:flex" />
-        <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
-          <StudentMobileHeader />
-          <div className="student-portal-content min-h-0 min-w-0">
-            <StudentPageEnter>
-              {inlineHeaderContent}
-              {children}
-            </StudentPageEnter>
-          </div>
-          <StudentBottomNav />
-        </main>
-      </div>
-    </StudentNotificationsProvider>
+    <PortalLayoutGate>
+      <StudentNotificationsProvider>
+        <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
+          <DashboardSidebar role="student" className="student-desktop-sidebar hidden lg:flex" />
+          <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
+            <StudentMobileHeader />
+            <div className="student-portal-content min-h-0 min-w-0">
+              <StudentPageEnter>
+                {inlineHeaderContent}
+                {children}
+              </StudentPageEnter>
+            </div>
+            <StudentBottomNav />
+          </main>
+        </div>
+      </StudentNotificationsProvider>
+    </PortalLayoutGate>
   );
 }
