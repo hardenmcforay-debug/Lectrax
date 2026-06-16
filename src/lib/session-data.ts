@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { computeCourseCA, resolveAttendanceClassTotal } from "@/lib/ca/course-ca";
 import type { ClassTest, SemesterType, StudentTableRow } from "@/types/database";
 import type { CAWeights } from "@/lib/ca/constants";
+import { resolveCaWeightsFromStorage } from "@/lib/ca/constants";
 
 export type ClassTestSummary = Pick<ClassTest, "id" | "title" | "test_number" | "max_score">;
 
@@ -71,6 +72,14 @@ export async function getStudentTableRows(
       .eq("academic_year", academicYear),
   ]);
 
+  const resolvedWeights = caConfig
+    ? resolveCaWeightsFromStorage(
+        caConfig.attendance_weight,
+        caConfig.assignment_weight,
+        caConfig.test_weight
+      )
+    : null;
+
   const config = weightOverride
     ? {
         ...(caConfig ?? {
@@ -83,12 +92,19 @@ export async function getStudentTableRows(
         assignment_weight: weightOverride.assignment,
         test_weight: weightOverride.test,
       }
-    : (caConfig ?? {
-        attendance_weight: 0,
-        assignment_weight: 0,
-        test_weight: 0,
-        expected_class_count: null,
-      });
+    : resolvedWeights
+      ? {
+          ...caConfig!,
+          attendance_weight: resolvedWeights.attendance,
+          assignment_weight: resolvedWeights.assignment,
+          test_weight: resolvedWeights.test,
+        }
+      : {
+          attendance_weight: 0,
+          assignment_weight: 0,
+          test_weight: 0,
+          expected_class_count: null,
+        };
 
   const attendanceClassTotal = resolveAttendanceClassTotal(
     config.expected_class_count,

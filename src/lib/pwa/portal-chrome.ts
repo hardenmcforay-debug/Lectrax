@@ -17,10 +17,6 @@ export function applyPortalChromeMarks() {
   } else {
     delete root.dataset.portalMobile;
   }
-
-  if (document.querySelector(".portal-shell-root")) {
-    root.dataset.portalChrome = "ready";
-  }
 }
 
 export function isPortalRoutePath(pathname: string): boolean {

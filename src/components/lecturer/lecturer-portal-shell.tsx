@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useLayoutEffect } from "react";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { LecturerPageEnter } from "@/components/lecturer/lecturer-portal-motion";
 import { LecturerBottomNav } from "@/components/lecturer/lecturer-bottom-nav";
 import { LecturerMobileHeader } from "@/components/lecturer/lecturer-mobile-header";
 import { cn } from "@/lib/utils";
-import { PortalLayoutGate } from "@/components/pwa/portal-layout-gate";
+import { applyPortalChromeMarks } from "@/lib/pwa/portal-chrome";
 
 type LecturerPortalShellProps = {
   title?: string;
@@ -25,6 +26,10 @@ export function LecturerPortalShell({
 }: LecturerPortalShellProps) {
   const showHeader = headerVariant !== "hidden";
   const useGreetingHeader = headerVariant === "lecturer-greeting";
+
+  useLayoutEffect(() => {
+    applyPortalChromeMarks();
+  }, []);
 
   const desktopHeaderClass =
     !disableEnterAnimation ? "lecturer-header-enter portal-page-header" : "portal-page-header";
@@ -56,21 +61,19 @@ export function LecturerPortalShell({
     ) : null;
 
   return (
-    <PortalLayoutGate>
-      <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
-        <DashboardSidebar role="lecturer" className="lecturer-desktop-sidebar hidden lg:flex" />
-        <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
-          <LecturerMobileHeader />
-          <div className="lecturer-portal-content min-h-0 min-w-0">
-            <LecturerPageEnter disableEnterAnimation={disableEnterAnimation}>
-              {desktopHeaderContent}
-              {mobilePageDescription}
-              {children}
-            </LecturerPageEnter>
-          </div>
-          <LecturerBottomNav />
-        </main>
-      </div>
-    </PortalLayoutGate>
+    <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
+      <DashboardSidebar role="lecturer" className="lecturer-desktop-sidebar hidden lg:flex" />
+      <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
+        <LecturerMobileHeader />
+        <div className="lecturer-portal-content min-h-0 min-w-0">
+          <LecturerPageEnter disableEnterAnimation={disableEnterAnimation}>
+            {desktopHeaderContent}
+            {mobilePageDescription}
+            {children}
+          </LecturerPageEnter>
+        </div>
+        <LecturerBottomNav />
+      </main>
+    </div>
   );
 }

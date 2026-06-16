@@ -17,10 +17,10 @@ import {
   isPremiumFeatureUnlocked,
   refreshSubscriptionLifecycle,
 } from "@/lib/subscription";
-import type { StudentTableRow } from "@/types/database";
+import { resolveCaWeightsFromStorage } from "@/lib/ca/constants";
 import type { SessionAssignmentSummary } from "@/components/lecturer/session-page-client";
 import type { SessionAttendanceAudit } from "@/components/lecturer/session-audit-panel";
-import type { AuditLog } from "@/types/database";
+import type { AuditLog, StudentTableRow } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -103,11 +103,11 @@ export default async function SessionDetailPage({
 
   const caConfig = caConfigResult.data;
   const caWeights = caConfig
-    ? {
-        attendance: Number(caConfig.attendance_weight),
-        assignment: Number(caConfig.assignment_weight),
-        test: Number(caConfig.test_weight),
-      }
+    ? resolveCaWeightsFromStorage(
+        caConfig.attendance_weight,
+        caConfig.assignment_weight,
+        caConfig.test_weight
+      )
     : undefined;
 
   const sessionAssignments = (assignmentsResult.data ?? []) as SessionAssignmentSummary[];

@@ -28,6 +28,7 @@ import {
   getNextTestNumber,
 } from "@/lib/ca/test-columns";
 import { EMPTY_CA_WEIGHTS, type CAWeights } from "@/lib/ca/constants";
+import { CaWeightInput } from "@/components/lecturer/ca-weight-input";
 
 interface CaStructurePanelProps {
   session: ClassSession;
@@ -43,15 +44,22 @@ export function CaStructurePanel({
   session,
   semester,
   initialClassTests,
+  initialWeights,
   readOnly = false,
   onWeightsChange,
   onCaConfigSaved,
 }: CaStructurePanelProps) {
   const router = useRouter();
-  const [caWeights, setCaWeights] = useState<CAWeights>({ ...EMPTY_CA_WEIGHTS });
+  const [caWeights, setCaWeights] = useState<CAWeights>(() => ({
+    ...(initialWeights ?? EMPTY_CA_WEIGHTS),
+  }));
 
-  function handleWeightFieldChange(field: keyof CAWeights, rawValue: string) {
-    const next = { ...caWeights, [field]: Number(rawValue) };
+  useEffect(() => {
+    setCaWeights({ ...(initialWeights ?? EMPTY_CA_WEIGHTS) });
+  }, [initialWeights]);
+
+  function handleWeightFieldChange(field: keyof CAWeights, value: number) {
+    const next = { ...caWeights, [field]: value };
     setCaWeights(next);
     onWeightsChange?.(next);
   }
@@ -118,7 +126,7 @@ export function CaStructurePanel({
         return { ok: false, error };
       }
 
-      setCaWeights({ ...EMPTY_CA_WEIGHTS });
+      setCaWeights({ ...weights });
       setConfigMessage(
         data.message ??
           "CA configuration saved. Attendance, grades, and Total C.A have been recalculated with the new weights."
@@ -260,32 +268,26 @@ export function CaStructurePanel({
           <div className="grid gap-4 max-w-lg sm:grid-cols-3">
             <div className="space-y-1">
               <Label>Attendance %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
+              <CaWeightInput
                 value={caWeights.attendance}
-                onChange={(e) => handleWeightFieldChange("attendance", e.target.value)}
+                onChange={(value) => handleWeightFieldChange("attendance", value)}
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">
               <Label>Assignment %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
+              <CaWeightInput
                 value={caWeights.assignment}
-                onChange={(e) => handleWeightFieldChange("assignment", e.target.value)}
+                onChange={(value) => handleWeightFieldChange("assignment", value)}
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">
               <Label>Test %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
+              <CaWeightInput
                 value={caWeights.test}
-                onChange={(e) => handleWeightFieldChange("test", e.target.value)}
+                onChange={(value) => handleWeightFieldChange("test", value)}
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -397,42 +399,33 @@ export function CaStructurePanel({
           <div className="grid gap-4 py-2 sm:grid-cols-3">
             <div className="space-y-1">
               <Label htmlFor="reset-attendance-weight">Attendance %</Label>
-              <Input
+              <CaWeightInput
                 id="reset-attendance-weight"
-                type="number"
-                min={0}
-                max={100}
                 value={resetWeights.attendance}
-                onChange={(e) =>
-                  setResetWeights({ ...resetWeights, attendance: Number(e.target.value) })
+                onChange={(value) =>
+                  setResetWeights({ ...resetWeights, attendance: value })
                 }
                 disabled={resetting}
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="reset-assignment-weight">Assignment %</Label>
-              <Input
+              <CaWeightInput
                 id="reset-assignment-weight"
-                type="number"
-                min={0}
-                max={100}
                 value={resetWeights.assignment}
-                onChange={(e) =>
-                  setResetWeights({ ...resetWeights, assignment: Number(e.target.value) })
+                onChange={(value) =>
+                  setResetWeights({ ...resetWeights, assignment: value })
                 }
                 disabled={resetting}
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="reset-test-weight">Test %</Label>
-              <Input
+              <CaWeightInput
                 id="reset-test-weight"
-                type="number"
-                min={0}
-                max={100}
                 value={resetWeights.test}
-                onChange={(e) =>
-                  setResetWeights({ ...resetWeights, test: Number(e.target.value) })
+                onChange={(value) =>
+                  setResetWeights({ ...resetWeights, test: value })
                 }
                 disabled={resetting}
               />

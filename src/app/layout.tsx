@@ -81,7 +81,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className="low-data-mode">
+    <html lang="en" className="low-data-mode" suppressHydrationWarning>
       <head>
         <PwaHeadLinks />
       </head>

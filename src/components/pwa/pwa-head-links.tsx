@@ -17,7 +17,7 @@ export function PwaHeadLinks() {
     <>
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){var w=window,mx=1023;function m(){try{var d=document.documentElement,n=w.navigator,q=w.matchMedia;if(q("(display-mode: standalone)").matches||q("(display-mode: fullscreen)").matches||(n&&n.standalone===true)){d.dataset.pwaStandalone="true";}if(w.innerWidth<=mx){d.dataset.portalMobile="true";}else{delete d.dataset.portalMobile;}if(d.querySelector(".portal-shell-root")){d.dataset.portalChrome="ready";}}catch(e){}}m();w.addEventListener("pageshow",m);w.addEventListener("resize",m);w.addEventListener("orientationchange",m);document.addEventListener("visibilitychange",function(){if(!document.hidden)m();});})();`,
+          __html: `(function(){var w=window,mx=1023;function m(){try{var d=document.documentElement,n=w.navigator,q=w.matchMedia;if(q("(display-mode: standalone)").matches||q("(display-mode: fullscreen)").matches||(n&&n.standalone===true)){d.dataset.pwaStandalone="true";}if(w.innerWidth<=mx){d.dataset.portalMobile="true";}else{delete d.dataset.portalMobile;}}catch(e){}}m();w.addEventListener("pageshow",m);w.addEventListener("resize",m);w.addEventListener("orientationchange",m);document.addEventListener("visibilitychange",function(){if(!document.hidden)m();});})();`,
         }}
       />
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
