@@ -34,7 +34,6 @@ function toAuthMessage(title: string, description: string, retryable = false): A
 }
 
 export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<AuthUserMessage | null>(() => {

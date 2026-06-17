@@ -1,5 +1,4 @@
 import type { User } from "@supabase/supabase-js";
-import { ROLE_ROUTES } from "@/lib/constants";
 import {
   getRoleHomePath,
   getRoleHomeUrl,
