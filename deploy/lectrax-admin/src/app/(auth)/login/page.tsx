@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/auth-form";
-import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 export default function AdminLoginPage() {
   return (
@@ -13,9 +12,6 @@ export default function AdminLoginPage() {
         <Suspense>
           <LoginForm adminOnly />
         </Suspense>
-        <div className="mt-6 flex justify-center">
-          <InstallAppButton />
-        </div>
       </div>
     </div>
   );

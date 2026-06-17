@@ -1,56 +1,28 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { APP_DESCRIPTION, BRAND } from "@/lib/constants";
-import { getPwaAppName } from "@/lib/pwa/config";
+import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
-import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
-import { PwaProvider } from "@/components/pwa/pwa-provider";
-import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
-const pwaAppName = getPwaAppName();
-const pageTitle = `${pwaAppName} | Platform Administration`;
 
 export const viewport: Viewport = {
   themeColor: BRAND.primary,
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
   title: {
-    default: pageTitle,
-    template: `%s | ${pwaAppName}`,
+    default: `Admin | ${APP_NAME}`,
+    template: `%s | Admin | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
-  applicationName: pwaAppName,
-  manifest: "/manifest.json",
   robots: { index: false, follow: false },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-  },
-  appleWebApp: {
-    capable: true,
-    title: pwaAppName,
-    statusBarStyle: "default",
-  },
-  other: {
-    "apple-mobile-web-app-title": pwaAppName,
-    "mobile-web-app-capable": "yes",
-  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -63,12 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
-      <head>
-        <PwaHeadLinks />
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <PwaProvider />
-        <PortalChromeSync />
         <SiteBrandingProvider logoUrl={logoUrl}>
           <PlatformErrorProvider>
             <PlatformErrorBoundary scope="root">{children}</PlatformErrorBoundary>

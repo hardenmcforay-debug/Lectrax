@@ -1,10 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useLayoutEffect } from "react";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { AdminMobileHeader } from "@/components/admin/admin-mobile-header";
-import { applyPortalChromeMarks } from "@/lib/pwa/portal-chrome";
 
 type AdminPortalShellProps = {
   title?: string;
@@ -20,10 +18,6 @@ export function AdminPortalShell({
   children,
 }: AdminPortalShellProps) {
   const showHeader = headerVariant !== "hidden";
-
-  useLayoutEffect(() => {
-    applyPortalChromeMarks();
-  }, []);
 
   return (
     <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">

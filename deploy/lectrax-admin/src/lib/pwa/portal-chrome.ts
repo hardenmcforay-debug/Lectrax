@@ -1,4 +1,3 @@
-import { isAdminDeployment } from "@/lib/auth/admin-deployment";
 import { isStandaloneMode } from "@/lib/pwa/detect";
 
 const MOBILE_LAYOUT_MAX_WIDTH = 1023;
@@ -21,10 +20,6 @@ export function applyPortalChromeMarks() {
 }
 
 export function isPortalRoutePath(pathname: string): boolean {
-  if (isAdminDeployment()) {
-    return pathname.startsWith("/admin") || pathname === "/login";
-  }
-
   return (
     pathname.startsWith("/student") ||
     pathname.startsWith("/lecturer") ||
