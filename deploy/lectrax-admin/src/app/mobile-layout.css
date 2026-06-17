@@ -1,0 +1,417 @@
+/* Shared mobile/PWA layout tokens and utilities for all Lectrax portals */
+
+:root {
+  --portal-page-gap: 1.25rem;
+  --portal-section-gap: 1.5rem;
+  --portal-bottom-nav-height: 4.25rem;
+}
+
+/* ── Portal shell: always use mobile grid + chrome when shell is mounted ── */
+.portal-shell-root .portal-mobile-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.portal-shell-root .portal-mobile-header {
+  grid-row: 1;
+  position: relative;
+  z-index: 60;
+  touch-action: none;
+}
+
+.portal-shell-root .portal-mobile-bottom-nav {
+  grid-row: 3;
+  position: relative;
+  z-index: 60;
+  box-sizing: content-box;
+}
+
+.portal-shell-root .student-portal-content,
+.portal-shell-root .lecturer-portal-content,
+.portal-shell-root .admin-portal-content {
+  grid-row: 2;
+  position: relative;
+  z-index: 0;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
+.portal-shell-root .portal-mobile-only {
+  display: flex !important;
+  flex-shrink: 0;
+}
+
+html[data-pwa-standalone="true"] .portal-shell-root .portal-mobile-only,
+html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
+  display: flex !important;
+}
+
+/* Desktop browser only: hide mobile chrome inside portal shell */
+@media (min-width: 1024px) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+  html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-only {
+    display: none !important;
+  }
+
+  html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ── Lock document scroll on portal pages (mobile + installed PWA) ── */
+@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
+  html:has(.portal-shell-root),
+  html:has(.portal-shell-root) body {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+html[data-pwa-standalone="true"]:has(.portal-shell-root),
+html[data-pwa-standalone="true"]:has(.portal-shell-root) body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ── Portal shell: static header + scrollable content + static bottom nav ── */
+@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
+  .portal-shell-root {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .portal-mobile-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .portal-mobile-header {
+    grid-row: 1;
+    position: relative;
+    z-index: 60;
+    touch-action: none;
+  }
+
+  .portal-mobile-bottom-nav {
+    grid-row: 3;
+    position: relative;
+    z-index: 60;
+    box-sizing: content-box;
+  }
+
+  .student-portal-content,
+  .lecturer-portal-content,
+  .admin-portal-content {
+    grid-row: 2;
+    position: relative;
+    z-index: 0;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    scroll-padding-top: 1rem;
+    scroll-padding-bottom: 1rem;
+  }
+}
+
+/* Portal scroll areas — horizontal safe area + desktop padding */
+.student-portal-content,
+.lecturer-portal-content,
+.admin-portal-content {
+  min-width: 0;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.admin-portal-content {
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .portal-shell-root {
+    position: relative;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .portal-mobile-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .student-portal-content,
+  .lecturer-portal-content,
+  .admin-portal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding: 2rem;
+    scroll-padding-bottom: 2rem;
+  }
+}
+
+/* Page hierarchy: title → description → content */
+.portal-page-header {
+  margin-bottom: var(--portal-page-gap);
+}
+
+.portal-page-header h1 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+.portal-page-description {
+  margin-top: -0.25rem;
+  margin-bottom: var(--portal-page-gap);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-muted-foreground);
+}
+
+.portal-section {
+  margin-top: var(--portal-section-gap);
+}
+
+@media (min-width: 640px) {
+  .portal-section {
+    margin-top: 2rem;
+  }
+}
+
+/* Dashboard stat grids: 2-up on phones, scale up on larger screens */
+.portal-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.portal-stat-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .portal-stat-grid {
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Admin stat grids */
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-stat-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .admin-stat-grid {
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-stat-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-stat-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Horizontal table scroll inside portal cards */
+.portal-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+
+.portal-table-scroll > div {
+  overflow: visible !important;
+  width: max-content;
+  min-width: 100%;
+}
+
+.portal-mobile-header-bar {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.portal-bottom-nav-bar {
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+}
+
+/* PWA / installed app: mobile chrome on first paint (no JS wait) */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .student-desktop-sidebar,
+  .lecturer-desktop-sidebar,
+  .admin-desktop-sidebar {
+    display: none !important;
+  }
+
+  .portal-mobile-only {
+    display: flex !important;
+  }
+}
+
+html[data-pwa-standalone="true"] .student-desktop-sidebar,
+html[data-pwa-standalone="true"] .lecturer-desktop-sidebar,
+html[data-pwa-standalone="true"] .admin-desktop-sidebar {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] .portal-mobile-only {
+  display: flex !important;
+}
+
+/* Installed PWA at any viewport width: same grid shell as mobile */
+html[data-pwa-standalone="true"] .portal-shell-root {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html[data-pwa-standalone="true"] .portal-mobile-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+html[data-pwa-standalone="true"] .portal-mobile-header {
+  grid-row: 1;
+  touch-action: none;
+}
+
+html[data-pwa-standalone="true"] .portal-mobile-bottom-nav {
+  grid-row: 3;
+  box-sizing: content-box;
+}
+
+html[data-pwa-standalone="true"] .student-portal-content,
+html[data-pwa-standalone="true"] .lecturer-portal-content,
+html[data-pwa-standalone="true"] .admin-portal-content {
+  grid-row: 2;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
+/* Mobile chrome: visible on small screens and in installed PWA */
+.portal-mobile-only {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* Desktop browser only: hide mobile header/nav (never in standalone PWA) */
+@media (min-width: 1024px) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+  html:not([data-pwa-standalone="true"]) .portal-mobile-only {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .portal-mobile-only {
+    display: flex !important;
+  }
+}
+
+/* Landing safe areas */
+.landing-nav-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.landing-nav-inner {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 640px) {
+  .landing-nav-inner {
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-nav-inner {
+    padding-left: max(2rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+.landing-hero-safe {
+  padding-top: calc(6rem + env(safe-area-inset-top, 0px));
+}
+
+/* PWA standalone portal overrides */
+html[data-pwa-standalone="true"] .student-portal-content,
+html[data-pwa-standalone="true"] .lecturer-portal-content,
+html[data-pwa-standalone="true"] .admin-portal-content {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+html[data-pwa-standalone="true"] .admin-portal-content {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
+}

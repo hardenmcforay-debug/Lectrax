@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "validate:env": "node scripts/validate-env.mjs",
     "predeploy": "npm run typecheck && npm run lint && npm run build",
-    "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs"
+    "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "export:admin": "node scripts/export-admin-app.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
