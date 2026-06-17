@@ -1,0 +1,57 @@
+export {
+  FREE_LIMITS,
+  GRACE_PERIOD_DAYS,
+  EXPIRY_REMINDER_DAYS,
+  BILLING_PLANS,
+  SUBSCRIPTION_TIER_LABELS,
+  SUBSCRIPTION_STATUS_LABELS,
+  ADMIN_GRANTED_SUBSCRIBE_BLOCKED_MESSAGE,
+  ACTIVE_SUBSCRIPTION_SUBSCRIBE_BLOCKED_MESSAGE,
+  getAdminActivateBlockedMessage,
+  billingPlanToSubscriptionPlan,
+  type BillingPlan,
+  type SubscriptionTier,
+  type SubscriptionLifecycleStatus,
+} from "@/lib/subscription/constants";
+
+export type { LecturerSubscription, SubscriptionDisplay } from "@/lib/subscription/types";
+
+import {
+  getBillingExpiryDate,
+  isPremiumFeatureUnlocked,
+  isSubscriptionWritable,
+  getLecturerSubscription,
+  isReadOnlySubscription,
+  buildSubscriptionDisplay,
+  refreshSubscriptionLifecycle,
+  processExpiryReminders,
+  activatePremiumSubscription,
+  revokePremiumSubscription,
+  adminActivatePremium,
+  adminExtendPremium,
+  isAdminGrantedPremiumActive,
+  hasActiveSubscriptionPeriod,
+  canLecturerSelfSubscribe,
+  getSubscriptionDisplayForLecturer,
+  backfillMissingSubscriptionRecords,
+} from "@/lib/subscription/lifecycle";
+
+export {
+  getBillingExpiryDate,
+  isPremiumFeatureUnlocked,
+  isSubscriptionWritable,
+  getLecturerSubscription,
+  isReadOnlySubscription,
+  hasActiveSubscriptionPeriod,
+  buildSubscriptionDisplay,
+  refreshSubscriptionLifecycle,
+  processExpiryReminders,
+  activatePremiumSubscription,
+  revokePremiumSubscription,
+  adminActivatePremium,
+  adminExtendPremium,
+  isAdminGrantedPremiumActive,
+  canLecturerSelfSubscribe,
+  getSubscriptionDisplayForLecturer,
+  backfillMissingSubscriptionRecords,
+};
