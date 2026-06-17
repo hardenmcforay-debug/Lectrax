@@ -26,13 +26,15 @@ const COPY_DIRS = [
   "src/app/api/admin",
   "src/app/api/auth",
   "src/app/auth",
+  "src/app/offline",
   "src/components/admin",
   "src/components/auth",
   "src/components/errors",
   "src/components/layout",
-  "src/components/shared",
-  "src/components/ui",
+  "src/components/pwa",
+  "src/hooks",
   "src/lib/admin",
+  "src/lib/api",
   "src/lib/auth",
   "src/lib/contact",
   "src/lib/errors",
@@ -47,11 +49,46 @@ const COPY_DIRS = [
   "public/icons",
 ];
 
+const COPY_SHARED_FILES = [
+  "src/components/shared/stat-card.tsx",
+  "src/components/shared/table-pagination.tsx",
+];
+
+const COPY_UI_FILES = [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/dialog.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/label.tsx",
+  "src/components/ui/password-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/table.tsx",
+];
+
+const ADMIN_PRUNE_PATHS = [
+  "src/components/errors/data-fetch-error.tsx",
+  "src/components/errors/form-error-message.tsx",
+  "src/components/errors/offline-cache-writer.tsx",
+  "src/lib/subscription/guards.ts",
+];
+
+const ADMIN_TEMPLATES = {
+  "src/components/auth/auth-form.tsx": "auth-form.tsx",
+  "src/components/layout/dashboard-shell.tsx": "dashboard-shell.tsx",
+  "src/components/layout/dashboard-sidebar.tsx": "dashboard-sidebar.tsx",
+  "src/lib/utils.ts": "utils.ts",
+  "src/lib/auth/cached-queries.ts": "cached-queries.ts",
+  "src/lib/subscription.ts": "subscription.ts",
+};
+
 const COPY_FILES = [
   "src/lib/constants.ts",
+  "src/lib/audit.ts",
   "src/lib/env.ts",
   "src/lib/utils.ts",
   "src/lib/validations.ts",
+  "src/lib/subscription.ts",
   "src/app/globals.css",
   "src/app/admin-portal-animations.css",
   "src/app/mobile-layout.css",
@@ -125,6 +162,11 @@ function writeAdminPackageJson() {
   writeFileSync(join(OUT, "package.json"), `${JSON.stringify(adminPkg, null, 2)}\n`);
 }
 
+function writeAdminPwaAssets() {
+  copyFromRoot("public/manifest.admin.json", "public/manifest.json");
+  copyFromRoot("public/sw-admin.js", "public/sw.js");
+}
+
 function writeAdminConfigs() {
   writeFileSync(
     join(OUT, "next.config.ts"),
@@ -138,6 +180,43 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co",
       },
     ],
+  },
+  async headers() {
+    const securityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+    ];
+
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+        ],
+      },
+      {
+        source: "/manifest.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400",
+          },
+        ],
+      },
+    ];
   },
 };
 
@@ -206,28 +285,56 @@ function writeAdminAppShell() {
     `import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
+import { APP_DESCRIPTION, BRAND } from "@/lib/constants";
+import { getPwaAppName } from "@/lib/pwa/config";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
+import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
+import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+const pwaAppName = getPwaAppName();
+const pageTitle = \`\${pwaAppName} | Platform Administration\`;
 
 export const viewport: Viewport = {
   themeColor: BRAND.primary,
   width: "device-width",
   initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
   title: {
-    default: \`Admin | \${APP_NAME}\`,
-    template: \`%s | Admin | \${APP_NAME}\`,
+    default: pageTitle,
+    template: \`%s | \${pwaAppName}\`,
   },
   description: APP_DESCRIPTION,
+  applicationName: pwaAppName,
+  manifest: "/manifest.json",
   robots: { index: false, follow: false },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: pwaAppName,
+    statusBarStyle: "default",
+  },
+  other: {
+    "apple-mobile-web-app-title": pwaAppName,
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -240,7 +347,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
+      <head>
+        <PwaHeadLinks />
+      </head>
       <body className={\`\${geistSans.variable} \${geistMono.variable} antialiased\`}>
+        <PwaProvider />
+        <PortalChromeSync />
         <SiteBrandingProvider logoUrl={logoUrl}>
           <PlatformErrorProvider>
             <PlatformErrorBoundary scope="root">{children}</PlatformErrorBoundary>
@@ -281,6 +393,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     join(OUT, "src/app/(auth)/login/page.tsx"),
     `import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/auth-form";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 export default function AdminLoginPage() {
   return (
@@ -293,6 +406,9 @@ export default function AdminLoginPage() {
         <Suspense>
           <LoginForm adminOnly />
         </Suspense>
+        <div className="mt-6 flex justify-center">
+          <InstallAppButton />
+        </div>
       </div>
     </div>
   );
@@ -301,61 +417,37 @@ export default function AdminLoginPage() {
   );
 }
 
-function patchAuthFormForAdminOnly() {
-  const authFormPath = join(OUT, "src/components/auth/auth-form.tsx");
-  if (!existsSync(authFormPath)) return;
+function pruneAdminOnlyPaths() {
+  for (const relativePath of ADMIN_PRUNE_PATHS) {
+    const target = join(OUT, relativePath);
+    if (existsSync(target)) {
+      rmSync(target, { force: true });
+    }
+  }
+}
 
-  let content = readFileSync(authFormPath, "utf8");
-  if (!content.includes("adminOnly")) {
-    content = content.replace(
-      "export function LoginForm() {",
-      "export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {"
-    );
-    content = content.replace(
-      `      if (!role) {
-        await supabase.auth.signOut();
-        setError(
-          networkFailure
-            ? getAuthNetworkMessage("session")
-            : toAuthMessage(
-                "Sign In Failed",
-                "Could not verify your account. Please try again or contact support.",
-                true
-              )
-        );
-        return;
-      }
+function applyAdminTemplates() {
+  const templatesDir = join(__dirname, "admin-deploy-templates");
 
-      redirectAfterAuth(role, searchParams.get("redirect"));`,
-      `      if (!role) {
-        await supabase.auth.signOut();
-        setError(
-          networkFailure
-            ? getAuthNetworkMessage("session")
-            : toAuthMessage(
-                "Sign In Failed",
-                "Could not verify your account. Please try again or contact support.",
-                true
-              )
-        );
-        return;
-      }
+  for (const [destRelative, templateName] of Object.entries(ADMIN_TEMPLATES)) {
+    const templatePath = join(templatesDir, templateName);
+    const destination = join(OUT, destRelative);
 
-      if (adminOnly && role !== "platform_admin") {
-        await supabase.auth.signOut();
-        setError(
-          toAuthMessage(
-            "Access Denied",
-            "This sign-in page is for platform administrators only. Lecturers and students should use the main Lectrax app.",
-            false
-          )
-        );
-        return;
-      }
+    if (!existsSync(templatePath)) {
+      throw new Error(`Missing admin template: ${templateName}`);
+    }
 
-      redirectAfterAuth(role, searchParams.get("redirect"));`
-    );
-    writeFileSync(authFormPath, content);
+    mkdirSync(dirname(destination), { recursive: true });
+    cpSync(templatePath, destination);
+  }
+
+  const globalsCssPath = join(OUT, "src/app/globals.css");
+  if (existsSync(globalsCssPath)) {
+    let globalsCss = readFileSync(globalsCssPath, "utf8");
+    globalsCss = globalsCss
+      .replace('@import "./student-portal-animations.css";\n', "")
+      .replace('@import "./lecturer-portal-animations.css";\n', "");
+    writeFileSync(globalsCssPath, globalsCss);
   }
 }
 
@@ -363,9 +455,15 @@ function main() {
   console.log("Exporting Lectrax platform admin to deploy/lectrax-admin ...");
 
   if (existsSync(OUT)) {
-    rmSync(OUT, { recursive: true, force: true });
+    for (const entry of ["src", "public", "package.json", "next.config.ts", "tsconfig.json", ".env.example", ".gitignore"]) {
+      const target = join(OUT, entry);
+      if (existsSync(target)) {
+        rmSync(target, { recursive: true, force: true });
+      }
+    }
+  } else {
+    mkdirSync(OUT, { recursive: true });
   }
-  mkdirSync(OUT, { recursive: true });
 
   for (const dir of COPY_DIRS) {
     copyFromRoot(dir);
@@ -375,10 +473,20 @@ function main() {
     copyFromRoot(file);
   }
 
+  for (const file of COPY_SHARED_FILES) {
+    copyFromRoot(file);
+  }
+
+  for (const file of COPY_UI_FILES) {
+    copyFromRoot(file);
+  }
+
   writeAdminPackageJson();
   writeAdminConfigs();
+  writeAdminPwaAssets();
   writeAdminAppShell();
-  patchAuthFormForAdminOnly();
+  applyAdminTemplates();
+  pruneAdminOnlyPaths();
 
   console.log("Done. Next steps:");
   console.log("  cd deploy/lectrax-admin");

@@ -7,7 +7,6 @@ import { applyPortalChromeMarks, isPortalRoutePath } from "@/lib/pwa/portal-chro
 export function PortalChromeSync() {
   const pathname = usePathname();
 
-  // Re-apply before child layout effects when React hydration clears html data-* attrs.
   if (typeof document !== "undefined") {
     applyPortalChromeMarks();
   }

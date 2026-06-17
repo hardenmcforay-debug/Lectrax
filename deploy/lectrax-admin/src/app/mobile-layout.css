@@ -57,7 +57,7 @@ html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
 }
 
 /* Desktop browser only: hide mobile chrome inside portal shell */
-@media (min-width: 1024px) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
   html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-only {
     display: none !important;
   }
@@ -363,8 +363,8 @@ html[data-pwa-standalone="true"] .admin-portal-content {
 }
 
 /* Desktop browser only: hide mobile header/nav (never in standalone PWA) */
-@media (min-width: 1024px) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
-  html:not([data-pwa-standalone="true"]) .portal-mobile-only {
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+  html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-mobile-only {
     display: none;
   }
 }

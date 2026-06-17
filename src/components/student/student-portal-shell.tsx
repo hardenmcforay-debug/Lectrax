@@ -24,6 +24,10 @@ export function StudentPortalShell({
 }: StudentPortalShellProps) {
   const showHeader = headerVariant !== "hidden";
 
+  if (typeof document !== "undefined") {
+    applyPortalChromeMarks();
+  }
+
   useLayoutEffect(() => {
     applyPortalChromeMarks();
   }, []);

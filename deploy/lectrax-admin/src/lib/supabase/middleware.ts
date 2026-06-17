@@ -4,10 +4,12 @@ import type { UserRole } from "@/types/database";
 import { AUTH_ROUTES, PUBLIC_API_ROUTES, PUBLIC_ROUTES } from "@/lib/constants";
 import {
   getAdminAppUrl,
+  getPlatformAdminLoginRedirectUrl,
   getRoleHomeUrl,
   isAbsoluteUrl,
   isAdminDeployment,
   isAdminHostedSeparately,
+  isMainAppDeployment,
 } from "@/lib/auth/admin-deployment";
 import { isUserRole, resolveUserRoleOrNull } from "@/lib/auth/roles";
 import {
@@ -152,8 +154,9 @@ export async function updateSession(request: NextRequest) {
 
     const roleHome = getRoleHomeUrl(role, request.nextUrl.origin);
 
-    if (isAdminHostedSeparately() && !isAdminDeployment() && role === "platform_admin") {
-      return NextResponse.redirect(roleHome);
+    if (isMainAppDeployment() && role === "platform_admin") {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(getPlatformAdminLoginRedirectUrl(request.nextUrl.origin));
     }
 
     if (isAdminDeployment() && role !== "platform_admin") {
