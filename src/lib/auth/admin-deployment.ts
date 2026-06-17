@@ -89,6 +89,32 @@ export function isAbsoluteUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
+export const PLATFORM_ADMIN_MAIN_APP_LOGIN_ERROR = "admin";
+
+/** True on the lecturer/student deployment (not the dedicated admin app). */
+export function isMainAppDeployment(): boolean {
+  return !isAdminDeployment();
+}
+
+export function getPlatformAdminMainAppLoginDeniedMessage(): string {
+  const adminLogin = getAdminLoginUrl();
+  if (isAbsoluteUrl(adminLogin)) {
+    return "Platform administrators must sign in through the admin portal. Lecturers and students use this page.";
+  }
+  return "Platform administrators cannot sign in here. Please use the admin portal.";
+}
+
+/** Redirect target when a platform admin must not use the main app login/session. */
+export function getPlatformAdminLoginRedirectUrl(origin: string): string {
+  const adminLogin = getAdminLoginUrl(origin);
+  if (isAbsoluteUrl(adminLogin)) {
+    return adminLogin;
+  }
+  const url = new URL("/login", origin);
+  url.searchParams.set("error", PLATFORM_ADMIN_MAIN_APP_LOGIN_ERROR);
+  return url.toString();
+}
+
 export function redirectToRoleHome(role: UserRole, redirectParam?: string | null) {
   const home = getRoleHomeUrl(role);
   if (redirectParam && redirectParam !== "/" && redirectParam.startsWith(getRoleHomePath(role))) {

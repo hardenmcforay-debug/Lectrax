@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  getPlatformAdminMainAppLoginDeniedMessage,
+} from "@/lib/auth/admin-deployment";
 import { redirectAfterAuth } from "@/lib/auth/roles";
 import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
@@ -41,6 +44,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
         "Sign In Failed",
         "Sign in failed. Please check your email and password."
       );
+    }
+    if (authError === "admin") {
+      return toAuthMessage("Access Denied", getPlatformAdminMainAppLoginDeniedMessage(), false);
     }
     return null;
   });
@@ -145,6 +151,14 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
             "This sign-in page is for platform administrators only. Lecturers and students should use the main Lectrax app.",
             false
           )
+        );
+        return;
+      }
+
+      if (!adminOnly && role === "platform_admin") {
+        await supabase.auth.signOut();
+        setError(
+          toAuthMessage("Access Denied", getPlatformAdminMainAppLoginDeniedMessage(), false)
         );
         return;
       }
