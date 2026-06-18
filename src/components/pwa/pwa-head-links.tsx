@@ -1,4 +1,5 @@
 import { PWA_THEME_COLOR } from "@/lib/pwa/detect";
+import { PWA_INSTALL_BOOTSTRAP_SCRIPT } from "@/lib/pwa/install-prompt-bootstrap";
 import { PORTAL_CHROME_BOOTSTRAP_SCRIPT } from "@/lib/pwa/portal-chrome-bootstrap";
 
 const APPLE_SPLASH_SCREENS = [
@@ -19,6 +20,11 @@ export function PwaHeadLinks() {
       <script
         dangerouslySetInnerHTML={{
           __html: PORTAL_CHROME_BOOTSTRAP_SCRIPT,
+        }}
+      />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: PWA_INSTALL_BOOTSTRAP_SCRIPT,
         }}
       />
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
