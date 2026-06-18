@@ -3,45 +3,22 @@ import { BILLING_PLAN_PRICES } from "@/types/database";
 
 export type PaymentCurrency = "SLE" | "USD";
 
-/** Monime financial account currency (must match your Monime space). */
-export function getMonimeCurrency(): PaymentCurrency {
-  const configured = process.env.MONIME_CURRENCY?.trim().toUpperCase();
-  return configured === "USD" ? "USD" : "SLE";
-}
-
-/** Default charge amounts in SLE (major units / whole leones). Override via env. */
+/** Default charge amounts in SLE (major units / whole leones). */
 export const DEFAULT_SLE_CHARGE_AMOUNTS: Record<BillingPlan, number> = {
   monthly: 120,
   semester: 480,
   annual: 1200,
 };
 
-function sleAmountFromEnv(plan: BillingPlan): number | null {
-  const key = {
-    monthly: "MONIME_AMOUNT_MONTHLY",
-    semester: "MONIME_AMOUNT_SEMESTER",
-    annual: "MONIME_AMOUNT_ANNUAL",
-  }[plan];
-  const raw = process.env[key];
-  if (!raw) return null;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-/** Charge amount in major currency units (e.g. 120 SLE or 5 USD). */
-export function getBillingChargeAmount(plan: BillingPlan): number {
-  if (getMonimeCurrency() === "USD") {
-    return BILLING_PLAN_PRICES[plan];
-  }
-  return sleAmountFromEnv(plan) ?? DEFAULT_SLE_CHARGE_AMOUNTS[plan];
-}
-
 /** Monime expects minor units (e.g. cents: 120 SLE → 12000). */
 export function toMonimeMinorUnits(majorAmount: number): number {
   return Math.round(majorAmount * 100);
 }
 
-export function formatChargeAmount(amount: number, currency = getMonimeCurrency()): string {
+export function formatChargeAmount(
+  amount: number,
+  currency: PaymentCurrency = "SLE"
+): string {
   if (currency === "SLE") {
     return `Le ${amount.toLocaleString()}`;
   }

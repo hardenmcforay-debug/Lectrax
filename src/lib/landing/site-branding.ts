@@ -1,4 +1,5 @@
 import { createPublicReadClient } from "@/lib/supabase/server";
+import { getPublicSupabaseUrl } from "@/lib/env/public";
 
 export {
   BRANDING_IMAGE_MAX_BYTES,
@@ -16,7 +17,7 @@ export type BrandingImageSetting = {
 };
 
 export function buildLandingAssetPublicUrl(storagePath: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const base = getPublicSupabaseUrl();
   if (!base) return "";
   return `${base}/storage/v1/object/public/${LANDING_ASSETS_BUCKET}/${storagePath}`;
 }

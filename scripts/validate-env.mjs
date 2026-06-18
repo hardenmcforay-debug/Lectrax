@@ -71,6 +71,40 @@ if (monimeSet.length === 0) {
   warnings.push("Monime not configured (optional until payments are enabled)");
 }
 
+const publicEnvKeys = Object.keys(process.env).filter((key) => key.startsWith("NEXT_PUBLIC_"));
+const forbiddenPublicPatterns = [
+  /SERVICE_ROLE/i,
+  /WEBHOOK_SECRET/i,
+  /API_KEY/i,
+  /^NEXT_PUBLIC_MONIME_/i,
+  /^NEXT_PUBLIC_CRON_/i,
+  /^NEXT_PUBLIC_QR_TOKEN/i,
+];
+
+for (const key of publicEnvKeys) {
+  if (forbiddenPublicPatterns.some((pattern) => pattern.test(key))) {
+    errors.push(
+      `${key} must not be exposed to the browser. Remove the NEXT_PUBLIC_ prefix and keep the value server-side.`
+    );
+  }
+}
+
+const anonKey = read("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+if (anonKey) {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(anonKey.split(".")[1], "base64url").toString("utf8")
+    );
+    if (payload.role === "service_role") {
+      errors.push(
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be a service role key. Use the anon key in the browser."
+      );
+    }
+  } catch {
+    // Not a JWT-shaped key — skip role inspection.
+  }
+}
+
 if (warnings.length > 0) {
   for (const warning of warnings) {
     console.warn(`WARN: ${warning}`);

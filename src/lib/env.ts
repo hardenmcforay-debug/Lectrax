@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Centralized environment variable validation for production deployments.
  * Fails fast with clear messages when required configuration is missing.
@@ -48,6 +50,11 @@ export function getPublicSupabaseEnv(): { url: string; anonKey: string } {
 /** Server-only service role key for privileged operations. */
 export function getServiceRoleKey(): string {
   return assertEnv("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+/** Whether the service role key is configured (does not expose the value). */
+export function isServiceRoleConfigured(): boolean {
+  return !!readEnv("SUPABASE_SERVICE_ROLE_KEY");
 }
 
 /** Application base URL for redirects, webhooks, and email links. */

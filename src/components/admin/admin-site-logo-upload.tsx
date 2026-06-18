@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/logo";
 import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { getPublicSupabaseUrl } from "@/lib/env/public";
 
 type AdminSiteLogoUploadProps = {
   initialLogoUrl: string | null;
@@ -17,7 +18,7 @@ type AdminSiteLogoUploadProps = {
 };
 
 function publicLogoUrl(storagePath: string, cacheBust?: number) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const base = getPublicSupabaseUrl();
   if (!base) return null;
   const url = `${base}/storage/v1/object/public/landing-assets/${storagePath}`;
   return cacheBust ? `${url}?v=${cacheBust}` : url;

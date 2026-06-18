@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Monime payment integration
  * Docs: https://docs.monime.io
@@ -8,8 +10,8 @@ import type { BillingPlan } from "@/types/database";
 import {
   getBillingChargeAmount,
   getMonimeCurrency,
-  toMonimeMinorUnits,
-} from "@/lib/subscription/payment-currency";
+} from "@/lib/subscription/payment-currency-server";
+import { toMonimeMinorUnits } from "@/lib/subscription/payment-currency";
 import type { LectraxPaymentMethod } from "@/lib/monime/payment-methods";
 import { getPaymentMethodOption } from "@/lib/monime/payment-methods";
 

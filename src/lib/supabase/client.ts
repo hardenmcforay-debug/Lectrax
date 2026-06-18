@@ -1,11 +1,12 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { getPublicSupabaseAnonKey, getPublicSupabaseUrl } from "@/lib/env/public";
 
 const CONFIG_ERROR =
   "Authentication is unavailable because the app is misconfigured. Please contact support.";
 
 export function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = getPublicSupabaseUrl();
+  const anonKey = getPublicSupabaseAnonKey();
 
   if (!url || !anonKey) {
     throw new Error(CONFIG_ERROR);
@@ -15,8 +16,8 @@ export function createClient() {
 }
 
 export function getSupabaseConfigError(): string | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = getPublicSupabaseUrl();
+  const anonKey = getPublicSupabaseAnonKey();
   if (!url || !anonKey) return CONFIG_ERROR;
   return null;
 }

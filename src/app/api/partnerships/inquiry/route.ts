@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { partnershipInquirySchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
+import { isServiceRoleConfigured } from "@/lib/env";
 import { PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
 
 export async function POST(request: Request) {
@@ -21,8 +22,8 @@ export async function POST(request: Request) {
 
   const data = parsed.data;
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  if (!isServiceRoleConfigured()) {
+    console.error("Partnership inquiry service is not configured");
     return NextResponse.json(
       { error: "Could not submit your request. Please try again." },
       { status: 500 }

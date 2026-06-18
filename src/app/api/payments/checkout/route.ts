@@ -5,7 +5,7 @@ import { createMonimeCheckout } from "@/lib/monime";
 import {
   getBillingChargeAmount,
   getMonimeCurrency,
-} from "@/lib/subscription/payment-currency";
+} from "@/lib/subscription/payment-currency-server";
 import { PAYMENT_METHOD_LABELS } from "@/lib/monime/payment-methods";
 import type { BillingPlan } from "@/types/database";
 import { logAudit } from "@/lib/audit";
