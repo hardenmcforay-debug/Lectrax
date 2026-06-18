@@ -76,11 +76,7 @@ export async function PATCH(request: Request) {
 
   const role =
     existing?.role ??
-    (user.user_metadata?.role === "lecturer"
-      ? "lecturer"
-      : user.user_metadata?.role === "platform_admin"
-        ? "platform_admin"
-        : "student");
+    (user.user_metadata?.role === "lecturer" ? "lecturer" : "student");
 
   const payload: Record<string, string | boolean | null> = {
     full_name: trimmedName,

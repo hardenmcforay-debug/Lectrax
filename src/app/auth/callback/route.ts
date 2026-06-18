@@ -15,11 +15,16 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
+  const flowType = searchParams.get("type");
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (flowType === "recovery") {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
         ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
         : { data: null };
 
-      const role = resolveUserRoleOrNull(profile?.role, user);
+      const role = resolveUserRoleOrNull(profile?.role);
       if (!role) {
         await supabase.auth.signOut();
         return NextResponse.redirect(getLoginFailureUrl(origin));

@@ -107,7 +107,7 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
   }
 
   if (context === "signup" && /user already registered/i.test(message)) {
-    return "An account with this email already exists. Try signing in instead.";
+    return "If an account exists for this email, check your inbox or try signing in.";
   }
 
   if (context === "signup" && /email not confirmed/i.test(message)) {

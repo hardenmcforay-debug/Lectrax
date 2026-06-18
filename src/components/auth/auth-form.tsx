@@ -58,6 +58,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     if (sanitizeQueryParam(searchParams.get("message"), 30) === "confirm-email") {
       return "Account created. Check your email to confirm, then sign in.";
     }
+    if (sanitizeQueryParam(searchParams.get("message"), 30) === "password-updated") {
+      return "Your password has been updated. You can sign in now.";
+    }
     return null;
   });
   const {

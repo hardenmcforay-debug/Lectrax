@@ -134,7 +134,7 @@ export async function updateSession(request: NextRequest) {
       if (profileError && isTransientDbError(profileError)) {
         roleServiceUnavailable = true;
       } else {
-        role = resolveUserRoleOrNull(profile?.role, user);
+        role = resolveUserRoleOrNull(profile?.role);
       }
     }
 
