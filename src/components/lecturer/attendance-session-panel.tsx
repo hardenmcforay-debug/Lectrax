@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -141,7 +142,7 @@ export function AttendanceSessionPanel({
   }, [activeSession, activeSessionDurationMinutes]);
 
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
-    const res = await fetch(
+    const res = await appFetch(
       `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present`
     );
     const data = (await res.json()) as {
@@ -187,7 +188,7 @@ export function AttendanceSessionPanel({
       logQrRefresh("start", { attendanceSessionId, source });
 
       try {
-        const res = await fetch("/api/attendance/refresh", {
+        const res = await appFetch("/api/attendance/refresh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ attendanceSessionId }),
@@ -353,7 +354,7 @@ export function AttendanceSessionPanel({
     setStarting(true);
 
     try {
-      const res = await fetch("/api/attendance/start", {
+      const res = await appFetch("/api/attendance/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -415,7 +416,7 @@ export function AttendanceSessionPanel({
     onAttendanceChange?.();
 
     try {
-      const res = await fetch("/api/attendance/end", {
+      const res = await appFetch("/api/attendance/end", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attendanceSessionId: endedSessionId }),
@@ -444,7 +445,7 @@ export function AttendanceSessionPanel({
     onAttendanceChange?.();
 
     try {
-      const res = await fetch("/api/attendance/manual", {
+      const res = await appFetch("/api/attendance/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -510,7 +511,7 @@ export function AttendanceSessionPanel({
     onAttendanceChange?.();
 
     try {
-      const res = await fetch("/api/attendance/manual", {
+      const res = await appFetch("/api/attendance/manual", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

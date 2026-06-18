@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useRef, useState } from "react";
@@ -48,7 +49,7 @@ export function AdminSiteLogoUpload({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/admin/site-logo", {
+      const response = await appFetch("/api/admin/site-logo", {
         method: "POST",
         body: formData,
       });
@@ -80,7 +81,7 @@ export function AdminSiteLogoUpload({
     setError(null);
     setMessage(null);
     try {
-      const response = await fetch("/api/admin/site-logo", { method: "DELETE" });
+      const response = await appFetch("/api/admin/site-logo", { method: "DELETE" });
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload.error ?? "Remove failed.");

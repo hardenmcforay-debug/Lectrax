@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -11,7 +12,7 @@ export function AttendanceDeviceRegistrar() {
     registeredRef.current = true;
 
     const identity = getAttendanceDeviceIdentity();
-    void fetch("/api/attendance/device/register", {
+    void appFetch("/api/attendance/device/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(identity),

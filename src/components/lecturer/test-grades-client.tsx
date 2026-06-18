@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import {
@@ -117,7 +118,7 @@ export function TestGradesClient({
 
     setSaving(true);
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${classSessionId}/tests/${test.id}/scores`,
         {
           method: "PUT",

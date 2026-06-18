@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -379,7 +380,7 @@ export function SignupForm() {
         }
 
         if (resolvedRole === "student") {
-          void fetch("/api/attendance/device/register", {
+          void appFetch("/api/attendance/device/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(getAttendanceDeviceIdentity()),

@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -110,7 +111,7 @@ export function CaStructurePanel({
     setSavingConfig(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${session.id}/ca-config`, {
+      const res = await appFetch(`/api/lecturer/sessions/${session.id}/ca-config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -187,7 +188,7 @@ export function CaStructurePanel({
     setCreating(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${session.id}/tests`, {
+      const res = await appFetch(`/api/lecturer/sessions/${session.id}/tests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
@@ -222,7 +223,7 @@ export function CaStructurePanel({
     setDeleting(true);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${session.id}/tests/${deleteTarget.id}`,
         { method: "DELETE" }
       );

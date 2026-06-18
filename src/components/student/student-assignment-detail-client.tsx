@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -94,7 +95,7 @@ export function StudentAssignmentDetailClient({
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`/api/student/assignments/${assignmentId}/submit`, {
+      const res = await appFetch(`/api/student/assignments/${assignmentId}/submit`, {
         method: "POST",
         body: formData,
       });

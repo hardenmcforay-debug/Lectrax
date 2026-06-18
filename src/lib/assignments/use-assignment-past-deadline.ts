@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,7 +19,7 @@ function isPastDeadlineWithOffset(deadline: string, serverOffsetMs: number): boo
 }
 
 async function fetchServerOffsetMs(): Promise<number> {
-  const res = await fetch("/api/server-time", { cache: "no-store" });
+  const res = await appFetch("/api/server-time", { cache: "no-store" });
   if (!res.ok) return 0;
 
   const body = (await res.json().catch(() => ({}))) as { serverTime?: string };
@@ -31,7 +32,7 @@ async function fetchServerOffsetMs(): Promise<number> {
 }
 
 async function fetchAssignmentPastDeadline(assignmentId: string): Promise<boolean | null> {
-  const res = await fetch(`/api/student/assignments/${assignmentId}/deadline-status`, {
+  const res = await appFetch(`/api/student/assignments/${assignmentId}/deadline-status`, {
     cache: "no-store",
   });
   if (!res.ok) return null;

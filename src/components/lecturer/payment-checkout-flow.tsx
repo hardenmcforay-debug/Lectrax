@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -74,7 +75,7 @@ export function PaymentCheckoutFlow({
 
     const interval = window.setInterval(() => {
       void (async () => {
-        const res = await fetch(`/api/payments/${ussdDetails.paymentId}/status`);
+        const res = await appFetch(`/api/payments/${ussdDetails.paymentId}/status`);
         if (!res.ok) return;
         const data = (await res.json()) as { status?: string };
         if (data.status === "completed") {

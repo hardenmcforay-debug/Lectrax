@@ -1,7 +1,11 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { rejectIfCsrfViolation } from "@/lib/security/csrf";
 
 export async function middleware(request: NextRequest) {
+  const csrfResponse = rejectIfCsrfViolation(request);
+  if (csrfResponse) return csrfResponse;
+
   return updateSession(request);
 }
 

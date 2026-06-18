@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -55,7 +56,7 @@ export function PartnershipInquiryForm({
     setSubmitError(null);
 
     try {
-      const response = await fetch("/api/partnerships/inquiry", {
+      const response = await appFetch("/api/partnerships/inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

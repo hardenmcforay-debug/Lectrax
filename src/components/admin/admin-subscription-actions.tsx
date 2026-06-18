@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -47,7 +48,7 @@ export function AdminSubscriptionActions({
   async function activate() {
     if (activateBlocked) return;
     setLoading("activate");
-    const res = await fetch("/api/admin/subscriptions", {
+    const res = await appFetch("/api/admin/subscriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lecturerId, billingPlan }),
@@ -59,7 +60,7 @@ export function AdminSubscriptionActions({
 
   async function extend() {
     setLoading("extend");
-    const res = await fetch("/api/admin/subscriptions", {
+    const res = await appFetch("/api/admin/subscriptions", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lecturerId, days: Number(days) }),
@@ -72,7 +73,7 @@ export function AdminSubscriptionActions({
   async function revoke() {
     if (!confirm("Revoke premium and revert this lecturer to the free plan?")) return;
     setLoading("revoke");
-    const res = await fetch("/api/admin/subscriptions", {
+    const res = await appFetch("/api/admin/subscriptions", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lecturerId }),

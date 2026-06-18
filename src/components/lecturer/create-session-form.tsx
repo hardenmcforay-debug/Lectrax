@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -32,7 +33,7 @@ export function CreateSessionForm() {
   async function onSubmit(data: ClassSessionInput) {
     setSubmitError(null);
 
-    const res = await fetch("/api/lecturer/sessions", {
+    const res = await appFetch("/api/lecturer/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

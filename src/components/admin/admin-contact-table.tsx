@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -47,7 +48,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
   async function updateStatus(id: string, status: ContactInquiryStatus) {
     setUpdatingId(id);
     try {
-      const response = await fetch(`/api/admin/contact/${id}`, {
+      const response = await appFetch(`/api/admin/contact/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -70,7 +71,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
 
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/admin/contact/${id}`, {
+      const response = await appFetch(`/api/admin/contact/${id}`, {
         method: "DELETE",
       });
 

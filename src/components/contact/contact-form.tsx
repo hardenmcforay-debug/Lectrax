@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -31,7 +32,7 @@ export function ContactForm() {
   async function onSubmit(data: ContactInquiryInput) {
     setSubmitError(null);
 
-    const response = await fetch("/api/contact", {
+    const response = await appFetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

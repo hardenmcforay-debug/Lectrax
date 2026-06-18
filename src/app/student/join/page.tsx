@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -32,7 +33,7 @@ export default function JoinClassPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/student/join", {
+      const res = await appFetch("/api/student/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

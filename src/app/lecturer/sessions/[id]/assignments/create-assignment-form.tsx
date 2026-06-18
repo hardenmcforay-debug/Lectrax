@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -45,7 +46,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
     setCreating(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${sessionId}/assignments`, {
+      const res = await appFetch(`/api/lecturer/sessions/${sessionId}/assignments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),

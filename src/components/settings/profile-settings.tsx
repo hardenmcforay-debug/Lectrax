@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -66,7 +67,7 @@ export function ProfileSettings({
     setProfileError(null);
     setProfileSaved(false);
 
-    const res = await fetch("/api/profile", {
+    const res = await appFetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

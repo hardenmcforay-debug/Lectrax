@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -81,7 +82,7 @@ export function SubscriptionPageContent({
   const [deletePaymentError, setDeletePaymentError] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
+    void appFetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
     stripSensitiveUrlParams();
   }, []);
 
@@ -140,7 +141,7 @@ export function SubscriptionPageContent({
     setDeletingPayment(true);
 
     try {
-      const res = await fetch(`/api/payments/${deletePaymentTarget.id}`, { method: "DELETE" });
+      const res = await appFetch(`/api/payments/${deletePaymentTarget.id}`, { method: "DELETE" });
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
@@ -162,7 +163,7 @@ export function SubscriptionPageContent({
     setDeletingAllPayments(true);
 
     try {
-      const res = await fetch("/api/payments", { method: "DELETE" });
+      const res = await appFetch("/api/payments", { method: "DELETE" });
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {

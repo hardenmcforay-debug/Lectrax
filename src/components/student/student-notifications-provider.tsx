@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import {
@@ -54,7 +55,7 @@ function showBrowserNotification(title: string, body: string, type: StudentNotif
 }
 
 async function fetchNotificationCounts(): Promise<StudentNotificationCounts> {
-  const response = await fetch("/api/student/notifications/counts", {
+  const response = await appFetch("/api/student/notifications/counts", {
     cache: "no-store",
   });
 
@@ -67,7 +68,7 @@ async function fetchNotificationCounts(): Promise<StudentNotificationCounts> {
 }
 
 async function markNotificationTypeRead(type: StudentNotificationType): Promise<void> {
-  await fetch("/api/student/notifications/mark-read", {
+  await appFetch("/api/student/notifications/mark-read", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ type }),

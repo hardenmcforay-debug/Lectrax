@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useState } from "react";
@@ -34,7 +35,7 @@ export function StudentPerformanceExportButton({
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await appFetch(
         `/api/lecturer/sessions/${sessionId}/export-student-performance`,
         {
           method: "POST",

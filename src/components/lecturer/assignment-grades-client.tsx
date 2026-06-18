@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import {
@@ -159,7 +160,7 @@ export function AssignmentGradesClient({
   const openPdf = useCallback(
     async (enrollmentId: string) => {
       try {
-        const res = await fetch(
+        const res = await appFetch(
           `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}`,
         );
 
@@ -210,7 +211,7 @@ export function AssignmentGradesClient({
     setSaving(true);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/grades`,
 
         {
@@ -270,7 +271,7 @@ export function AssignmentGradesClient({
     setDeleting(true);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions`,
 
         { method: "DELETE" },

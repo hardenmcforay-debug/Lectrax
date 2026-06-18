@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -40,7 +41,7 @@ export function SessionAttendanceSessionsList({
     setLoadingId(sessionId);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${classSessionId}/attendance-sessions/${sessionId}/present`
       );
       const data = (await res.json()) as {

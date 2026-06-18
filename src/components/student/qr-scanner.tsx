@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -168,7 +169,7 @@ export function QRScanner() {
 
     try {
       const identity = getAttendanceDeviceIdentity();
-      const res = await fetch("/api/attendance/scan", {
+      const res = await appFetch("/api/attendance/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -254,7 +255,7 @@ export function QRScanner() {
     setTransferring(true);
     try {
       const identity = getAttendanceDeviceIdentity();
-      const res = await fetch("/api/attendance/device/transfer", {
+      const res = await appFetch("/api/attendance/device/transfer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(identity),

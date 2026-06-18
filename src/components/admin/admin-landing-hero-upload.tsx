@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useRef, useState } from "react";
@@ -45,7 +46,7 @@ export function AdminLandingHeroUpload({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/admin/landing-hero", {
+      const response = await appFetch("/api/admin/landing-hero", {
         method: "POST",
         body: formData,
       });
@@ -76,7 +77,7 @@ export function AdminLandingHeroUpload({
     setError(null);
     setMessage(null);
     try {
-      const response = await fetch("/api/admin/landing-hero", { method: "DELETE" });
+      const response = await appFetch("/api/admin/landing-hero", { method: "DELETE" });
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload.error ?? "Remove failed.");

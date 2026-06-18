@@ -10,6 +10,7 @@ export function withSecureCookieOptions(options: CookieOptions = {}): CookieOpti
   return {
     ...options,
     secure: true,
+    // Lax blocks cross-site POST cookies (primary CSRF defense with session cookies).
     sameSite: options.sameSite ?? "lax",
   };
 }

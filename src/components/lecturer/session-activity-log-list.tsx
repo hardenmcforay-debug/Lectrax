@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -42,7 +43,7 @@ export function SessionActivityLogList({
     setDeleting(true);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${classSessionId}/audit-logs/${deleteTarget.id}`,
         { method: "DELETE" }
       );
@@ -68,7 +69,7 @@ export function SessionActivityLogList({
     setDeletingAll(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${classSessionId}/audit-logs`, {
+      const res = await appFetch(`/api/lecturer/sessions/${classSessionId}/audit-logs`, {
         method: "DELETE",
       });
       const data = (await res.json()) as { error?: string };

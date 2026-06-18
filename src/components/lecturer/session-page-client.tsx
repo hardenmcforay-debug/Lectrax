@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -184,7 +185,7 @@ export function SessionPageClient({
     setClosingSession(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${session.id}`, { method: "DELETE" });
+      const res = await appFetch(`/api/lecturer/sessions/${session.id}`, { method: "DELETE" });
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
@@ -215,7 +216,7 @@ export function SessionPageClient({
       const url = params
         ? `/api/lecturer/sessions/${session.id}/student-rows?${params.toString()}`
         : `/api/lecturer/sessions/${session.id}/student-rows`;
-      const res = await fetch(url);
+      const res = await appFetch(url);
       const data = (await res.json()) as { rows?: StudentTableRow[] };
 
       if (res.ok && data.rows) {
@@ -309,7 +310,7 @@ export function SessionPageClient({
     setDeletingAssignment(true);
 
     try {
-      const res = await fetch(
+      const res = await appFetch(
         `/api/lecturer/sessions/${session.id}/assignments/${deleteAssignmentTarget.id}`,
         { method: "DELETE" }
       );
@@ -347,7 +348,7 @@ export function SessionPageClient({
     setAddingManual(true);
 
     try {
-      const res = await fetch(`/api/lecturer/sessions/${session.id}/students/manual`, {
+      const res = await appFetch(`/api/lecturer/sessions/${session.id}/students/manual`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),

@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/api/client-fetch";
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -52,7 +53,7 @@ export function AdminPartnershipsTable({
   async function updateStatus(id: string, status: PartnershipInquiryStatus) {
     setUpdatingId(id);
     try {
-      const response = await fetch(`/api/admin/partnerships/${id}`, {
+      const response = await appFetch(`/api/admin/partnerships/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -79,7 +80,7 @@ export function AdminPartnershipsTable({
 
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/admin/partnerships/${id}`, {
+      const response = await appFetch(`/api/admin/partnerships/${id}`, {
         method: "DELETE",
       });
 
