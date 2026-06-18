@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { getAssignmentDeadlineStatus } from "@/lib/assignments/deadline-server";
+import { requireStudentRole } from "@/lib/auth/require-api-role";
 
 export async function GET(
   _request: Request,
@@ -8,16 +8,10 @@ export async function GET(
 ) {
   const { assignmentId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireStudentRole();
+  if (auth.error) return auth.error;
 
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const { data: assignment, error: assignmentError } = await supabase
+  const { data: assignment, error: assignmentError } = await auth.supabase
     .from("assignments")
     .select("id, deadline, class_session_id, is_published")
     .eq("id", assignmentId)
@@ -28,10 +22,10 @@ export async function GET(
     return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
   }
 
-  const { data: enrollment } = await supabase
+  const { data: enrollment } = await auth.supabase
     .from("enrollments")
     .select("id")
-    .eq("student_id", user.id)
+    .eq("student_id", auth.userId)
     .eq("class_session_id", assignment.class_session_id)
     .maybeSingle();
 
@@ -40,7 +34,7 @@ export async function GET(
   }
 
   const status = await getAssignmentDeadlineStatus(
-    supabase,
+    auth.supabase,
     assignmentId,
     assignment.deadline as string
   );

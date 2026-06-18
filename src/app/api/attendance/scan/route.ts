@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyQRToken, hashQRToken } from "@/lib/qr-token";
+import { requireStudentRole } from "@/lib/auth/require-api-role";
 import { logAudit } from "@/lib/audit";
 import {
   ATTENDANCE_ALREADY_RECORDED_MESSAGE,
@@ -32,7 +33,7 @@ type DuplicateScanContext = {
 };
 
 async function respondDuplicateAttendance(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   context: DuplicateScanContext
 ) {
   let recordId = context.existingRecordId;
@@ -80,14 +81,11 @@ async function respondDuplicateAttendance(
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireStudentRole();
+  if (auth.error) return auth.error;
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = auth.supabase;
+  const user = auth.user;
 
   const body = await request.json();
   const identityParsed = attendanceDeviceIdentitySchema.safeParse({

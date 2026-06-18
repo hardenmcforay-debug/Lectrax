@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getProfileByUserId } from "@/lib/auth/get-profile";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
+import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import { requireLecturerRole } from "@/lib/auth/require-api-role";
 
 export async function DELETE(
   _request: Request,
@@ -9,21 +10,16 @@ export async function DELETE(
 ) {
   const { id: classSessionId, logId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await requireLecturerRole();
+  if (auth.error) return auth.error;
 
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const premiumGuard = await requirePremiumFeature(auth.userId, "audit_logs");
+  if (!premiumGuard.ok) {
+    const { error, code, status } = subscriptionGuardResponse(premiumGuard);
+    return NextResponse.json({ error, code }, { status });
   }
 
-  const profile = await getProfileByUserId(user.id);
-  if (profile?.role !== "lecturer") {
-    return NextResponse.json({ error: "Only lecturers can delete activity logs." }, { status: 403 });
-  }
-
-  const session = await getClassSessionForLecturer(classSessionId, user.id);
+  const session = await getClassSessionForLecturer(classSessionId, auth.userId);
   if (!session) {
     return NextResponse.json({ error: "Class session not found." }, { status: 404 });
   }

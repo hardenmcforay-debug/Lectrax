@@ -111,8 +111,15 @@ export default async function SessionDetailPage({
     : undefined;
 
   const sessionAssignments = (assignmentsResult.data ?? []) as SessionAssignmentSummary[];
-  const sessionAuditLogs = (auditLogsResult.data ??
-    []) as Pick<AuditLog, "id" | "action" | "entity_type" | "created_at">[];
+  const subscriptionDisplay = buildSubscriptionDisplay(subscription);
+  const showAuditLogs = isPremiumFeatureUnlocked(subscription);
+
+  const sessionAuditLogs = showAuditLogs
+    ? ((auditLogsResult.data ?? []) as Pick<
+        AuditLog,
+        "id" | "action" | "entity_type" | "created_at"
+      >[])
+    : [];
 
   const attendanceAuditSessions: SessionAttendanceAudit[] = (
     attendanceSessionsResult.data ?? []
@@ -125,9 +132,6 @@ export default async function SessionDetailPage({
     session_expires_at: s.session_expires_at,
     recordCount: (s.attendance_records as { count: number }[])?.[0]?.count ?? 0,
   }));
-
-  const subscriptionDisplay = buildSubscriptionDisplay(subscription);
-  const showAuditLogs = isPremiumFeatureUnlocked(subscription);
 
   return (
     <DashboardShell

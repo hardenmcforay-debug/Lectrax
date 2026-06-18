@@ -6,7 +6,8 @@ import {
   uploadAssignmentSubmission,
 } from "@/lib/assignments/submissions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { requireStudentRole } from "@/lib/auth/require-api-role";
+import { createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 async function logRejectedSubmission(params: {
@@ -37,14 +38,8 @@ export async function POST(
 ) {
   const { assignmentId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requireStudentRole();
+  if (auth.error) return auth.error;
 
   const formData = await request.formData();
   const file = formData.get("file");
@@ -53,7 +48,7 @@ export async function POST(
     return NextResponse.json({ error: "A PDF file is required." }, { status: 400 });
   }
 
-  const { data: assignment, error: assignmentError } = await supabase
+  const { data: assignment, error: assignmentError } = await auth.supabase
     .from("assignments")
     .select("id, lecturer_id, class_session_id, deadline, semester, academic_year, is_published")
     .eq("id", assignmentId)
@@ -83,7 +78,7 @@ export async function POST(
   );
   if (!beforeDeadline) {
     await logRejectedSubmission({
-      userId: user.id,
+      userId: auth.userId,
       assignmentId,
       classSessionId: assignment.class_session_id as string,
       deadline: assignment.deadline as string,
@@ -94,10 +89,10 @@ export async function POST(
     return NextResponse.json({ error: SUBMISSION_CLOSED_ERROR }, { status: 403 });
   }
 
-  const { data: enrollment, error: enrollmentError } = await supabase
+  const { data: enrollment, error: enrollmentError } = await auth.supabase
     .from("enrollments")
     .select("id")
-    .eq("student_id", user.id)
+    .eq("student_id", auth.userId)
     .eq("class_session_id", assignment.class_session_id)
     .maybeSingle();
 
@@ -105,7 +100,7 @@ export async function POST(
     return NextResponse.json({ error: "You are not enrolled in this class." }, { status: 403 });
   }
 
-  const { data: session, error: sessionError } = await supabase
+  const { data: session, error: sessionError } = await auth.supabase
     .from("class_sessions")
     .select("course_code")
     .eq("id", assignment.class_session_id)
@@ -115,12 +110,12 @@ export async function POST(
     return NextResponse.json({ error: "Class session not found." }, { status: 404 });
   }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await auth.supabase
     .from("assignment_submissions")
     .select("id")
     .eq("assignment_id", assignmentId)
     .eq("enrollment_id", enrollment.id)
-    .eq("student_id", user.id)
+    .eq("student_id", auth.userId)
     .maybeSingle();
 
   if (existing) {
@@ -131,8 +126,8 @@ export async function POST(
   }
 
   const { error } = await uploadAssignmentSubmission({
-    supabase,
-    userId: user.id,
+    supabase: auth.supabase,
+    userId: auth.userId,
     assignment,
     session,
     enrollmentId: enrollment.id,
@@ -149,7 +144,7 @@ export async function POST(
 
     if (isDeadlineRejection) {
       await logRejectedSubmission({
-        userId: user.id,
+        userId: auth.userId,
         assignmentId,
         classSessionId: assignment.class_session_id as string,
         deadline: assignment.deadline as string,

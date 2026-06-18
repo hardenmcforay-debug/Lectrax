@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getProfileByUserId } from "@/lib/auth/get-profile";
+import { createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
 import { getAttendanceSessionForLecturer } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import { requireLecturerRole } from "@/lib/auth/require-api-role";
 
 const manualSchema = z.object({
   attendanceSessionId: z.string().uuid(),
@@ -19,11 +19,6 @@ async function validateManualAttendanceRequest(
   enrollmentId: string,
   classSessionId: string
 ) {
-  const profile = await getProfileByUserId(userId);
-  if (profile?.role !== "lecturer") {
-    return { error: NextResponse.json({ error: "Only lecturers can manage attendance" }, { status: 403 }) };
-  }
-
   const writeGuard = await requireWritableSubscription(userId);
   if (!writeGuard.ok) {
     const { error, code, status } = subscriptionGuardResponse(writeGuard);
@@ -44,18 +39,29 @@ async function validateManualAttendanceRequest(
     };
   }
 
+  const service = await createServiceClient();
+  const { data: enrollment } = await service
+    .from("enrollments")
+    .select("id")
+    .eq("id", enrollmentId)
+    .eq("class_session_id", classSessionId)
+    .maybeSingle();
+
+  if (!enrollment) {
+    return {
+      error: NextResponse.json(
+        { error: "Enrollment not found for this class session." },
+        { status: 404 }
+      ),
+    };
+  }
+
   return { attendanceSession };
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireLecturerRole();
+  if (auth.error) return auth.error;
 
   let body: unknown;
   try {
@@ -72,14 +78,14 @@ export async function POST(request: Request) {
   const { attendanceSessionId, enrollmentId, classSessionId } = parsed.data;
 
   const validation = await validateManualAttendanceRequest(
-    user.id,
+    auth.userId,
     attendanceSessionId,
     enrollmentId,
     classSessionId
   );
   if (validation.error) return validation.error;
 
-  const { data: existing } = await supabase
+  const { data: existing } = await auth.supabase
     .from("attendance_records")
     .select("id")
     .eq("attendance_session_id", attendanceSessionId)
@@ -93,7 +99,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: record, error } = await supabase
+  const { data: record, error } = await auth.supabase
     .from("attendance_records")
     .insert({
       attendance_session_id: attendanceSessionId,
@@ -134,14 +140,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireLecturerRole();
+  if (auth.error) return auth.error;
 
   let body: unknown;
   try {
@@ -158,14 +158,14 @@ export async function DELETE(request: Request) {
   const { attendanceSessionId, enrollmentId, classSessionId } = parsed.data;
 
   const validation = await validateManualAttendanceRequest(
-    user.id,
+    auth.userId,
     attendanceSessionId,
     enrollmentId,
     classSessionId
   );
   if (validation.error) return validation.error;
 
-  const service = await createServiceClient();
+  const service = auth.service;
 
   const { data: record, error: fetchError } = await service
     .from("attendance_records")
