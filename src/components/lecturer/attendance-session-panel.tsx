@@ -71,6 +71,12 @@ function logPresentRecords(source: string, records: PresentRecordMap, detail?: R
   });
 }
 
+function formatStudentNameWithId(name: string, collegeId: string | null): string {
+  const trimmedId = collegeId?.trim();
+  if (!trimmedId) return name;
+  return `${name} (${trimmedId})`;
+}
+
 export function AttendanceSessionPanel({
   session,
   rows,
@@ -660,10 +666,11 @@ export function AttendanceSessionPanel({
               const markMethod = presentRecords.get(student.enrollmentId);
               const isMarked = markMethod !== undefined;
               const isQr = markMethod !== undefined && isQrLockedAttendance(markMethod);
+              const studentLabel = formatStudentNameWithId(student.name, student.collegeId);
 
               return (
                 <div key={student.enrollmentId} className="flex items-center justify-between gap-3">
-                  <span className="text-sm">{student.name}</span>
+                  <span className="text-sm">{studentLabel}</span>
                   {isMarked ? (
                     isQr ? (
                       <Button
@@ -671,7 +678,7 @@ export function AttendanceSessionPanel({
                         size="sm"
                         className="cursor-default bg-blue-600 text-white hover:bg-blue-600"
                         onClick={() =>
-                          handlePresentControlClick(student.enrollmentId, student.name)
+                          handlePresentControlClick(student.enrollmentId, studentLabel)
                         }
                       >
                         <Check className="mr-1 h-3.5 w-3.5" />
@@ -683,7 +690,7 @@ export function AttendanceSessionPanel({
                         size="sm"
                         className="bg-green-600 text-white hover:bg-green-700"
                         onClick={() =>
-                          handlePresentControlClick(student.enrollmentId, student.name)
+                          handlePresentControlClick(student.enrollmentId, studentLabel)
                         }
                       >
                         <Check className="mr-1 h-3.5 w-3.5" />

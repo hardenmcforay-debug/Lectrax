@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TestGradeRow } from "@/components/lecturer/test-grade-row";
+import { TestGradeMobileCard, TestGradeRow } from "@/components/lecturer/test-grade-row";
 import type { TestGradeEntryData } from "@/lib/lecturer/class-tests";
 import {
   buildGradeSavePayload,
@@ -191,33 +191,57 @@ export function TestGradesClient({
               No students enrolled. Add students on the session Students tab first.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border bg-white">
-              <Table className="table-fixed">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[45%] px-4 py-3 align-middle">Student name</TableHead>
-                    <TableHead className="w-[30%] px-4 py-3 align-middle">Student ID</TableHead>
-                    <TableHead className="w-[25%] px-4 py-3 text-right align-middle">Score</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => (
-                    <TestGradeRow
-                      key={row.enrollmentId}
-                      enrollmentId={row.enrollmentId}
-                      name={row.name}
-                      collegeId={row.collegeId}
-                      isManual={row.isManual}
-                      value={scores[row.enrollmentId] ?? ""}
-                      maxScore={maxScore}
-                      isDirty={dirtyByEnrollment.has(row.enrollmentId)}
-                      disabled={saving}
-                      onChange={updateScore}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              <div className="space-y-3 md:hidden">
+                {rows.map((row) => (
+                  <TestGradeMobileCard
+                    key={row.enrollmentId}
+                    enrollmentId={row.enrollmentId}
+                    name={row.name}
+                    collegeId={row.collegeId}
+                    isManual={row.isManual}
+                    value={scores[row.enrollmentId] ?? ""}
+                    maxScore={maxScore}
+                    isDirty={dirtyByEnrollment.has(row.enrollmentId)}
+                    disabled={saving}
+                    onChange={updateScore}
+                  />
+                ))}
+              </div>
+              <div className="portal-table-scroll hidden rounded-lg border bg-white md:block">
+                <Table className="min-w-[32rem]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[10rem] px-4 py-3 align-middle">
+                        Student name
+                      </TableHead>
+                      <TableHead className="min-w-[7rem] px-4 py-3 align-middle">
+                        Student ID
+                      </TableHead>
+                      <TableHead className="min-w-[9rem] px-4 py-3 text-right align-middle">
+                        Score
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row) => (
+                      <TestGradeRow
+                        key={row.enrollmentId}
+                        enrollmentId={row.enrollmentId}
+                        name={row.name}
+                        collegeId={row.collegeId}
+                        isManual={row.isManual}
+                        value={scores[row.enrollmentId] ?? ""}
+                        maxScore={maxScore}
+                        isDirty={dirtyByEnrollment.has(row.enrollmentId)}
+                        disabled={saving}
+                        onChange={updateScore}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
           {success && <p className="mt-3 text-sm text-green-700">{success}</p>}
