@@ -1,3 +1,7 @@
+/**
+ * Offline cache utilities.
+ * Do not persist credentials, tokens, or full profile records here.
+ */
 const CACHE_PREFIX = "lectrax:cache:";
 const DEFAULT_TTL_MS = 1000 * 60 * 60 * 6;
 
@@ -61,4 +65,18 @@ export function writeOfflineCache<T>(
 export function clearOfflineCache(key: OfflineCacheKey): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(getStorageKey(key));
+}
+
+const ALL_OFFLINE_CACHE_KEYS: OfflineCacheKey[] = [
+  "profile",
+  "dashboard-summary",
+  "navigation-state",
+  "recent-sessions",
+];
+
+/** Remove all Lectrax offline cache entries from localStorage (e.g. on logout). */
+export function clearAllOfflineCache(): void {
+  for (const key of ALL_OFFLINE_CACHE_KEYS) {
+    clearOfflineCache(key);
+  }
 }

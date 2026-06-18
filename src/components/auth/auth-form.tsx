@@ -24,6 +24,8 @@ import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
 import { sanitizeQueryParam } from "@/lib/security/sanitize";
+import { REMEMBER_EMAIL_STORAGE_KEY } from "@/lib/security/client-storage";
+import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 
 const authInputClass =
   "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
@@ -64,7 +66,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("lectrax_remember_email");
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_STORAGE_KEY);
     if (savedEmail) {
       setValue("email", savedEmail);
       setRememberMe(true);
@@ -87,9 +89,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     }
 
     if (rememberMe) {
-      localStorage.setItem("lectrax_remember_email", data.email);
+      localStorage.setItem(REMEMBER_EMAIL_STORAGE_KEY, data.email);
     } else {
-      localStorage.removeItem("lectrax_remember_email");
+      localStorage.removeItem(REMEMBER_EMAIL_STORAGE_KEY);
     }
 
     try {
@@ -108,6 +110,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       if (authError) {
         await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
         setError(
           mapSupabaseAuthError(authError, "login", "auth.login.signIn") ?? {
             title: "Sign In Failed",
@@ -121,6 +124,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
       const user = authData.user;
       if (!user) {
         await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage("Sign In Failed", "Sign in failed. Please try again.", true)
         );
@@ -131,6 +135,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       if (!role) {
         await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
         setError(
           networkFailure
             ? getAuthNetworkMessage("session")
@@ -145,6 +150,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       if (adminOnly && role !== "platform_admin") {
         await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage(
             "Access Denied",
@@ -157,6 +163,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       if (!adminOnly && role === "platform_admin") {
         await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage("Access Denied", getPlatformAdminMainAppLoginDeniedMessage(), false)
         );
@@ -358,6 +365,7 @@ export function SignupForm() {
 
         if (!resolvedRole) {
           await supabase.auth.signOut();
+        clearClientStorageAfterAuthReset();
           setError(
             networkFailure
               ? getAuthNetworkMessage("session")

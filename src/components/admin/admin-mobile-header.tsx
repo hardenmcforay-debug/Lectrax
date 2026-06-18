@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   ADMIN_NAV_ITEMS,
   getActiveAdminNavHref,
@@ -51,8 +51,7 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
 
   async function handleLogout() {
     setOpen(false);
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutAndClearClientStorage();
     router.push("/login");
     router.refresh();
   }

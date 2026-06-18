@@ -222,7 +222,7 @@ export function SessionPageClient({
         setStudentRows(data.rows);
       }
     } catch (err) {
-      console.error("[SessionPageClient] refreshStudentRows failed", err);
+      console.error("[SessionPageClient] refreshStudentRows failed");
     }
   }, [session.id]);
 

@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
+import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
 
 type ScanResponse = {
   error?: string;
@@ -303,7 +304,10 @@ export function QRScanner() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (token) void submitToken(token);
+    if (token) {
+      void submitToken(token);
+      stripSensitiveUrlParams();
+    }
   }, [searchParams, submitToken]);
 
   async function startScanner() {

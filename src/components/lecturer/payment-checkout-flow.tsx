@@ -81,7 +81,7 @@ export function PaymentCheckoutFlow({
           setPolling(false);
           onPaymentComplete?.();
           onOpenChange(false);
-          window.location.href = `/lecturer/subscription?success=1&payment=${ussdDetails.paymentId}`;
+          window.location.href = `/lecturer/subscription?success=1`;
         }
       })();
     }, 5000);

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   getLecturerMobilePageTitle,
   LECTURER_SETTINGS_HREF,
@@ -48,8 +48,7 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
 
   async function handleLogout() {
     setOpen(false);
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutAndClearClientStorage();
     router.push("/login");
     router.refresh();
   }

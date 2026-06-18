@@ -3,7 +3,6 @@ import {
   getCachedStudentDashboardSummary,
 } from "@/lib/auth/cached-queries";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
-import { OfflineCacheWriter } from "@/components/errors/offline-cache-writer";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StudentDashboardBody } from "@/components/student/student-dashboard-body";
 import { StudentDashboardHero } from "@/components/student/student-dashboard-hero";
@@ -22,8 +21,6 @@ export default async function StudentDashboard() {
 
   return (
     <DashboardShell role="student" headerVariant="hidden">
-      <OfflineCacheWriter cacheKey="profile" data={profile} />
-      <OfflineCacheWriter cacheKey="dashboard-summary" data={overview} />
       <StudentDashboardHero
         displayName={displayName}
         collegeId={profile?.college_id ?? null}

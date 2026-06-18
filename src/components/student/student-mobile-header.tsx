@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import { STUDENT_SETTINGS_HREF } from "@/lib/student/navigation";
 
 export function StudentMobileHeader() {
@@ -36,8 +36,7 @@ export function StudentMobileHeader() {
 
   async function handleLogout() {
     setOpen(false);
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutAndClearClientStorage();
     router.push("/login");
     router.refresh();
   }

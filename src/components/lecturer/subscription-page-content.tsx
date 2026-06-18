@@ -25,6 +25,7 @@ import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboar
 import { cn } from "@/lib/utils";
 import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/payment-currency";
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
+import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
 import { PaymentCheckoutFlow } from "@/components/lecturer/payment-checkout-flow";
 import { Check, Trash2 } from "lucide-react";
 import {
@@ -81,6 +82,7 @@ export function SubscriptionPageContent({
 
   useEffect(() => {
     void fetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
+    stripSensitiveUrlParams();
   }, []);
 
   async function refreshSubscriptionData() {

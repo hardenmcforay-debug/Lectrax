@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Settings, LogOut } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   getActiveStudentNavHref,
   STUDENT_NAV_ITEMS,
@@ -76,8 +76,7 @@ export function DashboardSidebar({
           );
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutAndClearClientStorage();
     router.push("/login");
     router.refresh();
   }
