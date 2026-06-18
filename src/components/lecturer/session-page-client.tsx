@@ -1,5 +1,6 @@
-import { appFetch } from "@/lib/api/client-fetch";
 "use client";
+
+import { appFetch } from "@/lib/api/client-fetch";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -222,7 +223,7 @@ export function SessionPageClient({
       if (res.ok && data.rows) {
         setStudentRows(data.rows);
       }
-    } catch (err) {
+    } catch {
       console.error("[SessionPageClient] refreshStudentRows failed");
     }
   }, [session.id]);

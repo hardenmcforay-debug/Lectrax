@@ -1,5 +1,6 @@
-import { appFetch } from "@/lib/api/client-fetch";
 "use client";
+
+import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useState } from "react";
 import { Copy, Loader2, Smartphone } from "lucide-react";

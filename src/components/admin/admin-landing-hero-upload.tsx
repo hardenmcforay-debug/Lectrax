@@ -1,5 +1,6 @@
-import { appFetch } from "@/lib/api/client-fetch";
 "use client";
+
+import { appFetch } from "@/lib/api/client-fetch";
 
 import { useRef, useState } from "react";
 import Image from "next/image";

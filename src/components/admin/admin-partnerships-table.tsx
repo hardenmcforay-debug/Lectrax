@@ -1,5 +1,6 @@
-import { appFetch } from "@/lib/api/client-fetch";
 "use client";
+
+import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Trash2 } from "lucide-react";
