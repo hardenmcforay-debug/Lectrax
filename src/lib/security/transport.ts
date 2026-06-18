@@ -83,23 +83,11 @@ export function normalizeSecureOrigin(url: string): string {
   }
 }
 
-/** Security response headers applied to all routes. */
-export function getSecurityHeaders(): Array<{ key: string; value: string }> {
-  const headers: Array<{ key: string; value: string }> = [
-    { key: "X-Content-Type-Options", value: "nosniff" },
-    { key: "X-Frame-Options", value: "DENY" },
-    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  ];
-
-  if (isProduction()) {
-    headers.push({
-      key: "Strict-Transport-Security",
-      value: "max-age=63072000; includeSubDomains; preload",
-    });
-  }
-
-  return headers;
-}
+export {
+  getSecurityHeaders,
+  getContentSecurityPolicy,
+  getPermissionsPolicy,
+} from "@/lib/security/headers";
 
 /**
  * Block insecure absolute HTTP requests from the browser in production.

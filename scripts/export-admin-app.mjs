@@ -177,7 +177,7 @@ function writeAdminConfigs() {
   writeFileSync(
     join(OUT, "next.config.ts"),
     `import type { NextConfig } from "next";
-import { getSecurityHeaders } from "./src/lib/security/transport";
+import { getAdminSecurityHeaderRoutes } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
   images: {
@@ -189,39 +189,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    const securityHeaders = [
-      ...getSecurityHeaders(),
-      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-    ];
-
-    return [
-      {
-        source: "/:path*",
-        headers: securityHeaders,
-      },
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
-          {
-            key: "Service-Worker-Allowed",
-            value: "/",
-          },
-        ],
-      },
-      {
-        source: "/manifest.json",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400",
-          },
-        ],
-      },
-    ];
+    return getAdminSecurityHeaderRoutes();
   },
 };
 
