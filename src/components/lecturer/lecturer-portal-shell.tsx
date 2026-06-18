@@ -27,12 +27,11 @@ export function LecturerPortalShell({
   const showHeader = headerVariant !== "hidden";
   const useGreetingHeader = headerVariant === "lecturer-greeting";
 
-  if (typeof document !== "undefined") {
-    applyPortalChromeMarks();
-  }
-
   useLayoutEffect(() => {
     applyPortalChromeMarks();
+    requestAnimationFrame(() => {
+      applyPortalChromeMarks();
+    });
   }, []);
 
   const desktopHeaderClass =

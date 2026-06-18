@@ -27,14 +27,17 @@ export function applyPortalChromeMarks() {
 
   const root = document.documentElement;
   const standalone = isStandaloneMode();
+  const mobile = standalone || isMobileLayoutViewport();
 
-  if (standalone) {
+  if (standalone && root.dataset.pwaStandalone !== "true") {
     root.dataset.pwaStandalone = "true";
-    // Installed PWAs always use mobile chrome, including tablet widths.
-    root.dataset.portalMobile = "true";
-  } else if (isMobileLayoutViewport()) {
-    root.dataset.portalMobile = "true";
-  } else {
+  }
+
+  if (mobile) {
+    if (root.dataset.portalMobile !== "true") {
+      root.dataset.portalMobile = "true";
+    }
+  } else if (root.dataset.portalMobile !== undefined) {
     delete root.dataset.portalMobile;
   }
 }

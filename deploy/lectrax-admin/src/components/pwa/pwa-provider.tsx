@@ -1,19 +1,14 @@
 "use client";
 
-import { useInsertionEffect, useLayoutEffect } from "react";
+import { useLayoutEffect } from "react";
 import { applyPortalChromeMarks } from "@/lib/pwa/portal-chrome";
 
 export function PwaProvider() {
-  if (typeof document !== "undefined") {
-    applyPortalChromeMarks();
-  }
-
-  useInsertionEffect(() => {
-    applyPortalChromeMarks();
-  }, []);
-
   useLayoutEffect(() => {
     applyPortalChromeMarks();
+    requestAnimationFrame(() => {
+      applyPortalChromeMarks();
+    });
 
     const handleResume = () => {
       applyPortalChromeMarks();
@@ -27,13 +22,11 @@ export function PwaProvider() {
 
     window.addEventListener("pageshow", handleResume);
     document.addEventListener("visibilitychange", handleVisibility);
-    window.visualViewport?.addEventListener("resize", handleResume);
 
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
       return () => {
         window.removeEventListener("pageshow", handleResume);
         document.removeEventListener("visibilitychange", handleVisibility);
-        window.visualViewport?.removeEventListener("resize", handleResume);
       };
     }
 
@@ -41,7 +34,6 @@ export function PwaProvider() {
       return () => {
         window.removeEventListener("pageshow", handleResume);
         document.removeEventListener("visibilitychange", handleVisibility);
-        window.visualViewport?.removeEventListener("resize", handleResume);
       };
     }
 
@@ -62,7 +54,6 @@ export function PwaProvider() {
     return () => {
       window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.visualViewport?.removeEventListener("resize", handleResume);
     };
   }, []);
 

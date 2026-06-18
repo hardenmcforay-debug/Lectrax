@@ -1,22 +1,21 @@
 "use client";
 
-import { useInsertionEffect, useLayoutEffect } from "react";
+import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { applyPortalChromeMarks, isPortalRoutePath } from "@/lib/pwa/portal-chrome";
+
+function syncPortalChromeMarks() {
+  applyPortalChromeMarks();
+  requestAnimationFrame(() => {
+    applyPortalChromeMarks();
+  });
+}
 
 export function PortalChromeSync() {
   const pathname = usePathname();
 
-  if (typeof document !== "undefined") {
-    applyPortalChromeMarks();
-  }
-
-  useInsertionEffect(() => {
-    applyPortalChromeMarks();
-  }, [pathname]);
-
   useLayoutEffect(() => {
-    applyPortalChromeMarks();
+    syncPortalChromeMarks();
   }, [pathname]);
 
   useLayoutEffect(() => {
