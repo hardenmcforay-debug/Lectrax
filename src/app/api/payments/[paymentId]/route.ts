@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireLecturerRole } from "@/lib/auth/require-api-role";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function DELETE(
   _request: Request,
@@ -7,21 +9,15 @@ export async function DELETE(
 ) {
   const { paymentId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const auth = await requireLecturerRole();
+  if (auth.error) return auth.error;
 
   const service = await createServiceClient();
   const { data: payment } = await service
     .from("payments")
     .select("id, lecturer_id, status")
     .eq("id", paymentId)
-    .eq("lecturer_id", user.id)
+    .eq("lecturer_id", auth.userId)
     .maybeSingle();
 
   if (!payment) {
@@ -38,7 +34,7 @@ export async function DELETE(
   const { error } = await service.from("payments").delete().eq("id", paymentId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 500 });
   }
 
   return NextResponse.json({ message: "Payment record deleted." });

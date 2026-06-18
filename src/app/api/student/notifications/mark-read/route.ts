@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const markReadSchema = z.object({
   type: z.enum(["assignment", "grade", "attendance"]),
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json(
-      { error: error.message ?? "Could not mark notifications as read" },
+      { error: sanitizeErrorMessage(error.message ?? "Could not mark notifications as read") },
       { status: 500 }
     );
   }

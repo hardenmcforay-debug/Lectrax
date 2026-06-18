@@ -7,6 +7,7 @@ import {
   requireWritableSubscription,
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 
   if (sessionError || !session) {
     return NextResponse.json(
-      { error: sessionError?.message ?? "Could not create class session" },
+      { error: sanitizeErrorMessage(sessionError?.message ?? "Could not create class session") },
       { status: 500 }
     );
   }

@@ -12,6 +12,7 @@ import {
   getClassSessionLabel,
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(
   request: Request,
@@ -94,7 +95,10 @@ export async function POST(
     .single();
 
   if (error || !assignment) {
-    return NextResponse.json({ error: error?.message ?? "Could not create assignment" }, { status: 500 });
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(error?.message ?? "Could not create assignment") },
+      { status: 500 }
+    );
   }
 
   const classLabel = await getClassSessionLabel(service, classSessionId);

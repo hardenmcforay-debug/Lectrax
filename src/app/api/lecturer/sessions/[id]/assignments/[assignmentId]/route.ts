@@ -12,10 +12,9 @@ import {
 
 } from "@/lib/lecturer/class-assignments";
 
-
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function DELETE(
-
   _request: Request,
 
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
@@ -86,7 +85,7 @@ export async function DELETE(
 
     const message = err instanceof Error ? err.message : "Could not delete assignment.";
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
 
   }
 

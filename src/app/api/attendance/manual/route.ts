@@ -6,6 +6,7 @@ import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
 import { getAttendanceSessionForLecturer } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const manualSchema = z.object({
   attendanceSessionId: z.string().uuid(),
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
   await logAudit({
@@ -176,7 +177,7 @@ export async function DELETE(request: Request) {
     .maybeSingle();
 
   if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(fetchError.message) }, { status: 500 });
   }
 
   if (!record) {
@@ -205,7 +206,7 @@ export async function DELETE(request: Request) {
     .eq("id", record.id);
 
   if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(deleteError.message) }, { status: 500 });
   }
 
   await logAudit({

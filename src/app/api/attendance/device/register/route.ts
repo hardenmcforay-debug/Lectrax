@@ -5,6 +5,7 @@ import {
   attendanceDeviceIdentitySchema,
   deviceBoundToOtherAccountResponse,
 } from "@/lib/attendance/device-verification";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
   if (status === "not_student") {

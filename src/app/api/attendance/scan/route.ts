@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyQRToken, hashQRToken } from "@/lib/qr-token";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { logAudit } from "@/lib/audit";
 import {
   ATTENDANCE_ALREADY_RECORDED_MESSAGE,
@@ -193,7 +194,7 @@ export async function POST(request: Request) {
   );
 
   if (verifyError) {
-    return NextResponse.json({ error: verifyError.message }, { status: 400 });
+    return NextResponse.json({ error: sanitizeErrorMessage(verifyError.message) }, { status: 400 });
   }
 
   const status = verificationStatus as DeviceVerificationStatus;
@@ -249,7 +250,7 @@ export async function POST(request: Request) {
     );
 
     if (registerError) {
-      return NextResponse.json({ error: registerError.message }, { status: 400 });
+      return NextResponse.json({ error: sanitizeErrorMessage(registerError.message) }, { status: 400 });
     }
 
     if (registerStatus === "device_owned_by_other") {
@@ -327,7 +328,7 @@ export async function POST(request: Request) {
         deviceIdentifier,
       });
     }
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
   await logAudit({

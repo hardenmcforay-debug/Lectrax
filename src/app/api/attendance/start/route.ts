@@ -15,6 +15,7 @@ import {
   getClassSessionLabel,
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const startSchema = z.object({
   classSessionId: z.string().uuid(),
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
 
   if (insertError || !session) {
     return NextResponse.json(
-      { error: insertError?.message ?? "Could not start attendance session" },
+      { error: sanitizeErrorMessage(insertError?.message ?? "Could not start attendance session") },
       { status: 500 }
     );
   }

@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function DELETE(
   _request: Request,
@@ -32,7 +33,7 @@ export async function DELETE(
 
   if (deleteError) {
     return NextResponse.json(
-      { error: deleteError.message ?? "Could not delete activity logs." },
+      { error: sanitizeErrorMessage(deleteError.message ?? "Could not delete activity logs.") },
       { status: 500 }
     );
   }

@@ -8,6 +8,7 @@ import {
   requireWritableSubscription,
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(
   request: Request,
@@ -77,7 +78,7 @@ export async function POST(
 
   if (manualError || !manual) {
     return NextResponse.json(
-      { error: manualError?.message ?? "Could not create manual student" },
+      { error: sanitizeErrorMessage(manualError?.message ?? "Could not create manual student") },
       { status: 500 }
     );
   }
@@ -96,7 +97,7 @@ export async function POST(
   if (enrollError || !enrollment) {
     await service.from("manual_students").delete().eq("id", manual.id);
     return NextResponse.json(
-      { error: enrollError?.message ?? "Could not enroll manual student" },
+      { error: sanitizeErrorMessage(enrollError?.message ?? "Could not enroll manual student") },
       { status: 500 }
     );
   }

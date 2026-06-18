@@ -7,6 +7,7 @@ import { buildRotatedQRToken, buildScanUrl, invalidSessionTokenHash } from "@/li
 import {
   getAttendanceSessionForLecturer,
 } from "@/lib/attendance/sessions";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const refreshSchema = z.object({
   attendanceSessionId: z.string().uuid(),
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
     .eq("id", attendanceSession.id);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(updateError.message) }, { status: 500 });
   }
 
   const appUrl = resolveAppUrl(request);

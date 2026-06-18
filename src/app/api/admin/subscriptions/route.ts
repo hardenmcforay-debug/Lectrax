@@ -7,6 +7,7 @@ import {
   revokePremiumSubscription,
 } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const activateSchema = z.object({
   lecturerId: z.string().uuid(),
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, subscription });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to activate subscription";
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to activate subscription"
+    );
     return NextResponse.json({ error: message }, { status: 409 });
   }
 }

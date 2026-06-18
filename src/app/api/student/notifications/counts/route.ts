@@ -6,6 +6,7 @@ import {
   EMPTY_STUDENT_NOTIFICATION_COUNTS,
   type StudentNotificationType,
 } from "@/lib/student/notifications";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function GET() {
   const supabase = await createClient();
@@ -30,7 +31,7 @@ export async function GET() {
 
   if (error) {
     return NextResponse.json(
-      { error: error.message ?? "Could not load notifications" },
+      { error: sanitizeErrorMessage(error.message ?? "Could not load notifications") },
       { status: 500 }
     );
   }

@@ -4,6 +4,7 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassTestForLecturer } from "@/lib/lecturer/class-tests";
 import { testScoresBulkSchema } from "@/lib/validations";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import {
   getClassSessionLabel,
   notifyStudentsByEnrollmentIds,
@@ -100,7 +101,7 @@ export async function PUT(
 
     if (deleteError) {
       return NextResponse.json(
-        { error: deleteError.message ?? "Could not clear scores" },
+        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear scores") },
         { status: 500 }
       );
     }
@@ -125,7 +126,7 @@ export async function PUT(
     });
 
     if (error) {
-      const message = error.message ?? "Could not save scores";
+      const message = sanitizeErrorMessage(error.message ?? "Could not save scores");
       const legacyUnique =
         message.includes("class_session_id_enrollment_id") ||
         message.includes("semester_academi");

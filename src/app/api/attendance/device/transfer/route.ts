@@ -7,6 +7,7 @@ import {
   deviceBoundToOtherAccountResponse,
   isDeviceOwnedByOtherError,
 } from "@/lib/attendance/device-verification";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     if (isDeviceOwnedByOtherError(error.message)) {
       return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
     }
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
   await logAudit({

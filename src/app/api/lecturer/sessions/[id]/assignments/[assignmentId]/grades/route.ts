@@ -6,6 +6,7 @@ import {
   getClassAssignmentForLecturer,
 } from "@/lib/lecturer/class-assignments";
 import { testScoresBulkSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import {
   getClassSessionLabel,
@@ -125,7 +126,7 @@ export async function PUT(
 
     if (deleteError) {
       return NextResponse.json(
-        { error: deleteError.message ?? "Could not clear grades" },
+        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear grades") },
         { status: 500 }
       );
     }
@@ -145,7 +146,7 @@ export async function PUT(
 
     if (upsertError) {
       return NextResponse.json(
-        { error: upsertError.message ?? "Could not save grades" },
+        { error: sanitizeErrorMessage(upsertError.message ?? "Could not save grades") },
         { status: 500 }
       );
     }

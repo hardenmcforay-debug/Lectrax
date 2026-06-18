@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { invalidSessionTokenHash } from "@/lib/attendance/qr-rotation";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const endSchema = z.object({
   attendanceSessionId: z.string().uuid(),
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     .eq("id", attendanceSession.id);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(updateError.message) }, { status: 500 });
   }
 
   void logAudit({

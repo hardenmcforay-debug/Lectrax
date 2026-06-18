@@ -5,6 +5,7 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { deleteClassSession } from "@/lib/lecturer/delete-class-session";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function DELETE(
   _request: Request,
@@ -52,6 +53,6 @@ export async function DELETE(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not close class session.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }

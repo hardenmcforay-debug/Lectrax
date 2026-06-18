@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassAssignmentForLecturer } from "@/lib/lecturer/class-assignments";
 import { deleteSubmissionFile } from "@/lib/assignments/submissions";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function DELETE(
   _request: Request,
@@ -38,7 +39,7 @@ export async function DELETE(
 
   if (submissionsError) {
     return NextResponse.json(
-      { error: submissionsError.message ?? "Could not load submissions." },
+      { error: sanitizeErrorMessage(submissionsError.message ?? "Could not load submissions.") },
       { status: 500 }
     );
   }
@@ -83,7 +84,7 @@ export async function DELETE(
 
   if (deleteError) {
     return NextResponse.json(
-      { error: deleteError.message ?? "Could not delete submissions." },
+      { error: sanitizeErrorMessage(deleteError.message ?? "Could not delete submissions.") },
       { status: 500 }
     );
   }

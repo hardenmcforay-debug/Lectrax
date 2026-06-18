@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { joinSessionSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (sessionError) {
-    return NextResponse.json({ error: sessionError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(sessionError.message) }, { status: 500 });
   }
 
   if (!session) {
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
     if (enrollError.code === "23505") {
       return NextResponse.json({ error: "You are already enrolled in this class." }, { status: 409 });
     }
-    return NextResponse.json({ error: enrollError.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(enrollError.message) }, { status: 500 });
   }
 
   return NextResponse.json({

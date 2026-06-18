@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getAttendanceSessionPresentStudents } from "@/lib/lecturer/attendance-sessions";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function GET(
   _request: Request,
@@ -37,6 +38,6 @@ export async function GET(
     return NextResponse.json({ students });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not load present students.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }

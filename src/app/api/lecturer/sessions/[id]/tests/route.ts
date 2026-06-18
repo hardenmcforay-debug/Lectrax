@@ -4,6 +4,7 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { getClassTestsForSession, getNextTestNumber } from "@/lib/lecturer/class-tests";
 import { classTestSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import {
   checkFreePlanLimit,
   requireWritableSubscription,
@@ -154,7 +155,7 @@ export async function POST(
 
   if (error || !test) {
     return NextResponse.json(
-      { error: error?.message ?? "Could not create test" },
+      { error: sanitizeErrorMessage(error?.message ?? "Could not create test") },
       { status: 500 }
     );
   }

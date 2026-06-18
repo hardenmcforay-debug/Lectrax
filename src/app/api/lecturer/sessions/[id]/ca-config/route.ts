@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { caConfigSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function PUT(
   request: Request,
@@ -59,7 +60,7 @@ export async function PUT(
 
   if (error) {
     return NextResponse.json(
-      { error: error.message ?? "Could not save CA configuration" },
+      { error: sanitizeErrorMessage(error.message ?? "Could not save CA configuration") },
       { status: 500 }
     );
   }

@@ -8,6 +8,7 @@ import {
   getLandingHeroImageSetting,
   isAllowedBrandingImage,
 } from "@/lib/landing/site-branding";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
   if (uploadError) {
     return NextResponse.json(
-      { error: uploadError.message ?? "Could not upload image." },
+      { error: sanitizeErrorMessage(uploadError.message ?? "Could not upload image.") },
       { status: 500 }
     );
   }
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
 
   if (settingsError) {
     return NextResponse.json(
-      { error: settingsError.message ?? "Image uploaded but settings could not be saved." },
+      { error: sanitizeErrorMessage(settingsError.message ?? "Image uploaded but settings could not be saved.") },
       { status: 500 }
     );
   }
@@ -96,7 +97,7 @@ export async function DELETE() {
 
   if (error) {
     return NextResponse.json(
-      { error: error.message ?? "Could not remove hero image." },
+      { error: sanitizeErrorMessage(error.message ?? "Could not remove hero image.") },
       { status: 500 }
     );
   }
