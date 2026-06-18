@@ -2,10 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   ASSIGNMENT_SUBMISSIONS_BUCKET,
   buildSubmissionStoragePath,
-  isPdfFile,
-  MAX_SUBMISSION_FILE_SIZE,
 } from "@/lib/assignments/storage";
-import { sanitizeFilename } from "@/lib/security/sanitize";
+import { validateSubmissionFile } from "@/lib/assignments/submission-validation";
+export { validateSubmissionFile } from "@/lib/assignments/submission-validation";
 import type { Assignment, ClassSession } from "@/types/database";
 import { SUBMISSION_CLOSED_ERROR } from "@/lib/assignments/deadline-messages";
 import { isAssignmentBeforeDeadline } from "@/lib/assignments/deadline-server";
@@ -40,27 +39,6 @@ export async function deleteSubmissionFile(
   if (!storagePath) return;
 
   await supabase.storage.from(ASSIGNMENT_SUBMISSIONS_BUCKET).remove([storagePath]);
-}
-
-export function validateSubmissionFile(file: File): string | null {
-  const safeName = sanitizeFilename(file.name);
-  if (!safeName.toLowerCase().endsWith(".pdf")) {
-    return "Only PDF files are allowed. Images, archives, and videos are not permitted.";
-  }
-
-  if (!isPdfFile({ type: file.type, name: safeName })) {
-    return "Only PDF files are allowed. Images, archives, and videos are not permitted.";
-  }
-
-  if (file.size > MAX_SUBMISSION_FILE_SIZE) {
-    return `File exceeds the 10 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
-  }
-
-  if (file.size === 0) {
-    return "The selected file is empty.";
-  }
-
-  return null;
 }
 
 export async function uploadAssignmentSubmission(params: {

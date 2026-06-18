@@ -1,17 +1,14 @@
 import { createPublicReadClient } from "@/lib/supabase/server";
 
+export {
+  BRANDING_IMAGE_MAX_BYTES,
+  isAllowedBrandingImage,
+  validateBrandingImageFile,
+} from "@/lib/landing/branding-image-validation";
+
 export const LANDING_ASSETS_BUCKET = "landing-assets";
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
 export const SITE_LOGO_SETTING_KEY = "site_logo";
-export const BRANDING_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/svg+xml",
-]);
 
 export type BrandingImageSetting = {
   storage_path: string;
@@ -39,21 +36,6 @@ export function extensionForImageMime(mime: string): string | null {
     default:
       return null;
   }
-}
-
-export function isAllowedBrandingImage(file: { type: string; size: number }): boolean {
-  return (
-    ALLOWED_IMAGE_TYPES.has(file.type) &&
-    file.size > 0 &&
-    file.size <= BRANDING_IMAGE_MAX_BYTES
-  );
-}
-
-export function validateBrandingImageFile(file: File): string | null {
-  if (!isAllowedBrandingImage(file)) {
-    return "Invalid image. Use JPEG, PNG, WebP, GIF, or SVG up to 5 MB.";
-  }
-  return null;
 }
 
 export function buildHeroImageStoragePath(ext: string): string {

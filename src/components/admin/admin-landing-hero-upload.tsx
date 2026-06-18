@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { validateBrandingImageFile } from "@/lib/landing/site-branding";
+import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 type AdminLandingHeroUploadProps = {

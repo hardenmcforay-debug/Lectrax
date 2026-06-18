@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatFileSize, MAX_SUBMISSION_FILE_SIZE } from "@/lib/assignments/storage";
-import { validateSubmissionFile } from "@/lib/assignments/submissions";
+import { validateSubmissionFile } from "@/lib/assignments/submission-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import type { StudentAssignmentDetailData } from "@/lib/student/assignment-queries";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";

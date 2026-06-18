@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/logo";
-import { validateBrandingImageFile } from "@/lib/landing/site-branding";
+import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 type AdminSiteLogoUploadProps = {
