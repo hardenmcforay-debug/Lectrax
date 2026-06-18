@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,15 +21,18 @@ export async function GET(
 
   const { id: classSessionId, assignmentId } = await params;
 
-  const enrollmentId = new URL(request.url).searchParams.get("enrollmentId");
+  const enrollmentIdParam = new URL(request.url).searchParams.get("enrollmentId");
 
-
-
-  if (!enrollmentId) {
-
+  if (!enrollmentIdParam) {
     return NextResponse.json({ error: "enrollmentId is required." }, { status: 400 });
-
   }
+
+  const enrollmentIdParsed = z.string().uuid().safeParse(enrollmentIdParam);
+  if (!enrollmentIdParsed.success) {
+    return NextResponse.json({ error: "Invalid enrollmentId." }, { status: 400 });
+  }
+
+  const enrollmentId = enrollmentIdParsed.data;
 
 
 
