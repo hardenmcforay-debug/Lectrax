@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
-import { z } from "zod";
-
-const joinSchema = z.object({
-  sessionCode: z.string().min(4).max(10),
-});
+import { joinSessionSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -29,12 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const parsed = joinSchema.safeParse(body);
+  const parsed = joinSessionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a valid session code" }, { status: 400 });
   }
 
-  const sessionCode = parsed.data.sessionCode.toUpperCase().trim();
+  const sessionCode = parsed.data.sessionCode;
   const service = await createServiceClient();
 
   const { data: session, error: sessionError } = await service

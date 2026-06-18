@@ -5,6 +5,7 @@ import {
   isPdfFile,
   MAX_SUBMISSION_FILE_SIZE,
 } from "@/lib/assignments/storage";
+import { sanitizeFilename } from "@/lib/security/sanitize";
 import type { Assignment, ClassSession } from "@/types/database";
 import { SUBMISSION_CLOSED_ERROR } from "@/lib/assignments/deadline-messages";
 import { isAssignmentBeforeDeadline } from "@/lib/assignments/deadline-server";
@@ -42,7 +43,12 @@ export async function deleteSubmissionFile(
 }
 
 export function validateSubmissionFile(file: File): string | null {
-  if (!isPdfFile(file)) {
+  const safeName = sanitizeFilename(file.name);
+  if (!safeName.toLowerCase().endsWith(".pdf")) {
+    return "Only PDF files are allowed. Images, archives, and videos are not permitted.";
+  }
+
+  if (!isPdfFile({ type: file.type, name: safeName })) {
     return "Only PDF files are allowed. Images, archives, and videos are not permitted.";
   }
 

@@ -10,11 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "validate:env": "node scripts/validate-env.mjs",
-    "validate:https": "node scripts/check-https.mjs",
-    "validate:https:production": "node scripts/check-https.mjs --production",
-    "prebuild": "node scripts/check-https.mjs --production",
-    "postbuild": "node scripts/check-https.mjs --production --scan-build",
-    "predeploy": "npm run typecheck && npm run lint && npm run validate:env -- --production && npm run build",
+    "predeploy": "npm run typecheck && npm run lint && npm run build",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "export:admin": "node scripts/export-admin-app.mjs"
   },

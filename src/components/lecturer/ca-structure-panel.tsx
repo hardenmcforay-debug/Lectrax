@@ -29,6 +29,8 @@ import {
 } from "@/lib/ca/test-columns";
 import { EMPTY_CA_WEIGHTS, type CAWeights } from "@/lib/ca/constants";
 import { CaWeightInput } from "@/components/lecturer/ca-weight-input";
+import { classTestSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 interface CaStructurePanelProps {
   session: ClassSession;
@@ -170,23 +172,33 @@ export function CaStructurePanel({
   async function handleCreateTest() {
     if (!nextTestNumber) return;
     setCreateError(null);
+
+    const parsed = classTestSchema.safeParse({
+      testNumber: nextTestNumber,
+      title: testTitle.trim() || getDefaultTestTitle(nextTestNumber),
+      maxScore,
+    });
+
+    if (!parsed.success) {
+      setCreateError(parsed.error.errors[0]?.message ?? "Invalid test details.");
+      return;
+    }
+
     setCreating(true);
 
     try {
       const res = await fetch(`/api/lecturer/sessions/${session.id}/tests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          testNumber: nextTestNumber,
-          title: testTitle.trim() || getDefaultTestTitle(nextTestNumber),
-          maxScore,
-        }),
+        body: JSON.stringify(parsed.data),
       });
 
       const data = (await res.json()) as { test?: ClassTest; error?: string };
 
       if (!res.ok || !data.test) {
-        setCreateError(data.error ?? "Could not create test.");
+        setCreateError(
+          sanitizeErrorMessage(data.error) ?? "Could not create test."
+        );
         return;
       }
 

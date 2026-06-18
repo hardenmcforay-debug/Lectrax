@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { z } from "zod";
-
-const profileUpdateSchema = z.object({
-  fullName: z.string().min(2, "Name is required"),
-  phone: z.string().optional(),
-  collegeId: z.string().optional(),
-});
+import { profileUpdateSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function GET() {
   const supabase = await createClient();
@@ -27,7 +22,10 @@ export async function GET() {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(error.message) },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ profile });
@@ -59,8 +57,8 @@ export async function PATCH(request: Request) {
   }
 
   const { fullName, phone, collegeId } = parsed.data;
-  const trimmedName = fullName.trim();
-  const trimmedPhone = phone?.trim() || null;
+  const trimmedName = fullName;
+  const trimmedPhone = phone ?? null;
 
   const service = await createServiceClient();
   const { data: existing, error: readError } = await service
@@ -70,7 +68,10 @@ export async function PATCH(request: Request) {
     .maybeSingle();
 
   if (readError) {
-    return NextResponse.json({ error: readError.message }, { status: 500 });
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(readError.message) },
+      { status: 500 }
+    );
   }
 
   const role =
@@ -87,7 +88,7 @@ export async function PATCH(request: Request) {
   };
 
   if (role === "student" || collegeId !== undefined) {
-    payload.college_id = collegeId?.trim() || null;
+    payload.college_id = collegeId ?? null;
   }
 
   let savedProfile;
@@ -100,7 +101,7 @@ export async function PATCH(request: Request) {
         email: user.email ?? `${user.id}@users.local`,
         full_name: trimmedName,
         phone: trimmedPhone,
-        college_id: role === "student" ? collegeId?.trim() || null : null,
+        college_id: role === "student" ? collegeId ?? null : null,
         role,
         is_active: true,
       })
@@ -108,7 +109,10 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: sanitizeErrorMessage(error.message) },
+        { status: 500 }
+      );
     }
     savedProfile = data;
   } else {
@@ -120,7 +124,10 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: sanitizeErrorMessage(error.message) },
+        { status: 500 }
+      );
     }
 
     if (!data) {
@@ -138,7 +145,10 @@ export async function PATCH(request: Request) {
   });
 
   if (authError) {
-    return NextResponse.json({ error: authError.message }, { status: 500 });
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(authError.message) },
+      { status: 500 }
+    );
   }
 
   revalidatePath("/student");

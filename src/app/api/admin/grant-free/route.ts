@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { adminActivatePremium } from "@/lib/subscription/lifecycle";
-import type { BillingPlan } from "@/types/database";
+import { adminGrantFreeSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 /** Legacy route — delegates to profile-based premium activation */
 export async function POST(request: Request) {
@@ -21,12 +22,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { lecturerId, days = 365 } = await request.json();
-  if (!lecturerId) {
-    return NextResponse.json({ error: "lecturerId required" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  let billingPlan: BillingPlan = "annual";
+  const parsed = adminGrantFreeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message ?? "Invalid request" },
+      { status: 400 }
+    );
+  }
+
+  const { lecturerId, days } = parsed.data;
+
+  let billingPlan: "monthly" | "semester" | "annual" = "annual";
   if (days <= 35) billingPlan = "monthly";
   else if (days <= 130) billingPlan = "semester";
 
@@ -39,7 +52,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, subscription });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to activate subscription";
-    return NextResponse.json({ error: message }, { status: 409 });
+    const message =
+      error instanceof Error ? error.message : "Failed to activate subscription";
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(message) },
+      { status: 409 }
+    );
   }
 }

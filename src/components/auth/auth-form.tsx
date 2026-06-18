@@ -23,6 +23,7 @@ import { AuthErrorNotice } from "@/components/auth/auth-error-notice";
 import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
+import { sanitizeQueryParam } from "@/lib/security/sanitize";
 
 const authInputClass =
   "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
@@ -37,7 +38,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
   const searchParams = useSearchParams();
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<AuthUserMessage | null>(() => {
-    const authError = searchParams.get("error");
+    const authError = sanitizeQueryParam(searchParams.get("error"), 20);
     if (authError === "auth") {
       return toAuthMessage(
         "Sign In Failed",
@@ -50,7 +51,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     return null;
   });
   const [info, setInfo] = useState<string | null>(() => {
-    if (searchParams.get("message") === "confirm-email") {
+    if (sanitizeQueryParam(searchParams.get("message"), 30) === "confirm-email") {
       return "Account created. Check your email to confirm, then sign in.";
     }
     return null;

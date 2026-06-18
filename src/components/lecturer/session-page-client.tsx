@@ -48,6 +48,8 @@ import type { AttendancePresentStudent } from "@/lib/lecturer/attendance-session
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
 import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { isPastDeadline } from "@/lib/assignments/deadline";
+import { manualStudentSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 const SESSION_TAB_ITEMS = [
@@ -332,9 +334,13 @@ export function SessionPageClient({
     event?.preventDefault();
     setManualError(null);
 
-    const fullName = manualName.trim();
-    if (fullName.length < 2) {
-      setManualError("Enter the student's full name (at least 2 characters).");
+    const parsed = manualStudentSchema.safeParse({
+      fullName: manualName,
+      collegeId: manualCollegeId || undefined,
+    });
+
+    if (!parsed.success) {
+      setManualError(parsed.error.errors[0]?.message ?? "Invalid student details.");
       return;
     }
 
@@ -344,16 +350,15 @@ export function SessionPageClient({
       const res = await fetch(`/api/lecturer/sessions/${session.id}/students/manual`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName,
-          collegeId: manualCollegeId.trim() || undefined,
-        }),
+        body: JSON.stringify(parsed.data),
       });
 
       const data = (await res.json().catch(() => ({}))) as { error?: string };
 
       if (!res.ok) {
-        setManualError(data.error ?? "Could not add student. Please try again.");
+        setManualError(
+          sanitizeErrorMessage(data.error) ?? "Could not add student. Please try again."
+        );
         return;
       }
 
@@ -481,6 +486,7 @@ export function SessionPageClient({
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
                   disabled={addingManual}
+                  maxLength={120}
                 />
               </div>
               <div className="min-w-[160px] flex-1 space-y-1">
@@ -491,6 +497,7 @@ export function SessionPageClient({
                   value={manualCollegeId}
                   onChange={(e) => setManualCollegeId(e.target.value)}
                   disabled={addingManual}
+                  maxLength={50}
                 />
               </div>
               <Button type="submit" disabled={addingManual}>

@@ -21,6 +21,7 @@ import {
 } from "@/lib/partnerships/constants";
 import type { PartnershipInquiryStatus, UniversityPartnershipInquiry } from "@/types/database";
 import { formatDate } from "@/lib/utils";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminPartnershipsTable({
   inquiries: initialInquiries,
@@ -113,7 +114,7 @@ export function AdminPartnershipsTable({
         <Input
           type="search"
           value={emailQuery}
-          onChange={(event) => setEmailQuery(event.target.value)}
+          onChange={(event) => setEmailQuery(sanitizeSearchQuery(event.target.value))}
           placeholder="Search by university, contact, or email"
           className="pl-9"
           aria-label="Search partnership inquiries"

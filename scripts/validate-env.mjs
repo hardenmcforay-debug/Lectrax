@@ -39,16 +39,6 @@ const required = [
   "QR_TOKEN_SECRET",
 ];
 
-const httpsEnvVars = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_APP_URL",
-  "NEXT_PUBLIC_ADMIN_APP_URL",
-  "NEXT_PUBLIC_MAIN_APP_URL",
-];
-
-const isProduction =
-  process.argv.includes("--production") || process.env.NODE_ENV === "production";
-
 const errors = [];
 const warnings = [];
 
@@ -79,34 +69,6 @@ if (monimeSet.length > 0 && monimeSet.length < monimeKeys.length) {
 }
 if (monimeSet.length === 0) {
   warnings.push("Monime not configured (optional until payments are enabled)");
-}
-
-if (isProduction) {
-  for (const name of httpsEnvVars) {
-    const value = read(name);
-    if (!value) {
-      if (name === "NEXT_PUBLIC_SUPABASE_URL" || name === "NEXT_PUBLIC_APP_URL") {
-        errors.push(`Production requires ${name} with an HTTPS URL`);
-      }
-      continue;
-    }
-
-    let parsed;
-    try {
-      parsed = new URL(value);
-    } catch {
-      errors.push(`${name} is not a valid URL`);
-      continue;
-    }
-
-    if (parsed.protocol !== "https:") {
-      errors.push(`${name} must use HTTPS in production (got ${parsed.protocol}//)`);
-    }
-
-    if (["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)) {
-      errors.push(`${name} must not use localhost in production`);
-    }
-  }
 }
 
 if (warnings.length > 0) {

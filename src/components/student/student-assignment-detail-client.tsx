@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatFileSize, MAX_SUBMISSION_FILE_SIZE } from "@/lib/assignments/storage";
+import { validateSubmissionFile } from "@/lib/assignments/submissions";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import type { StudentAssignmentDetailData } from "@/lib/student/assignment-queries";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
@@ -69,6 +71,12 @@ export function StudentAssignmentDetailClient({
   async function handleFile(file: File | null) {
     if (!file) return;
 
+    const validationError = validateSubmissionFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     if (!canUpload || pastDeadline) {
       setError(
         submission
@@ -94,13 +102,19 @@ export function StudentAssignmentDetailClient({
       const body = (await res.json().catch(() => ({}))) as { error?: string };
 
       if (!res.ok) {
-        throw new Error(body.error ?? "Could not upload submission.");
+        throw new Error(
+          sanitizeErrorMessage(body.error) ?? "Could not upload submission."
+        );
       }
 
       setSuccess("Submission uploaded successfully.");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not upload submission.");
+      setError(
+        e instanceof Error
+          ? sanitizeErrorMessage(e.message)
+          : "Could not upload submission."
+      );
     } finally {
       setUploading(false);
     }

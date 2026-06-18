@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
-import { z } from "zod";
+import { assignmentSchema } from "@/lib/validations";
 import { normalizeAssignmentDeadline } from "@/lib/assignments/deadline";
 import {
   checkAssignmentCreationLimit,
@@ -12,13 +12,6 @@ import {
   getClassSessionLabel,
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
-
-const assignmentSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  deadline: z.string().min(1),
-  maxScore: z.coerce.number().min(1).max(1000),
-});
 
 export async function POST(
   request: Request,

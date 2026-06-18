@@ -49,6 +49,13 @@ export function isAllowedBrandingImage(file: { type: string; size: number }): bo
   );
 }
 
+export function validateBrandingImageFile(file: File): string | null {
+  if (!isAllowedBrandingImage(file)) {
+    return "Invalid image. Use JPEG, PNG, WebP, GIF, or SVG up to 5 MB.";
+  }
+  return null;
+}
+
 export function buildHeroImageStoragePath(ext: string): string {
   return `hero/landing.${ext}`;
 }

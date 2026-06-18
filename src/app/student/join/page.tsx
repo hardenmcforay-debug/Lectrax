@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
+import { joinSessionSchema } from "@/lib/validations";
+import { sanitizeSessionCode } from "@/lib/security/sanitize";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export default function JoinClassPage() {
   const router = useRouter();
@@ -19,6 +22,13 @@ export default function JoinClassPage() {
   async function handleJoin() {
     setError(null);
     setSuccess(null);
+
+    const parsed = joinSessionSchema.safeParse({ sessionCode: code });
+    if (!parsed.success) {
+      setError(parsed.error.errors[0]?.message ?? "Enter a valid session code.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -26,7 +36,7 @@ export default function JoinClassPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ sessionCode: code }),
+        body: JSON.stringify(parsed.data),
       });
 
       const result = (await res.json()) as {
@@ -35,7 +45,9 @@ export default function JoinClassPage() {
       };
 
       if (!res.ok || !result.session) {
-        setError(result.error ?? "Session not found. Check the code and try again.");
+        setError(
+          sanitizeErrorMessage(result.error) ?? "Session not found. Check the code and try again."
+        );
         return;
       }
 
@@ -58,9 +70,10 @@ export default function JoinClassPage() {
             <Label>Code</Label>
             <Input
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(sanitizeSessionCode(e.target.value))}
               placeholder="e.g. A3F9B2"
               className="font-mono text-lg tracking-widest"
+              maxLength={10}
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { validateBrandingImageFile } from "@/lib/landing/site-branding";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 type AdminLandingHeroUploadProps = {
   initialImageUrl: string | null;
@@ -30,6 +32,12 @@ export function AdminLandingHeroUpload({
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
+    const validationError = validateBrandingImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setUploading(true);
     setError(null);
     setMessage(null);
@@ -52,7 +60,11 @@ export function AdminLandingHeroUpload({
       setUpdatedAt((payload.updated_at as string) ?? new Date().toISOString());
       setMessage("Hero image updated. The landing page will show your new image.");
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Could not upload image.");
+      setError(
+        uploadError instanceof Error
+          ? sanitizeErrorMessage(uploadError.message)
+          : "Could not upload image."
+      );
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

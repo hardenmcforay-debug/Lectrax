@@ -1,7 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getPublicSupabaseEnv, getServiceRoleKey } from "@/lib/env";
-import { withSecureCookieOptions } from "@/lib/security/cookies";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -26,7 +25,7 @@ export async function createClient() {
           void _headers;
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, withSecureCookieOptions(options))
+              cookieStore.set(name, value, options)
             );
           } catch {
             // Server Component — ignore

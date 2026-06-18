@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { adminToggleLecturerSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -18,10 +20,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { lecturerId, isActive } = await request.json();
-  if (!lecturerId || typeof isActive !== "boolean") {
-    return NextResponse.json({ error: "lecturerId and isActive required" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
+
+  const parsed = adminToggleLecturerSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message ?? "Invalid request" },
+      { status: 400 }
+    );
+  }
+
+  const { lecturerId, isActive } = parsed.data;
 
   const service = await createServiceClient();
   const { error } = await service
@@ -30,7 +44,12 @@ export async function POST(request: Request) {
     .eq("id", lecturerId)
     .eq("role", "lecturer");
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(error.message) },
+      { status: 400 }
+    );
+  }
 
   await service.from("audit_logs").insert({
     actor_id: user.id,

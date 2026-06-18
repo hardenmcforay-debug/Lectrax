@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import {
+  passwordChangeSchema,
+  profileUpdateSchema,
+  type ProfileUpdateInput,
+} from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { createClient } from "@/lib/supabase/client";
 import type { ProfileSettingsInitial } from "@/lib/settings/profile-settings-initial";
 import { Button } from "@/components/ui/button";
@@ -19,24 +24,6 @@ import { User, Phone, GraduationCap, CreditCard, Lock } from "lucide-react";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { cn } from "@/lib/utils";
-
-const profileSchema = z.object({
-  fullName: z.string().min(2, "Name is required"),
-  phone: z.string().optional(),
-  collegeId: z.string().optional(),
-});
-
-type ProfileForm = z.infer<typeof profileSchema>;
-
-const passwordSchema = z
-  .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
 
 export function ProfileSettings({
   role,
@@ -57,8 +44,8 @@ export function ProfileSettings({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ProfileForm>({
-    resolver: zodResolver(profileSchema),
+  } = useForm<ProfileUpdateInput>({
+    resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       fullName: initialProfile.full_name,
       phone: initialProfile.phone ?? "",
@@ -71,9 +58,11 @@ export function ProfileSettings({
     handleSubmit: handleSubmitPw,
     reset: resetPw,
     formState: { errors: pwErrors, isSubmitting: pwSubmitting },
-  } = useForm<z.infer<typeof passwordSchema>>({ resolver: zodResolver(passwordSchema) });
+  } = useForm<{ password: string; confirmPassword: string }>({
+    resolver: zodResolver(passwordChangeSchema),
+  });
 
-  async function onSaveProfile(data: ProfileForm) {
+  async function onSaveProfile(data: ProfileUpdateInput) {
     setProfileError(null);
     setProfileSaved(false);
 
@@ -110,12 +99,12 @@ export function ProfileSettings({
     setTimeout(() => setProfileSaved(false), 3000);
   }
 
-  async function onChangePassword(data: z.infer<typeof passwordSchema>) {
+  async function onChangePassword(data: { password: string; confirmPassword: string }) {
     setPasswordError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({ password: data.password });
     if (error) {
-      setPasswordError(error.message);
+      setPasswordError(sanitizeErrorMessage(error.message));
       return;
     }
     resetPw();

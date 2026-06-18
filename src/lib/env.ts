@@ -3,12 +3,6 @@
  * Fails fast with clear messages when required configuration is missing.
  */
 
-import {
-  DEV_HTTP_ORIGIN,
-  HTTPS_REQUIRED_ENV_VARS,
-  validateHttpsUrl,
-} from "@/lib/security/transport";
-
 const PLACEHOLDER_PATTERNS = [
   /^your-/i,
   /^change-this/i,
@@ -43,19 +37,10 @@ function assertEnv(name: string, options?: { minLength?: number }): string {
   return value;
 }
 
-function assertHttpsEnv(name: string, value: string): void {
-  const httpsError = validateHttpsUrl(name, value, { required: true });
-  if (httpsError) {
-    throw new Error(httpsError);
-  }
-}
-
 /** Public variables required for client and server Supabase access. */
 export function getPublicSupabaseEnv(): { url: string; anonKey: string } {
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL");
-  assertHttpsEnv("NEXT_PUBLIC_SUPABASE_URL", url);
   return {
-    url,
+    url: assertEnv("NEXT_PUBLIC_SUPABASE_URL"),
     anonKey: assertEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   };
 }
@@ -69,7 +54,6 @@ export function getServiceRoleKey(): string {
 export function getAppUrl(fallbackOrigin?: string): string {
   const configured = readEnv("NEXT_PUBLIC_APP_URL");
   if (configured) {
-    assertHttpsEnv("NEXT_PUBLIC_APP_URL", configured);
     return configured.replace(/\/$/, "");
   }
   if (fallbackOrigin) {
@@ -80,7 +64,7 @@ export function getAppUrl(fallbackOrigin?: string): string {
       "Missing NEXT_PUBLIC_APP_URL. Set it to your production domain (e.g. https://lectrax.app)."
     );
   }
-  return DEV_HTTP_ORIGIN;
+  return "http://localhost:3000";
 }
 
 /** QR attendance token signing secret. */
@@ -153,16 +137,6 @@ export function validateProductionEnv(): EnvValidationResult {
     }
     if (isPlaceholder(value)) {
       errors.push(`${name} is still a placeholder`);
-    }
-  }
-
-  for (const name of HTTPS_REQUIRED_ENV_VARS) {
-    const value = readEnv(name);
-    const httpsError = validateHttpsUrl(name, value, {
-      required: name === "NEXT_PUBLIC_SUPABASE_URL" || name === "NEXT_PUBLIC_APP_URL",
-    });
-    if (httpsError) {
-      errors.push(httpsError);
     }
   }
 

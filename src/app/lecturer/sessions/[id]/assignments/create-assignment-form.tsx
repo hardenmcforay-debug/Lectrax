@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { localDateTimeInputToIso } from "@/lib/assignments/deadline";
+import { assignmentSchema } from "@/lib/validations";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -19,43 +21,39 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   async function createAssignment() {
-    if (!title.trim() || !deadline) {
-      setError("Title and deadline are required.");
+    let deadlineIso: string;
+    try {
+      deadlineIso = localDateTimeInputToIso(deadline);
+    } catch {
+      setError("Enter a valid deadline date and time.");
       return;
     }
-    const parsedMaxScore = Number(maxScore);
-    if (!Number.isFinite(parsedMaxScore) || parsedMaxScore < 1 || parsedMaxScore > 1000) {
-      setError("Maximum score must be between 1 and 1000.");
+
+    const parsed = assignmentSchema.safeParse({
+      title,
+      description: description || undefined,
+      deadline: deadlineIso,
+      maxScore,
+    });
+
+    if (!parsed.success) {
+      setError(parsed.error.errors[0]?.message ?? "Invalid assignment details.");
       return;
     }
 
     setError(null);
     setCreating(true);
 
-    let deadlineIso: string;
-    try {
-      deadlineIso = localDateTimeInputToIso(deadline);
-    } catch {
-      setError("Enter a valid deadline date and time.");
-      setCreating(false);
-      return;
-    }
-
     try {
       const res = await fetch(`/api/lecturer/sessions/${sessionId}/assignments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          deadline: deadlineIso,
-          maxScore: parsedMaxScore,
-        }),
+        body: JSON.stringify(parsed.data),
       });
 
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Could not create assignment.");
+        setError(sanitizeErrorMessage(data.error) ?? "Could not create assignment.");
         return;
       }
 
@@ -83,6 +81,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Essay 1"
                 disabled={creating}
+                maxLength={200}
               />
             </div>
             <div className="space-y-1">
@@ -117,6 +116,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
               placeholder="Instructions, requirements, or notes for students"
               rows={4}
               disabled={creating}
+              maxLength={10000}
               className="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>

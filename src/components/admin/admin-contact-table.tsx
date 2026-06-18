@@ -20,6 +20,7 @@ import {
 } from "@/lib/contact/constants";
 import type { ContactInquiry, ContactInquiryStatus } from "@/types/database";
 import { formatDate } from "@/lib/utils";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: ContactInquiry[] }) {
   const [inquiries, setInquiries] = useState(initialInquiries);
@@ -91,7 +92,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
         <Input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => setQuery(sanitizeSearchQuery(event.target.value))}
           placeholder="Search by name, email, or subject"
           className="pl-9"
           aria-label="Search contact inquiries"

@@ -24,6 +24,7 @@ import type { SubscriptionPageInitialData } from "@/lib/subscription/subscriptio
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { cn } from "@/lib/utils";
 import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/payment-currency";
+import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
 import { PaymentCheckoutFlow } from "@/components/lecturer/payment-checkout-flow";
 import { Check, Trash2 } from "lucide-react";
 import {
@@ -192,12 +193,12 @@ export function SubscriptionPageContent({
       title="Subscription"
       description="Manage your subscription, billing, and access to premium features designed to support your academic activities."
     >
-      {searchParams.get("success") && (
+      {isAllowedPaymentCallbackFlag(searchParams.get("success")) && (
         <Badge variant="accent" className="mb-4">
           Payment successful! Your Lectrax Premium plan is activating…
         </Badge>
       )}
-      {searchParams.get("cancelled") && (
+      {isAllowedPaymentCallbackFlag(searchParams.get("cancelled")) && (
         <Badge variant="secondary" className="mb-4">
           Payment cancelled.
         </Badge>

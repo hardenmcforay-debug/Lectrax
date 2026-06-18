@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/logo";
+import { validateBrandingImageFile } from "@/lib/landing/site-branding";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 type AdminSiteLogoUploadProps = {
   initialLogoUrl: string | null;
@@ -33,6 +35,12 @@ export function AdminSiteLogoUpload({
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
+    const validationError = validateBrandingImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setUploading(true);
     setError(null);
     setMessage(null);
@@ -56,7 +64,11 @@ export function AdminSiteLogoUpload({
       setMessage("Logo updated across the app.");
       router.refresh();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Could not upload logo.");
+      setError(
+        uploadError instanceof Error
+          ? sanitizeErrorMessage(uploadError.message)
+          : "Could not upload logo."
+      );
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
