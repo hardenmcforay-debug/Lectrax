@@ -6,6 +6,7 @@ import {
 } from "@/lib/errors/classify";
 import { logPlatformError } from "@/lib/errors/logger";
 import type { PlatformError } from "@/lib/errors/types";
+import { assertSecureClientRequest } from "@/lib/security/transport";
 
 export type PlatformFetchResult<T> =
   | { ok: true; data: T; response: Response }
@@ -60,6 +61,14 @@ export async function platformFetch<T = unknown>(
 
   if (isOffline()) {
     const error = classifyFetchFailure(null, true);
+    logPlatformError("platformFetch", error, { url: String(input) });
+    return { ok: false, error };
+  }
+
+  try {
+    assertSecureClientRequest(input);
+  } catch (cause) {
+    const error = classifyFetchFailure(cause, false);
     logPlatformError("platformFetch", error, { url: String(input) });
     return { ok: false, error };
   }

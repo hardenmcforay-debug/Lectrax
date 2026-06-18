@@ -43,6 +43,7 @@ const COPY_DIRS = [
   "src/lib/low-data",
   "src/lib/partnerships",
   "src/lib/pwa",
+  "src/lib/security",
   "src/lib/subscription",
   "src/lib/supabase",
   "src/types",
@@ -93,6 +94,7 @@ const COPY_FILES = [
   "src/app/admin-portal-animations.css",
   "src/app/mobile-layout.css",
   "src/middleware.ts",
+  "src/instrumentation.ts",
   "public/favicon.ico",
   "postcss.config.mjs",
   "eslint.config.mjs",
@@ -121,6 +123,10 @@ function writeAdminPackageJson() {
       start: "next start -p 3001",
       lint: "next lint",
       typecheck: "tsc --noEmit",
+      "validate:https": "node ../../scripts/check-https.mjs",
+      "validate:https:production": "node ../../scripts/check-https.mjs --production",
+      prebuild: "node ../../scripts/check-https.mjs --production",
+      postbuild: "node ../../scripts/check-https.mjs --production --scan-build",
     },
     dependencies: {
       "@hookform/resolvers": rootPkg.dependencies["@hookform/resolvers"],
@@ -171,6 +177,7 @@ function writeAdminConfigs() {
   writeFileSync(
     join(OUT, "next.config.ts"),
     `import type { NextConfig } from "next";
+import { getSecurityHeaders } from "./src/lib/security/transport";
 
 const nextConfig: NextConfig = {
   images: {
@@ -183,9 +190,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const securityHeaders = [
-      { key: "X-Content-Type-Options", value: "nosniff" },
-      { key: "X-Frame-Options", value: "DENY" },
-      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ...getSecurityHeaders(),
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
     ];
 
@@ -257,7 +262,9 @@ export default nextConfig;
     join(OUT, ".env.example"),
     `# Lectrax platform-admin deployment
 NEXT_PUBLIC_DEPLOYMENT_TARGET=admin
+# Development: http://localhost:3001 | Production: https://admin.lectrax.app (HTTPS required)
 NEXT_PUBLIC_APP_URL=http://localhost:3001
+# Development: http://localhost:3000 | Production: https://lectrax.app (HTTPS required)
 NEXT_PUBLIC_MAIN_APP_URL=http://localhost:3000
 
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co

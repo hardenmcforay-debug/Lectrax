@@ -1,8 +1,12 @@
 import type { UserRole } from "@/types/database";
 import { ROLE_ROUTES } from "@/lib/constants";
+import {
+  DEV_ADMIN_HTTP_ORIGIN,
+  normalizeSecureOrigin,
+} from "@/lib/security/transport";
 
 function normalizeOrigin(url: string): string {
-  return url.replace(/\/$/, "");
+  return normalizeSecureOrigin(url.replace(/\/$/, ""));
 }
 
 /** External admin app origin when platform admin is deployed separately (e.g. https://admin.lectrax.app). */
@@ -43,7 +47,13 @@ export function getRoleHomeUrl(role: UserRole, fallbackOrigin?: string): string 
       return `${adminUrl}${ROLE_ROUTES.platform_admin}`;
     }
     if (isAdminDeployment()) {
-      const origin = fallbackOrigin ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const origin =
+        fallbackOrigin ??
+        process.env.NEXT_PUBLIC_APP_URL ??
+        (process.env.NODE_ENV === "production" ? "" : DEV_ADMIN_HTTP_ORIGIN);
+      if (!origin) {
+        return ROLE_ROUTES.platform_admin;
+      }
       return `${normalizeOrigin(origin)}${ROLE_ROUTES.platform_admin}`;
     }
   }
@@ -71,7 +81,13 @@ export function getAdminLoginUrl(fallbackOrigin?: string): string {
     return `${adminUrl}/login`;
   }
   if (isAdminDeployment()) {
-    const origin = fallbackOrigin ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const origin =
+      fallbackOrigin ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      (process.env.NODE_ENV === "production" ? "" : DEV_ADMIN_HTTP_ORIGIN);
+    if (!origin) {
+      return "/login";
+    }
     return `${normalizeOrigin(origin)}/login`;
   }
   return "/login";
@@ -87,6 +103,11 @@ export function getMainLoginUrl(fallbackOrigin?: string): string {
 
 export function isAbsoluteUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
+}
+
+/** True when a URL is absolute and uses HTTPS (required for production cross-origin redirects). */
+export function isSecureAbsoluteUrl(value: string): boolean {
+  return /^https:\/\//i.test(value);
 }
 
 export const PLATFORM_ADMIN_MAIN_APP_LOGIN_ERROR = "admin";
