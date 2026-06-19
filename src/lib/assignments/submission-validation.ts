@@ -2,9 +2,15 @@
 
 import { isPdfFile, MAX_SUBMISSION_FILE_SIZE } from "@/lib/assignments/storage";
 import { sanitizeFilename } from "@/lib/security/sanitize";
+import { hasBlockedUploadExtension } from "@/lib/security/file-validation-shared";
 
 export function validateSubmissionFile(file: File): string | null {
   const safeName = sanitizeFilename(file.name);
+
+  if (hasBlockedUploadExtension(safeName)) {
+    return "This file type is not allowed.";
+  }
+
   if (!safeName.toLowerCase().endsWith(".pdf")) {
     return "Only PDF files are allowed. Images, archives, and videos are not permitted.";
   }

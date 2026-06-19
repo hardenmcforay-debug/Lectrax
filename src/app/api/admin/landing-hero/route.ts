@@ -9,6 +9,7 @@ import {
   isAllowedBrandingImage,
 } from "@/lib/landing/site-branding";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { brandingExtensionMatchesMime } from "@/lib/security/file-validation";
 
 export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
@@ -25,6 +26,13 @@ export async function POST(request: Request) {
   if (!isAllowedBrandingImage(file)) {
     return NextResponse.json(
       { error: "Upload a JPEG, PNG, WebP, or GIF image up to 5 MB." },
+      { status: 400 }
+    );
+  }
+
+  if (!brandingExtensionMatchesMime(file)) {
+    return NextResponse.json(
+      { error: "File extension does not match the image type." },
       { status: 400 }
     );
   }
