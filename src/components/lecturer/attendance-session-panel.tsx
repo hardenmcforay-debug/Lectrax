@@ -30,6 +30,7 @@ import {
   formatAttendanceDate,
   formatAttendanceTime,
   formatSessionDurationLabel,
+  PRESENT_COUNT_POLL_INTERVAL_MS,
   QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
@@ -123,6 +124,9 @@ export function AttendanceSessionPanel({
   const refreshQrRef = useRef<
     (attendanceSessionId: string, source?: string) => Promise<boolean>
   >(async () => false);
+  const syncPresentRecordsRef = useRef<
+    (attendanceSessionId: string, source: string) => Promise<void>
+  >(async () => {});
   const presentLoadedForSessionRef = useRef<string | null>(null);
   const skipInitialRefreshRef = useRef(false);
 
@@ -166,6 +170,8 @@ export function AttendanceSessionPanel({
     },
     [fetchPresentRecords]
   );
+
+  syncPresentRecordsRef.current = syncPresentRecords;
 
   const renderQr = useCallback(async (qrPayload: string) => {
     setQrRendering(true);
@@ -238,6 +244,7 @@ export function AttendanceSessionPanel({
           source,
           tokenExpiresAt: data.tokenExpiresAt ?? new Date(nextExpiresAt).toISOString(),
         });
+        void syncPresentRecordsRef.current(attendanceSessionId, "qr-refresh");
         return true;
       } catch {
         setError("Network error while refreshing QR code.");
@@ -313,41 +320,84 @@ export function AttendanceSessionPanel({
     if (!activeSession) return;
 
     const supabase = createClient();
-    const channel = supabase
-      .channel(`attendance-records-${activeSession.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "attendance_records",
-          filter: `attendance_session_id=eq.${activeSession.id}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            enrollment_id?: string;
-            mark_method?: string;
-          };
-          const enrollmentId = row.enrollment_id;
-          if (!enrollmentId) return;
+    const attendanceSessionId = activeSession.id;
+    const classSessionId = session.id;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-          const method = normalizeMarkMethod(row.mark_method ?? "qr_scan");
+    const applyPresentInsert = (enrollmentId: string, markMethod: string | undefined) => {
+      const method = normalizeMarkMethod(markMethod ?? "qr_scan");
 
-          setPresentRecords((prev) => {
-            if (prev.has(enrollmentId)) return prev;
-            const next = addPresentRecord(prev, enrollmentId, method);
-            logPresentRecords("realtime:insert", next, { enrollmentId, method });
-            return next;
-          });
-          onAttendanceChange?.();
-        }
-      )
-      .subscribe();
+      setPresentRecords((prev) => {
+        if (prev.has(enrollmentId)) return prev;
+        const next = addPresentRecord(prev, enrollmentId, method);
+        logPresentRecords("realtime:insert", next, { enrollmentId, method });
+        return next;
+      });
+      onAttendanceChange?.();
+    };
+
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || cancelled) return;
+
+      channel = supabase
+        .channel(`attendance-records-${attendanceSessionId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "attendance_records",
+            filter: `class_session_id=eq.${classSessionId}`,
+          },
+          (payload) => {
+            const row = payload.new as {
+              attendance_session_id?: string;
+              enrollment_id?: string;
+              mark_method?: string;
+            };
+            if (row.attendance_session_id !== attendanceSessionId) return;
+
+            const enrollmentId = row.enrollment_id;
+            if (!enrollmentId) return;
+
+            applyPresentInsert(enrollmentId, row.mark_method);
+          }
+        )
+        .subscribe((status) => {
+          if (DEBUG_ATTENDANCE_COUNT) {
+            console.debug("[AttendanceCount] realtime:status", {
+              attendanceSessionId,
+              status,
+            });
+          }
+        });
+    })();
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
     };
-  }, [activeSession, onAttendanceChange]);
+  }, [activeSession, session.id, onAttendanceChange]);
+
+  useEffect(() => {
+    if (!activeSession) return;
+
+    const attendanceSessionId = activeSession.id;
+    const intervalId = window.setInterval(() => {
+      void syncPresentRecordsRef.current(attendanceSessionId, "poll");
+    }, PRESENT_COUNT_POLL_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeSession]);
 
   async function startAttendance() {
     setError(null);
