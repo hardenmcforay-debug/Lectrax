@@ -118,6 +118,10 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
     return "Please confirm your email before signing in.";
   }
 
+  if (context === "password-reset") {
+    return "Could not send the reset link. Please try again.";
+  }
+
   if (message.length > 0 && message.length <= 180) {
     return sanitizeErrorMessage(message);
   }

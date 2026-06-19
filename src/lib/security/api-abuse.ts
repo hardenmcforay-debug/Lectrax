@@ -72,6 +72,10 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
     return { policy: "partnershipInquiry", rule: RATE_LIMIT_POLICIES.partnershipInquiry };
   }
 
+  if (pathname === "/api/auth/forgot-password" && upperMethod === "POST") {
+    return { policy: "passwordReset", rule: RATE_LIMIT_POLICIES.passwordReset };
+  }
+
   if (pathname === "/api/attendance/scan" && upperMethod === "POST") {
     return { policy: "attendanceScan", rule: RATE_LIMIT_POLICIES.attendanceScan };
   }

@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validations";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { PASSWORD_RESET_SUCCESS_MESSAGE } from "@/lib/auth/password-reset-constants";
+import { appFetch } from "@/lib/api/client-fetch";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorNotice } from "@/components/auth/auth-error-notice";
 import type { AuthUserMessage } from "@/lib/errors/auth-messages";
-import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
+import { mapAuthError } from "@/lib/errors/map-auth-error";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -28,19 +29,28 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      const response = await appFetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email }),
       });
 
-      if (resetError) {
-        setError(
-          mapSupabaseAuthError(resetError, "password-reset", "auth.passwordReset") ?? {
-            title: "Request Failed",
-            description: "Could not send the reset link. Please try again.",
-            retryable: true,
-          }
-        );
+      if (response.status === 429) {
+        setError({
+          title: "Too Many Requests",
+          description: "Too many reset attempts. Please wait a few minutes and try again.",
+          retryable: true,
+        });
+        return;
+      }
+
+      if (response.status === 400) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        setError({
+          title: "Request Failed",
+          description: body?.error ?? "Please enter a valid email address.",
+          retryable: false,
+        });
         return;
       }
 
@@ -62,7 +72,7 @@ export default function ForgotPasswordPage() {
         </CardHeader>
         <CardContent>
           {sent ? (
-            <p className="text-sm text-accent">Check your email for the reset link.</p>
+            <p className="text-sm text-accent">{PASSWORD_RESET_SUCCESS_MESSAGE}</p>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>

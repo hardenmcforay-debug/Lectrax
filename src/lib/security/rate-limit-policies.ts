@@ -11,6 +11,8 @@ export const RATE_LIMIT_POLICIES = {
 
   // Authentication surfaces
   authCallback: { limit: 20, windowMs: 15 * 60_000 },
+  passwordReset: { limit: 5, windowMs: 15 * 60_000 },
+  passwordResetEmail: { limit: 3, windowMs: 15 * 60_000 },
 
   // Academic — attendance
   attendanceScan: { limit: 40, windowMs: 60_000 },
