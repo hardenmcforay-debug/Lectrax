@@ -5,6 +5,7 @@ import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { getClassTestsForSession, getNextTestNumber } from "@/lib/lecturer/class-tests";
 import { classTestSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import {
   checkFreePlanLimit,
   requireWritableSubscription,
@@ -154,6 +155,13 @@ export async function POST(
     .single();
 
   if (error || !test) {
+    if (isUniqueViolation(error)) {
+      return NextResponse.json(
+        { error: "Test 1 and Test 2 already exist for this class." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { error: sanitizeErrorMessage(error?.message ?? "Could not create test") },
       { status: 500 }

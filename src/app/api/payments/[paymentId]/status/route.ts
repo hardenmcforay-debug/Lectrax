@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { verifyMonimePayment, verifyMonimePaymentCode } from "@/lib/monime";
-import { activatePremiumSubscription, canLecturerSelfSubscribe } from "@/lib/subscription/lifecycle";
+import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
 
 export async function GET(
@@ -34,6 +34,10 @@ export async function GET(
     return NextResponse.json({ status: "completed" });
   }
 
+  if (payment.status === "processing") {
+    return NextResponse.json({ status: "processing" });
+  }
+
   const metadata = (payment.metadata ?? {}) as { monime_kind?: string };
   const monimeId = payment.monime_payment_id ?? payment.transaction_reference;
 
@@ -57,13 +61,20 @@ export async function GET(
         );
       }
 
-      await activatePremiumSubscription({
-        lecturerId: payment.lecturer_id,
-        billingPlan: payment.billing_plan as BillingPlan,
-        paymentId: payment.id,
-        transactionReference: monimeId,
-        service,
-      });
+      try {
+        await activatePremiumSubscription({
+          lecturerId: payment.lecturer_id,
+          billingPlan: payment.billing_plan as BillingPlan,
+          paymentId: payment.id,
+          transactionReference: monimeId,
+          service,
+        });
+      } catch (err) {
+        if (err instanceof PaymentActivationInProgressError) {
+          return NextResponse.json({ status: "processing" });
+        }
+        throw err;
+      }
 
       return NextResponse.json({ status: "completed" });
     }

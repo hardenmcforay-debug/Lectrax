@@ -113,25 +113,7 @@ export async function PUT(
     submissionByEnrollmentId.set(enrollmentId, submissionId);
   }
 
-  // Deletes are batch-delete of grade rows (grade itself is one-per-submission via UNIQUE constraint).
-  if (deleteEnrollmentIds.length > 0) {
-    const submissionIdsToDelete = deleteEnrollmentIds
-      .map((enrollmentId) => submissionByEnrollmentId.get(enrollmentId))
-      .filter((id): id is string => Boolean(id));
-
-    const { error: deleteError } = await service
-      .from("assignment_grades")
-      .delete()
-      .in("assignment_submission_id", submissionIdsToDelete);
-
-    if (deleteError) {
-      return NextResponse.json(
-        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear grades") },
-        { status: 500 }
-      );
-    }
-  }
-
+  // Upsert before delete so concurrent writers cannot clear a row another request just saved.
   if (scores.length > 0) {
     const gradeRows = scores.map((entry) => ({
       assignment_submission_id: submissionByEnrollmentId.get(entry.enrollmentId),
@@ -163,6 +145,24 @@ export async function PUT(
         message: `Your grade for "${assignment.title}" in ${classLabel} has been updated.`,
       }
     );
+  }
+
+  if (deleteEnrollmentIds.length > 0) {
+    const submissionIdsToDelete = deleteEnrollmentIds
+      .map((enrollmentId) => submissionByEnrollmentId.get(enrollmentId))
+      .filter((id): id is string => Boolean(id));
+
+    const { error: deleteError } = await service
+      .from("assignment_grades")
+      .delete()
+      .in("assignment_submission_id", submissionIdsToDelete);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear grades") },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({

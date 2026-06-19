@@ -1,7 +1,7 @@
 export type UserRole = "platform_admin" | "lecturer" | "student";
 export type SemesterType = "first_semester" | "second_semester" | "full_year";
 export type SubscriptionStatus = "active" | "expired" | "cancelled" | "free" | "grace_period";
-export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
+export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
 export type SubscriptionPlan = "1_month" | "3_months" | "6_months" | "12_months" | "free";
 export type BillingPlan = "monthly" | "semester" | "annual";
 export type SubscriptionTier = "free" | "premium";

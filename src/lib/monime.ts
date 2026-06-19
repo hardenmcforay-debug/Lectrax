@@ -30,7 +30,11 @@ function unwrapMonimeResult<T>(body: MonimeEnvelope<T>): T {
   return body as T;
 }
 
-async function monimeFetch<T>(path: string, init: RequestInit): Promise<T> {
+async function monimeFetch<T>(
+  path: string,
+  init: RequestInit,
+  options?: { idempotencyKey?: string }
+): Promise<T> {
   const apiKey = process.env.MONIME_API_KEY;
   const spaceId = process.env.MONIME_SPACE_ID;
   if (!apiKey || !spaceId) {
@@ -44,7 +48,7 @@ async function monimeFetch<T>(path: string, init: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       "Monime-Space-Id": spaceId,
       "Monime-Version": MONIME_VERSION,
-      "Idempotency-Key": randomUUID(),
+      "Idempotency-Key": options?.idempotencyKey ?? randomUUID(),
       ...(init.headers ?? {}),
     },
   });
@@ -111,9 +115,11 @@ async function createCardCheckoutSession(params: MonimeCheckoutParams): Promise<
   const amountMajor = getBillingChargeAmount(params.plan);
   const amountMinor = toMonimeMinorUnits(amountMajor);
 
-  const data = await monimeFetch<{ id?: string; redirectUrl?: string }>("/checkout-sessions", {
-    method: "POST",
-    body: JSON.stringify({
+  const data = await monimeFetch<{ id?: string; redirectUrl?: string }>(
+    "/checkout-sessions",
+    {
+      method: "POST",
+      body: JSON.stringify({
       name: `Lectrax Premium — ${params.plan}`,
       lineItems: buildLineItems(params.plan, currency, amountMinor),
       reference: params.paymentId,
@@ -127,7 +133,9 @@ async function createCardCheckoutSession(params: MonimeCheckoutParams): Promise<
         wallet: { disable: true },
       },
     }),
-  });
+    },
+    { idempotencyKey: `checkout:${params.paymentId}` }
+  );
 
   const checkoutUrl = data.redirectUrl ?? "";
   if (!data.id || !checkoutUrl) {
@@ -147,9 +155,11 @@ async function createMobileMoneyPaymentCode(params: MonimeCheckoutParams): Promi
   const amountMajor = getBillingChargeAmount(params.plan);
   const amountMinor = toMonimeMinorUnits(amountMajor);
 
-  const data = await monimeFetch<{ id?: string; ussdCode?: string }>("/payment-codes", {
-    method: "POST",
-    body: JSON.stringify({
+  const data = await monimeFetch<{ id?: string; ussdCode?: string }>(
+    "/payment-codes",
+    {
+      method: "POST",
+      body: JSON.stringify({
       mode: "one_time",
       name: `Lectrax ${params.plan}`,
       amount: { currency, value: amountMinor },
@@ -159,7 +169,9 @@ async function createMobileMoneyPaymentCode(params: MonimeCheckoutParams): Promi
       customer: params.customerName ? { name: params.customerName } : undefined,
       metadata: buildMetadata(params),
     }),
-  });
+    },
+    { idempotencyKey: `payment-code:${params.paymentId}` }
+  );
 
   if (!data.id || !data.ussdCode) {
     throw new Error("Monime did not return a USSD payment code");

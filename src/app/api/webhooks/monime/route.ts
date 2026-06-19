@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyMonimeWebhookSignature, verifyMonimePayment, verifyMonimePaymentCode } from "@/lib/monime";
-import { activatePremiumSubscription, canLecturerSelfSubscribe } from "@/lib/subscription/lifecycle";
+import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
 import { logAudit } from "@/lib/audit";
 import { handleApiRouteError } from "@/lib/errors/api";
@@ -109,6 +109,10 @@ export async function POST(request: Request) {
       service,
     });
   } catch (err) {
+    if (err instanceof PaymentActivationInProgressError) {
+      return NextResponse.json({ received: true, in_progress: true });
+    }
+
     void logAudit({
       action: "payment_activation_failed",
       entityType: "payment",

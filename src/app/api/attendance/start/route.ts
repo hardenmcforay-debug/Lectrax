@@ -16,6 +16,7 @@ import {
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { isUniqueViolation } from "@/lib/db/postgres-errors";
 
 const startSchema = z.object({
   classSessionId: z.string().uuid(),
@@ -145,6 +146,13 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError || !session) {
+    if (isUniqueViolation(insertError)) {
+      return NextResponse.json(
+        { error: "An attendance session is already active. End it before starting a new one." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { error: sanitizeErrorMessage(insertError?.message ?? "Could not start attendance session") },
       { status: 500 }

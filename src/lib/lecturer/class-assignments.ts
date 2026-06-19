@@ -1,5 +1,6 @@
 import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
 import { createServiceClient } from "@/lib/supabase/server";
+import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import type { Assignment, ClassSession } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -86,6 +87,17 @@ export async function ensureAssignmentSubmissionForGrading(
     .single();
 
   if (insertError || !created?.id) {
+    if (isUniqueViolation(insertError)) {
+      const { data: raced } = await supabase
+        .from("assignment_submissions")
+        .select("id")
+        .eq("assignment_id", assignment.id)
+        .eq("enrollment_id", enrollmentId)
+        .maybeSingle();
+
+      if (raced?.id) return raced.id as string;
+    }
+
     throw new Error(insertError?.message ?? "Could not create grade record.");
   }
 

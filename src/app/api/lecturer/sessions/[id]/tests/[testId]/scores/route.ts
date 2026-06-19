@@ -92,21 +92,6 @@ export async function PUT(
     }
   }
 
-  if (deleteEnrollmentIds.length > 0) {
-    const { error: deleteError } = await service
-      .from("test_scores")
-      .delete()
-      .eq("class_test_id", testId)
-      .in("enrollment_id", deleteEnrollmentIds);
-
-    if (deleteError) {
-      return NextResponse.json(
-        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear scores") },
-        { status: 500 }
-      );
-    }
-  }
-
   if (scores.length > 0) {
     const rows = scores.map((entry) => ({
       class_session_id: classSessionId,
@@ -153,6 +138,21 @@ export async function PUT(
         message: `Your score for "${test.title}" in ${classLabel} has been updated.`,
       }
     );
+  }
+
+  if (deleteEnrollmentIds.length > 0) {
+    const { error: deleteError } = await service
+      .from("test_scores")
+      .delete()
+      .eq("class_test_id", testId)
+      .in("enrollment_id", deleteEnrollmentIds);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: sanitizeErrorMessage(deleteError.message ?? "Could not clear scores") },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({

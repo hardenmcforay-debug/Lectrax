@@ -7,6 +7,7 @@ import { validateSubmissionFile } from "@/lib/assignments/submission-validation"
 import { sanitizeFilename } from "@/lib/security/sanitize";
 import { scanAssignmentSubmissionPdf } from "@/lib/security/submission-file-scan";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { isUniqueViolation } from "@/lib/db/postgres-errors";
 export { validateSubmissionFile } from "@/lib/assignments/submission-validation";
 import type { Assignment, ClassSession } from "@/types/database";
 import { SUBMISSION_CLOSED_ERROR } from "@/lib/assignments/deadline-messages";
@@ -131,6 +132,12 @@ export async function uploadAssignmentSubmission(params: {
 
   if (insertError) {
     await deleteSubmissionFile(params.supabase, storagePath);
+
+    if (isUniqueViolation(insertError)) {
+      return {
+        error: "You have already submitted this assignment. You cannot upload again.",
+      };
+    }
 
     const message = insertError.message ?? "Could not save submission metadata.";
     if (message.toLowerCase().includes("deadline") || insertError.code === "23514") {
