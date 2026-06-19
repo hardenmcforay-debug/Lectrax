@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyQRToken, hashQRToken } from "@/lib/qr-token";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
+import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { logAudit } from "@/lib/audit";
 import {
@@ -84,6 +85,13 @@ async function respondDuplicateAttendance(
 export async function POST(request: Request) {
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
+
+  const userRateLimit = rejectIfUserRateLimited(
+    auth.userId,
+    "attendanceScanPerUser",
+    "attendance-scan-user"
+  );
+  if (userRateLimit) return userRateLimit;
 
   const supabase = auth.supabase;
   const user = auth.user;
