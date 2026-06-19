@@ -20,7 +20,7 @@ function sanitizeContext(context: LogContext): LogContext {
   if (!isProduction) return context;
   const safe: LogContext = {};
   for (const [key, value] of Object.entries(context)) {
-    if (/secret|token|key|password|authorization/i.test(key)) continue;
+    if (/secret|token|key|password|authorization|cookie/i.test(key)) continue;
     safe[key] = value;
   }
   return safe;

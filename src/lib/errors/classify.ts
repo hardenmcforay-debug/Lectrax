@@ -1,6 +1,7 @@
 import type { AuthError } from "@supabase/supabase-js";
 import type { ErrorCategory, PlatformError, PlatformErrorCode } from "@/lib/errors/types";
 import { getMessageForCode } from "@/lib/errors/messages";
+import { hasSupabaseAuthCookies as detectSupabaseAuthCookies } from "@/lib/security/cookies";
 
 const DEFINITIVE_AUTH_CODES = new Set([
   "refresh_token_not_found",
@@ -118,11 +119,7 @@ export function isTransientDbError(error: unknown): boolean {
 export function hasSupabaseAuthCookies(
   cookies: Array<{ name: string; value: string }>
 ): boolean {
-  return cookies.some(
-    (cookie) =>
-      cookie.name.includes("-auth-token") ||
-      (cookie.name.startsWith("sb-") && cookie.name.includes("auth"))
-  );
+  return detectSupabaseAuthCookies(cookies);
 }
 
 export function classifyFetchFailure(error: unknown, offline = false): PlatformError {

@@ -7,6 +7,7 @@ import { PlatformErrorBoundary } from "@/components/errors/platform-error-bounda
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
 import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
+import { AuthSessionSync } from "@/components/auth/auth-session-sync";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
 
@@ -87,6 +88,7 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <PwaProvider />
+        <AuthSessionSync />
         <PortalChromeSync />
         <SiteBrandingProvider logoUrl={logoUrl}>
           <PlatformErrorProvider>
