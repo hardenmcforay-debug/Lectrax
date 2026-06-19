@@ -19,21 +19,34 @@ export function PortalChromeSync() {
   }, [pathname]);
 
   useLayoutEffect(() => {
-    if (!isPortalRoutePath(pathname)) return;
-
     const handleResize = () => {
       applyPortalChromeMarks();
     };
 
+    const handlePageShow = (event: PageTransitionEvent) => {
+      syncPortalChromeMarks();
+      if (event.persisted) {
+        requestAnimationFrame(syncPortalChromeMarks);
+      }
+    };
+
     window.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", handleResize);
+    window.addEventListener("pageshow", handlePageShow);
     window.visualViewport?.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
+      window.removeEventListener("pageshow", handlePageShow);
       window.visualViewport?.removeEventListener("resize", handleResize);
     };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isPortalRoutePath(pathname)) return;
+
+    syncPortalChromeMarks();
   }, [pathname]);
 
   return null;

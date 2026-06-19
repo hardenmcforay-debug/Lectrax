@@ -197,7 +197,7 @@ body {
 }
 
 /* PWA installed app: form-only auth (login / signup) */
-@media (display-mode: standalone), (display-mode: fullscreen) {
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   .auth-branding-panel,
   .auth-form-decorations,
   .auth-form-marketing-copy {
