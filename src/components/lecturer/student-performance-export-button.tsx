@@ -18,9 +18,6 @@ function fileNameFromContentDisposition(header: string | null): string | null {
 
 export function StudentPerformanceExportButton({
   sessionId,
-  rows,
-  testCount,
-  assignmentCount,
   disabled = false,
 }: {
   sessionId: string;

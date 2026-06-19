@@ -2,9 +2,6 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import {
-  DEFAULT_SESSION_DURATION_MINUTES,
-} from "@/lib/attendance/constants";
 import { buildRotatedQRToken, buildScanUrl } from "@/lib/attendance/qr-rotation";
 import { getAttendanceSessionNumber } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
@@ -37,12 +34,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error, code }, { status });
   }
 
-  let body: unknown;
   const parsedBody = await parseJsonBody(request);
   if (!parsedBody.ok) return parsedBody.response;
-  body = parsedBody.body;
 
-  const parsed = attendanceStartSchema.safeParse(body);
+  const parsed = attendanceStartSchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.errors[0]?.message ?? "Invalid attendance session data" },

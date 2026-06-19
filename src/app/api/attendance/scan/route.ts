@@ -15,7 +15,6 @@ import {
   isAttendanceSessionOpen,
 } from "@/lib/attendance/constants";
 import {
-  attendanceDeviceIdentitySchema,
   DEVICE_MESSAGES,
   DEVICE_VERIFICATION_CODES,
   deviceBoundToOtherAccountResponse,
