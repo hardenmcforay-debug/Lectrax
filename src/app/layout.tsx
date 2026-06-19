@@ -5,7 +5,6 @@ import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
-import { ensureSiteLogoRasterized } from "@/lib/landing/migrate-svg-logo";
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
 import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
@@ -76,7 +75,6 @@ export default async function RootLayout({
 }>) {
   let logoUrl: string | null = null;
   try {
-    await ensureSiteLogoRasterized();
     logoUrl = await getSiteLogoUrl();
   } catch (error) {
     console.error("[RootLayout] Failed to load site logo:", error);
