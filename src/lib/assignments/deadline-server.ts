@@ -123,6 +123,31 @@ export async function isAssignmentBeforeDeadline(
   return !isPastDeadline(deadline);
 }
 
+/** Batch deadline checks with a single service client and parallel RPC calls. */
+export async function batchAssignmentsBeforeDeadline(
+  assignments: { id: string; deadline: string }[]
+): Promise<boolean[]> {
+  if (assignments.length === 0) return [];
+
+  const service = await createServiceClient();
+
+  return Promise.all(
+    assignments.map(async (assignment) => {
+      const rpcBeforeDeadline = await readBeforeDeadlineFromRpc(service, assignment.id);
+      if (rpcBeforeDeadline !== null) {
+        return rpcBeforeDeadline;
+      }
+
+      const status = await readDeadlineStatusFromRpc(service, assignment.id, assignment.deadline);
+      if (status) {
+        return status.beforeDeadline;
+      }
+
+      return !isPastDeadline(assignment.deadline);
+    })
+  );
+}
+
 /** Fetch deadline status from the database server clock (authoritative). */
 export async function getAssignmentDeadlineStatus(
   _supabase: SupabaseClient | null | undefined,

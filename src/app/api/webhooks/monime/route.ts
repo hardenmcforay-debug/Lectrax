@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { verifyMonimeWebhookSignature, verifyMonimePayment, verifyMonimePaymentCode } from "@/lib/monime";
 import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
-import { logAudit } from "@/lib/audit";
+import { logAudit, logSystemAudit } from "@/lib/audit";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { monimeWebhookEventSchema } from "@/lib/validations";
 import { logServerError } from "@/lib/errors/logger";
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, in_progress: true });
     }
 
-    void logAudit({
+    void logSystemAudit({
       action: "payment_activation_failed",
       entityType: "payment",
       entityId: payment.id,

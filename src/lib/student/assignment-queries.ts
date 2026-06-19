@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { isAssignmentBeforeDeadline } from "@/lib/assignments/deadline-server";
+import {
+  batchAssignmentsBeforeDeadline,
+  isAssignmentBeforeDeadline,
+} from "@/lib/assignments/deadline-server";
 import { getSignedSubmissionUrl } from "@/lib/assignments/submissions";
 
 export type StudentAssignmentListItem = {
@@ -91,10 +94,11 @@ export async function getStudentAssignmentsList(
     (grades ?? []).map((g) => [g.assignment_submission_id as string, g.grade as number | null])
   );
 
-  const beforeDeadlineFlags = await Promise.all(
-    assignmentList.map((a) =>
-      isAssignmentBeforeDeadline(null, a.id as string, a.deadline as string)
-    )
+  const beforeDeadlineFlags = await batchAssignmentsBeforeDeadline(
+    assignmentList.map((a) => ({
+      id: a.id as string,
+      deadline: a.deadline as string,
+    }))
   );
 
   return assignmentList.map((a, index) => {

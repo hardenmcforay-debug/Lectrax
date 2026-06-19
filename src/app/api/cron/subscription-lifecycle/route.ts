@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCronSecret } from "@/lib/env";
+import { logSystemAudit } from "@/lib/audit";
 import {
   backfillMissingSubscriptionRecords,
   processExpiryReminders,
@@ -24,32 +25,51 @@ export async function POST(request: Request) {
     .eq("subscription_plan", "premium");
 
   let lifecycleUpdates = 0;
+  let lifecycleFailures = 0;
+
   for (const lecturer of premiumLecturers ?? []) {
-    const before = await service
-      .from("profiles")
-      .select("subscription_status")
-      .eq("id", lecturer.id)
-      .single();
+    try {
+      const before = await service
+        .from("profiles")
+        .select("subscription_status")
+        .eq("id", lecturer.id)
+        .single();
 
-    await refreshSubscriptionLifecycle(lecturer.id, service);
+      await refreshSubscriptionLifecycle(lecturer.id, service);
 
-    const after = await service
-      .from("profiles")
-      .select("subscription_status")
-      .eq("id", lecturer.id)
-      .single();
+      const after = await service
+        .from("profiles")
+        .select("subscription_status")
+        .eq("id", lecturer.id)
+        .single();
 
-    if (before.data?.subscription_status !== after.data?.subscription_status) {
-      lifecycleUpdates += 1;
+      if (before.data?.subscription_status !== after.data?.subscription_status) {
+        lifecycleUpdates += 1;
+      }
+    } catch (error) {
+      lifecycleFailures += 1;
+      console.error("subscription_lifecycle_lecturer_failed", lecturer.id, error);
     }
   }
 
   const remindersSent = await processExpiryReminders(service);
   const backfilledSubscriptions = await backfillMissingSubscriptionRecords(service);
 
+  if (lifecycleFailures > 0) {
+    void logSystemAudit({
+      action: "subscription_lifecycle_partial_failure",
+      entityType: "cron",
+      metadata: {
+        lifecycle_failures: lifecycleFailures,
+        lifecycle_updates: lifecycleUpdates,
+      },
+    });
+  }
+
   return NextResponse.json({
-    ok: true,
+    ok: lifecycleFailures === 0,
     lifecycleUpdates,
+    lifecycleFailures,
     remindersSent,
     backfilledSubscriptions,
     processedAt: new Date().toISOString(),
