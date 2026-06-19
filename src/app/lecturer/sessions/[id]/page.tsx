@@ -58,7 +58,9 @@ export default async function SessionDetailPage({
   ] = await Promise.all([
     service.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
     getStudentTableRows(id, session.semester, session.academic_year, user.id).catch((error) => {
-      console.error("[SessionDetailPage] getStudentTableRows failed", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[SessionDetailPage] getStudentTableRows failed", error);
+      }
       return {
         rows: [] as StudentTableRow[],
         testCount: 0,
@@ -92,7 +94,9 @@ export default async function SessionDetailPage({
       .order("created_at", { ascending: false }),
     getActiveAttendanceSession(id, user.id),
     refreshSubscriptionLifecycle(user.id).catch((error) => {
-      console.error("[SessionDetailPage] subscription refresh failed", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[SessionDetailPage] subscription refresh failed", error);
+      }
       return null;
     }),
   ]);

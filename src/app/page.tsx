@@ -18,7 +18,9 @@ export default async function HomePage() {
   try {
     heroImageUrl = await getLandingHeroImageUrl();
   } catch (error) {
-    console.error("[HomePage] Failed to load hero image:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("[HomePage] Failed to load hero image:", error);
+    }
   }
 
   return (

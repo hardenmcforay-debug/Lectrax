@@ -78,7 +78,9 @@ export default async function RootLayout({
   try {
     logoUrl = await getSiteLogoUrl();
   } catch (error) {
-    console.error("[RootLayout] Failed to load site logo:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("[RootLayout] Failed to load site logo:", error);
+    }
   }
 
   return (

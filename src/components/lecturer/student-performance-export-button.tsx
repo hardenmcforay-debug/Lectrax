@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadWorkbookBuffer } from "@/lib/lecturer/download-workbook";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import type { StudentTableRow } from "@/types/database";
 
 function fileNameFromContentDisposition(header: string | null): string | null {
@@ -57,10 +58,12 @@ export function StudentPerformanceExportButton({
 
       downloadWorkbookBuffer(buffer, fileName);
     } catch (err) {
-      console.error("[StudentPerformanceExport]", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[StudentPerformanceExport]", err);
+      }
       setError(
         err instanceof Error
-          ? err.message
+          ? sanitizeErrorMessage(err.message)
           : "Could not export the student performance table. Please try again."
       );
     } finally {

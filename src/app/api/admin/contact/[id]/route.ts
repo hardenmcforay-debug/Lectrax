@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { CONTACT_INQUIRY_STATUSES } from "@/lib/contact/constants";
+import { logServerError } from "@/lib/errors/logger";
 
 const updateSchema = z.object({
   status: z.enum(CONTACT_INQUIRY_STATUSES),
@@ -74,7 +75,7 @@ export async function DELETE(
     .eq("reference_id", id);
 
   if (notificationError) {
-    console.error("Contact notification delete failed:", notificationError);
+    logServerError("contact.notification.delete", notificationError);
   }
 
   const { error } = await service.from("contact_inquiries").delete().eq("id", id);

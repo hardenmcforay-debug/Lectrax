@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { PARTNERSHIP_INQUIRY_STATUSES } from "@/lib/partnerships/constants";
+import { logServerError } from "@/lib/errors/logger";
 
 const updateSchema = z.object({
   status: z.enum(PARTNERSHIP_INQUIRY_STATUSES),
@@ -76,7 +77,7 @@ export async function DELETE(
     .eq("reference_id", id);
 
   if (notificationError) {
-    console.error("Partnership notification delete failed:", notificationError);
+    logServerError("partnerships.notification.delete", notificationError);
   }
 
   const { error } = await auth.service

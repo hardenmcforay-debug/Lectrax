@@ -5,6 +5,7 @@ import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { getStudentTableRows } from "@/lib/session-data";
 import type { CAWeights } from "@/lib/ca/constants";
 import { createClient } from "@/lib/supabase/server";
+import { handleApiRouteError } from "@/lib/errors/api";
 
 function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefined {
   const attendance = searchParams.get("attendanceWeight");
@@ -60,13 +61,17 @@ export async function GET(
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 
-  const { rows } = await getStudentTableRows(
-    classSessionId,
-    classSession.semester,
-    classSession.academic_year,
-    user.id,
-    parseWeightOverride(new URL(request.url).searchParams)
-  );
+  try {
+    const { rows } = await getStudentTableRows(
+      classSessionId,
+      classSession.semester,
+      classSession.academic_year,
+      user.id,
+      parseWeightOverride(new URL(request.url).searchParams)
+    );
 
-  return NextResponse.json({ rows });
+    return NextResponse.json({ rows });
+  } catch (error) {
+    return handleApiRouteError("lecturer.student-rows", error);
+  }
 }

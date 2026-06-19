@@ -6,7 +6,11 @@ import {
   type AuthErrorContext,
   type AuthUserMessage,
 } from "@/lib/errors/auth-messages";
-import { isTransientError, createPlatformError } from "@/lib/errors/classify";
+import {
+  isTransientError,
+  createPlatformError,
+  sanitizeErrorMessage,
+} from "@/lib/errors/classify";
 import { logPlatformError } from "@/lib/errors/logger";
 
 const RAW_NETWORK_PATTERNS = [
@@ -115,7 +119,7 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
   }
 
   if (message.length > 0 && message.length <= 180) {
-    return message;
+    return sanitizeErrorMessage(message);
   }
 
   return context === "login"

@@ -4,6 +4,7 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { exportStudentPerformanceWorkbook } from "@/lib/lecturer/export-student-performance";
 import { createClient } from "@/lib/supabase/server";
+import { handleApiRouteError } from "@/lib/errors/api";
 import type { SemesterType, StudentTableRow } from "@/types/database";
 
 type ExportStudentPerformanceBody = {
@@ -60,20 +61,24 @@ export async function POST(
     return NextResponse.json({ error: "No students to export." }, { status: 400 });
   }
 
-  const { buffer, fileName } = await exportStudentPerformanceWorkbook({
-    rows: payload.rows,
-    assignmentCount: payload.assignmentCount,
-    testCount: payload.testCount,
-    meta: {
-      session,
-      semester: session.semester as SemesterType,
-    },
-  });
+  try {
+    const { buffer, fileName } = await exportStudentPerformanceWorkbook({
+      rows: payload.rows,
+      assignmentCount: payload.assignmentCount,
+      testCount: payload.testCount,
+      meta: {
+        session,
+        semester: session.semester as SemesterType,
+      },
+    });
 
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${fileName}"`,
-    },
-  });
+    return new NextResponse(buffer, {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      },
+    });
+  } catch (error) {
+    return handleApiRouteError("lecturer.export-student-performance", error);
+  }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { contactInquirySchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
+import { logServerError } from "@/lib/errors/logger";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !inquiry) {
-    console.error("Contact inquiry insert failed:", error);
+    logServerError("contact.inquiry.insert", error);
     return NextResponse.json(
       { error: "Could not send your message. Please try again." },
       { status: 500 }
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   });
 
   if (notificationError) {
-    console.error("Admin notification insert failed:", notificationError);
+    logServerError("contact.inquiry.notification", notificationError);
   }
 
   await service.from("audit_logs").insert({

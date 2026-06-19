@@ -67,13 +67,20 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const subscription = await adminExtendPremium({
-    lecturerId: parsed.data.lecturerId,
-    days: parsed.data.days,
-    actorId: auth.userId,
-  });
+  try {
+    const subscription = await adminExtendPremium({
+      lecturerId: parsed.data.lecturerId,
+      days: parsed.data.days,
+      actorId: auth.userId,
+    });
 
-  return NextResponse.json({ success: true, subscription });
+    return NextResponse.json({ success: true, subscription });
+  } catch (error) {
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to extend subscription"
+    );
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
 }
 
 const revokeSchema = z.object({
@@ -96,6 +103,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  await revokePremiumSubscription(parsed.data.lecturerId, auth.userId);
-  return NextResponse.json({ success: true });
+  try {
+    await revokePremiumSubscription(parsed.data.lecturerId, auth.userId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to revoke subscription"
+    );
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
 }

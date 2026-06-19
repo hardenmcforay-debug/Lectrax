@@ -54,5 +54,15 @@ export function logPlatformError(
 }
 
 export function logClientCrash(scope: string, error: Error, context: LogContext = {}): void {
+  if (isProduction) {
+    console.error(`[${scope}] ${error.name}: Application error`, sanitizeContext(context));
+    return;
+  }
+
   console.error(`[${scope}] ${error.name}: ${error.message}`, sanitizeContext(context));
+}
+
+/** Log server-side failures without echoing raw error text in production. */
+export function logServerError(scope: string, error: unknown, context: LogContext = {}): void {
+  logPlatformError(scope, error, context);
 }

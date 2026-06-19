@@ -35,7 +35,9 @@ export default async function TestGradesPage({
       </DashboardShell>
     );
   } catch (error) {
-    console.error("[TestGradesPage] getTestGradeEntryData failed", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("[TestGradesPage] getTestGradeEntryData failed", error);
+    }
     return (
       <DashboardShell
         role="lecturer"

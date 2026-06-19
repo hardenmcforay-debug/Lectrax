@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { backfillMissingSubscriptionRecords } from "@/lib/subscription/lifecycle";
+import { handleApiRouteError } from "@/lib/errors/api";
 
 /** Repairs missing subscription history rows for the signed-in lecturer. */
 export async function POST() {
@@ -23,7 +24,10 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const backfilled = await backfillMissingSubscriptionRecords();
-
-  return NextResponse.json({ ok: true, backfilled });
+  try {
+    const backfilled = await backfillMissingSubscriptionRecords();
+    return NextResponse.json({ ok: true, backfilled });
+  } catch (error) {
+    return handleApiRouteError("subscription.sync", error);
+  }
 }

@@ -36,7 +36,9 @@ export default async function AssignmentGradesPage({
       </DashboardShell>
     );
   } catch (error) {
-    console.error("[AssignmentGradesPage] getAssignmentGradeEntryData failed", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("[AssignmentGradesPage] getAssignmentGradeEntryData failed", error);
+    }
     return (
       <DashboardShell
         role="lecturer"

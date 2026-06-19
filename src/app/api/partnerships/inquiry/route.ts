@@ -3,6 +3,7 @@ import { partnershipInquirySchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isServiceRoleConfigured } from "@/lib/env";
 import { PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
+import { logServerError } from "@/lib/errors/logger";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   const data = parsed.data;
 
   if (!isServiceRoleConfigured()) {
-    console.error("Partnership inquiry service is not configured");
+    logServerError("partnerships.inquiry.config", new Error("Service role not configured"));
     return NextResponse.json(
       { error: "Could not submit your request. Please try again." },
       { status: 500 }
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !inquiry) {
-    console.error("Partnership inquiry insert failed:", error);
+    logServerError("partnerships.inquiry.insert", error);
     return NextResponse.json(
       { error: "Could not submit your request. Please try again." },
       { status: 500 }
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
   });
 
   if (notificationError) {
-    console.error("Admin notification insert failed:", notificationError);
+    logServerError("partnerships.inquiry.notification", notificationError);
   }
 
   await service.from("audit_logs").insert({
