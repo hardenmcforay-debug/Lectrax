@@ -1,8 +1,12 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { rejectIfCsrfViolation } from "@/lib/security/csrf";
 
 export async function middleware(request: NextRequest) {
+  const abuseResponse = rejectIfAbusiveRequest(request);
+  if (abuseResponse) return abuseResponse;
+
   const csrfResponse = rejectIfCsrfViolation(request);
   if (csrfResponse) return csrfResponse;
 

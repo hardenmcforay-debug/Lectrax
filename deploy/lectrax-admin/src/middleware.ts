@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { enforceHttpsRedirect } from "@/lib/security/redirect";
+import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
@@ -7,6 +8,9 @@ export async function middleware(request: NextRequest) {
   if (httpsRedirect) {
     return httpsRedirect;
   }
+
+  const abuseResponse = rejectIfAbusiveRequest(request);
+  if (abuseResponse) return abuseResponse;
 
   return updateSession(request);
 }
