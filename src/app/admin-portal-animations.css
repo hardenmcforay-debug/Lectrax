@@ -64,17 +64,15 @@
   min-width: 0;
 }
 
-/* PWA standalone: always use mobile admin navigation */
-html[data-pwa-standalone="true"] .admin-desktop-sidebar {
+/* PWA standalone / mobile portal: always use mobile admin navigation */
+html[data-pwa-standalone="true"] .admin-desktop-sidebar,
+html[data-portal-mobile="true"] .admin-desktop-sidebar {
   display: none !important;
 }
 
-html[data-pwa-standalone="true"] .admin-desktop-header {
+html[data-pwa-standalone="true"] .admin-desktop-header,
+html[data-portal-mobile="true"] .admin-desktop-header {
   display: none !important;
-}
-
-html[data-pwa-standalone="true"] .admin-mobile-header {
-  display: flex !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
