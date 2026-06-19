@@ -17,7 +17,7 @@ import {
   isPremiumFeatureUnlocked,
   refreshSubscriptionLifecycle,
 } from "@/lib/subscription";
-import { resolveCaWeightsFromStorage } from "@/lib/ca/constants";
+import { parseCaWeights } from "@/lib/ca/constants";
 import type { SessionAssignmentSummary } from "@/components/lecturer/session-page-client";
 import type { SessionAttendanceAudit } from "@/components/lecturer/session-audit-panel";
 import type { AuditLog, StudentTableRow } from "@/types/database";
@@ -107,7 +107,7 @@ export default async function SessionDetailPage({
 
   const caConfig = caConfigResult.data;
   const caWeights = caConfig
-    ? resolveCaWeightsFromStorage(
+    ? parseCaWeights(
         caConfig.attendance_weight,
         caConfig.assignment_weight,
         caConfig.test_weight

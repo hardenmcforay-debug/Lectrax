@@ -1,8 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeCourseCA, resolveAttendanceClassTotal } from "@/lib/ca/course-ca";
 import type { ClassTest, SemesterType, StudentTableRow } from "@/types/database";
-import type { CAWeights } from "@/lib/ca/constants";
-import { resolveCaWeightsFromStorage } from "@/lib/ca/constants";
+import { parseCaWeights, type CAWeights } from "@/lib/ca/constants";
 
 export type ClassTestSummary = Pick<ClassTest, "id" | "title" | "test_number" | "max_score">;
 
@@ -72,39 +71,19 @@ export async function getStudentTableRows(
       .eq("academic_year", academicYear),
   ]);
 
-  const resolvedWeights = caConfig
-    ? resolveCaWeightsFromStorage(
-        caConfig.attendance_weight,
-        caConfig.assignment_weight,
-        caConfig.test_weight
-      )
-    : null;
+  const storedWeights = parseCaWeights(
+    caConfig?.attendance_weight,
+    caConfig?.assignment_weight,
+    caConfig?.test_weight
+  );
+  const weights = weightOverride ?? storedWeights;
 
-  const config = weightOverride
-    ? {
-        ...(caConfig ?? {
-          attendance_weight: 0,
-          assignment_weight: 0,
-          test_weight: 0,
-          expected_class_count: null,
-        }),
-        attendance_weight: weightOverride.attendance,
-        assignment_weight: weightOverride.assignment,
-        test_weight: weightOverride.test,
-      }
-    : resolvedWeights
-      ? {
-          ...caConfig!,
-          attendance_weight: resolvedWeights.attendance,
-          assignment_weight: resolvedWeights.assignment,
-          test_weight: resolvedWeights.test,
-        }
-      : {
-          attendance_weight: 0,
-          assignment_weight: 0,
-          test_weight: 0,
-          expected_class_count: null,
-        };
+  const config = {
+    ...(caConfig ?? { expected_class_count: null }),
+    attendance_weight: weights.attendance,
+    assignment_weight: weights.assignment,
+    test_weight: weights.test,
+  };
 
   const attendanceClassTotal = resolveAttendanceClassTotal(
     config.expected_class_count,
