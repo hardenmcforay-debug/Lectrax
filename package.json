@@ -47,6 +47,7 @@
     "react-hook-form": "^7.78.0",
     "recharts": "^2.15.4",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.14"
@@ -60,7 +61,6 @@
     "@types/react-dom": "^19.1.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.19",
-    "sharp": "^0.35.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3"
   },

@@ -9,6 +9,8 @@ import {
   isAllowedBrandingImage,
 } from "@/lib/landing/site-branding";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { brandingExtensionMatchesMime } from "@/lib/security/file-validation";
+import { prepareSiteLogoForPublicStorage } from "@/lib/security/branding-image-prepare";
 
 export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
@@ -29,23 +31,41 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!brandingExtensionMatchesMime(file)) {
+    return NextResponse.json(
+      { error: "File extension does not match the image type." },
+      { status: 400 }
+    );
+  }
+
   const ext = extensionForImageMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
   }
 
-  const storagePath = buildSiteLogoStoragePath(ext);
   const previous = await getSiteLogoSetting();
+
+  const rawBuffer = Buffer.from(await file.arrayBuffer());
+  let prepared;
+  try {
+    prepared = await prepareSiteLogoForPublicStorage({ buffer: rawBuffer, mime: file.type });
+  } catch {
+    return NextResponse.json(
+      { error: "Could not process the logo image. Check the file and try again." },
+      { status: 400 }
+    );
+  }
+
+  const storagePath = buildSiteLogoStoragePath(prepared.ext);
 
   if (previous?.storage_path && previous.storage_path !== storagePath) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   const { error: uploadError } = await supabase.storage
     .from(LANDING_ASSETS_BUCKET)
-    .upload(storagePath, buffer, {
-      contentType: file.type,
+    .upload(storagePath, prepared.buffer, {
+      contentType: prepared.contentType,
       upsert: true,
       cacheControl: "3600",
     });

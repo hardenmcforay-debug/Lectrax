@@ -184,8 +184,8 @@ export function AdminSiteLogoUpload({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        JPEG, PNG, WebP, GIF, or SVG · Max 5 MB · Used in the navbar, sidebar, footer, and auth
-        pages.
+        JPEG, PNG, WebP, GIF, or SVG · Max 5 MB · SVG files are stored as PNG for security · Used
+        in the navbar, sidebar, footer, and auth pages.
       </p>
     </div>
   );
