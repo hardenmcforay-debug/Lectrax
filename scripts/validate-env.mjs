@@ -62,6 +62,14 @@ if (!read("CRON_SECRET")) {
   warnings.push("CRON_SECRET not set (subscription lifecycle cron will not run)");
 }
 
+if (read("SUBMISSION_ANTIVIRUS_REQUIRED") === "true" && !read("VIRUSTOTAL_API_KEY")) {
+  errors.push("SUBMISSION_ANTIVIRUS_REQUIRED is true but VIRUSTOTAL_API_KEY is missing");
+} else if (!read("VIRUSTOTAL_API_KEY")) {
+  warnings.push(
+    "VIRUSTOTAL_API_KEY not set (assignment uploads use deep PDF inspection only)"
+  );
+}
+
 const monimeKeys = ["MONIME_API_KEY", "MONIME_SPACE_ID", "MONIME_WEBHOOK_SECRET"];
 const monimeSet = monimeKeys.filter((key) => read(key));
 if (monimeSet.length > 0 && monimeSet.length < monimeKeys.length) {

@@ -84,6 +84,18 @@ export function getCronSecret(): string | undefined {
   return readEnv("CRON_SECRET");
 }
 
+/** Optional VirusTotal API key for assignment PDF antivirus scanning. */
+export function getVirusTotalApiKey(): string | undefined {
+  const value = readEnv("VIRUSTOTAL_API_KEY");
+  if (!value || isPlaceholder(value)) return undefined;
+  return value;
+}
+
+/** When true, assignment uploads fail if antivirus scanning is not configured. */
+export function isAntivirusScanRequired(): boolean {
+  return readEnv("SUBMISSION_ANTIVIRUS_REQUIRED") === "true";
+}
+
 /** Monime payment configuration (optional until payments are enabled). */
 export function getMonimeEnv(): {
   apiKey: string;
@@ -158,6 +170,16 @@ export function validateProductionEnv(): EnvValidationResult {
     );
   } else if (isPlaceholder(readEnv("CRON_SECRET")!)) {
     warnings.push("CRON_SECRET is still a placeholder");
+  }
+
+  if (isAntivirusScanRequired() && !getVirusTotalApiKey()) {
+    errors.push(
+      "SUBMISSION_ANTIVIRUS_REQUIRED is true but VIRUSTOTAL_API_KEY is not configured"
+    );
+  } else if (!getVirusTotalApiKey()) {
+    warnings.push(
+      "VIRUSTOTAL_API_KEY not set — assignment uploads use deep PDF inspection only (no antivirus)"
+    );
   }
 
   try {

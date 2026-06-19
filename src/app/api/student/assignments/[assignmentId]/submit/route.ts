@@ -125,7 +125,7 @@ export async function POST(
     );
   }
 
-  const { error } = await uploadAssignmentSubmission({
+  const { error, scanReason } = await uploadAssignmentSubmission({
     supabase: auth.supabase,
     userId: auth.userId,
     assignment,
@@ -149,6 +149,20 @@ export async function POST(
         classSessionId: assignment.class_session_id as string,
         deadline: assignment.deadline as string,
         reason: "deadline_passed",
+        fileName: file.name,
+      });
+    } else if (!error.includes("already submitted")) {
+      await logRejectedSubmission({
+        userId: auth.userId,
+        assignmentId,
+        classSessionId: assignment.class_session_id as string,
+        deadline: assignment.deadline as string,
+        reason:
+          scanReason === "antivirus_rejected"
+            ? "security_scan_failed"
+            : scanReason?.startsWith("pdf_") || scanReason === "invalid_pdf_header"
+              ? "pdf_inspection_failed"
+              : "validation_failed",
         fileName: file.name,
       });
     }

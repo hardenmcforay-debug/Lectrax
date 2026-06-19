@@ -4,6 +4,9 @@ import {
   buildSubmissionStoragePath,
 } from "@/lib/assignments/storage";
 import { validateSubmissionFile } from "@/lib/assignments/submission-validation";
+import { sanitizeFilename } from "@/lib/security/sanitize";
+import { scanAssignmentSubmissionPdf } from "@/lib/security/submission-file-scan";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 export { validateSubmissionFile } from "@/lib/assignments/submission-validation";
 import type { Assignment, ClassSession } from "@/types/database";
 import { SUBMISSION_CLOSED_ERROR } from "@/lib/assignments/deadline-messages";
@@ -52,7 +55,7 @@ export async function uploadAssignmentSubmission(params: {
   enrollmentId: string;
   file: File;
   hasExistingSubmission?: boolean;
-}): Promise<{ error: string | null }> {
+}): Promise<{ error: string | null; scanReason?: string }> {
   const validationError = validateSubmissionFile(params.file);
   if (validationError) return { error: validationError };
 
@@ -81,9 +84,16 @@ export async function uploadAssignmentSubmission(params: {
     studentId: params.userId,
   });
 
+  const fileBytes = new Uint8Array(await params.file.arrayBuffer());
+  const scan = await scanAssignmentSubmissionPdf(fileBytes);
+  if (!scan.ok) {
+    console.warn("[submission-scan] rejected", { reason: scan.reason });
+    return { error: scan.error, scanReason: scan.reason };
+  }
+
   const { error: uploadError } = await params.supabase.storage
     .from(ASSIGNMENT_SUBMISSIONS_BUCKET)
-    .upload(storagePath, params.file, {
+    .upload(storagePath, fileBytes, {
       contentType: "application/pdf",
       upsert: false,
     });
@@ -93,7 +103,7 @@ export async function uploadAssignmentSubmission(params: {
     if (message.toLowerCase().includes("deadline") || message.toLowerCase().includes("policy")) {
       return { error: deadlineError };
     }
-    return { error: message };
+    return { error: sanitizeErrorMessage(message) };
   }
 
   const beforeInsert = await isAssignmentBeforeDeadline(
@@ -112,7 +122,7 @@ export async function uploadAssignmentSubmission(params: {
     student_id: params.userId,
     lecturer_id: params.assignment.lecturer_id,
     class_session_id: params.assignment.class_session_id,
-    file_name: params.file.name,
+    file_name: sanitizeFilename(params.file.name),
     file_size: params.file.size,
     storage_path: storagePath,
     submission_status: "submitted",
@@ -127,7 +137,7 @@ export async function uploadAssignmentSubmission(params: {
       return { error: deadlineError };
     }
 
-    return { error: message };
+    return { error: sanitizeErrorMessage(message) };
   }
 
   return { error: null };
