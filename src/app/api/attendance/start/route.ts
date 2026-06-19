@@ -1,12 +1,9 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import {
   DEFAULT_SESSION_DURATION_MINUTES,
-  MAX_SESSION_DURATION_MINUTES,
-  MIN_SESSION_DURATION_MINUTES,
 } from "@/lib/attendance/constants";
 import { buildRotatedQRToken, buildScanUrl } from "@/lib/attendance/qr-rotation";
 import { getAttendanceSessionNumber } from "@/lib/attendance/sessions";
@@ -17,17 +14,8 @@ import {
 } from "@/lib/student/notifications";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { isUniqueViolation } from "@/lib/db/postgres-errors";
-
-const startSchema = z.object({
-  classSessionId: z.string().uuid(),
-  title: z.string().optional(),
-  durationMinutes: z.coerce
-    .number()
-    .min(MIN_SESSION_DURATION_MINUTES)
-    .max(MAX_SESSION_DURATION_MINUTES)
-    .default(DEFAULT_SESSION_DURATION_MINUTES),
-  requireGps: z.boolean().optional().default(false),
-});
+import { parseJsonBody } from "@/lib/security/parse-request";
+import { attendanceStartSchema } from "@/lib/validations";
 
 function resolveAppUrl(request: Request): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(request.url).origin;
@@ -50,13 +38,11 @@ export async function POST(request: Request) {
   }
 
   let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+  body = parsedBody.body;
 
-  const parsed = startSchema.safeParse(body);
+  const parsed = attendanceStartSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.errors[0]?.message ?? "Invalid attendance session data" },

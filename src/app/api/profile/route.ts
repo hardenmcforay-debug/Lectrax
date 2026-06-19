@@ -82,7 +82,7 @@ export async function PATCH(request: Request) {
     phone: trimmedPhone,
   };
 
-  if (role === "student" || collegeId !== undefined) {
+  if (role === "student") {
     payload.college_id = collegeId ?? null;
   }
 

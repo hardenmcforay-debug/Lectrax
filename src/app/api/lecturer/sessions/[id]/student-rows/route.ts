@@ -6,6 +6,8 @@ import { getStudentTableRows } from "@/lib/session-data";
 import type { CAWeights } from "@/lib/ca/constants";
 import { createClient } from "@/lib/supabase/server";
 import { handleApiRouteError } from "@/lib/errors/api";
+import { parseRouteUuid } from "@/lib/security/parse-request";
+import { studentRowsWeightQuerySchema } from "@/lib/validations";
 
 function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefined {
   const attendance = searchParams.get("attendanceWeight");
@@ -16,24 +18,21 @@ function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefin
     return undefined;
   }
 
-  const parsed: CAWeights = {
-    attendance: Number(attendance),
-    assignment: Number(assignment),
-    test: Number(test),
-  };
+  const parsed = studentRowsWeightQuerySchema.safeParse({
+    attendanceWeight: attendance,
+    assignmentWeight: assignment,
+    testWeight: test,
+  });
 
-  if (
-    !Number.isFinite(parsed.attendance) ||
-    !Number.isFinite(parsed.assignment) ||
-    !Number.isFinite(parsed.test) ||
-    parsed.attendance < 0 ||
-    parsed.assignment < 0 ||
-    parsed.test < 0
-  ) {
+  if (!parsed.success) {
     return undefined;
   }
 
-  return parsed;
+  return {
+    attendance: parsed.data.attendanceWeight,
+    assignment: parsed.data.assignmentWeight,
+    test: parsed.data.testWeight,
+  };
 }
 
 export async function GET(
@@ -41,6 +40,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: classSessionId } = await params;
+  const routeId = parseRouteUuid(classSessionId, "session ID");
+  if (!routeId.ok) return routeId.response;
 
   const supabase = await createClient();
   const {
@@ -56,14 +57,14 @@ export async function GET(
     return NextResponse.json({ error: "Only lecturers can view student rows." }, { status: 403 });
   }
 
-  const classSession = await getClassSessionForLecturer(classSessionId, user.id);
+  const classSession = await getClassSessionForLecturer(routeId.id, user.id);
   if (!classSession) {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 
   try {
     const { rows } = await getStudentTableRows(
-      classSessionId,
+      routeId.id,
       classSession.semester,
       classSession.academic_year,
       user.id,

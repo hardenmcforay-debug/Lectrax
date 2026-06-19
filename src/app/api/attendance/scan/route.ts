@@ -21,6 +21,8 @@ import {
   deviceBoundToOtherAccountResponse,
   type DeviceVerificationStatus,
 } from "@/lib/attendance/device-verification";
+import { attendanceScanSchema } from "@/lib/validations";
+import { parseJsonBody } from "@/lib/security/parse-request";
 
 type DuplicateScanContext = {
   userId: string;
@@ -96,21 +98,23 @@ export async function POST(request: Request) {
   const supabase = auth.supabase;
   const user = auth.user;
 
-  const body = await request.json();
-  const identityParsed = attendanceDeviceIdentitySchema.safeParse({
-    deviceFingerprint: body.deviceFingerprint,
-    browserFingerprint: body.browserFingerprint,
-    deviceIdentifier: body.deviceIdentifier,
-    deviceMetadata: body.deviceMetadata,
-  });
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
 
-  if (!identityParsed.success) {
-    return NextResponse.json({ error: "Invalid device identity" }, { status: 400 });
+  const scanParsed = attendanceScanSchema.safeParse(parsedBody.body);
+  if (!scanParsed.success) {
+    return NextResponse.json({ error: "Invalid attendance scan request" }, { status: 400 });
   }
 
-  const { token, latitude, longitude } = body;
-  const { deviceFingerprint, browserFingerprint, deviceIdentifier, deviceMetadata } =
-    identityParsed.data;
+  const {
+    token,
+    latitude,
+    longitude,
+    deviceFingerprint,
+    browserFingerprint,
+    deviceIdentifier,
+    deviceMetadata,
+  } = scanParsed.data;
 
   const payload = verifyQRToken(token);
 
@@ -140,6 +144,15 @@ export async function POST(request: Request) {
       { error: "Attendance collection has ended for this session." },
       { status: 410 }
     );
+  }
+
+  if (attSession.require_gps) {
+    if (latitude == null || longitude == null) {
+      return NextResponse.json(
+        { error: "Location is required to mark attendance for this session." },
+        { status: 400 }
+      );
+    }
   }
 
   const tokenHash = hashQRToken(token);

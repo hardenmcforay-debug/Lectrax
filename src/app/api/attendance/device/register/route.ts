@@ -6,6 +6,7 @@ import {
   deviceBoundToOtherAccountResponse,
 } from "@/lib/attendance/device-verification";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { parseJsonBody } from "@/lib/security/parse-request";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -17,8 +18,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const parsed = attendanceDeviceIdentitySchema.safeParse(body);
+  const parsedBody = await parseJsonBody(request);
+  if (!parsedBody.ok) return parsedBody.response;
+
+  const parsed = attendanceDeviceIdentitySchema.safeParse(parsedBody.body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid device identity" }, { status: 400 });

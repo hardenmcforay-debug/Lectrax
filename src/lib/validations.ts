@@ -1,5 +1,13 @@
 import { z } from "zod";
 import {
+  attendanceDeviceIdentitySchema,
+} from "@/lib/attendance/device-verification";
+import {
+  DEFAULT_SESSION_DURATION_MINUTES,
+  MAX_SESSION_DURATION_MINUTES,
+  MIN_SESSION_DURATION_MINUTES,
+} from "@/lib/attendance/constants";
+import {
   emailField,
   FIELD_LIMITS,
   optionalPhoneField,
@@ -122,6 +130,42 @@ export const classTestSchema = z.object({
   weightPercent: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
+/** Maximum grade/score rows accepted per bulk save request. */
+export const BULK_GRADE_ENTRY_MAX = 500;
+
+export const attendanceScanSchema = attendanceDeviceIdentitySchema.extend({
+  token: z.string().min(1, "QR token is required").max(2048, "QR token is too long"),
+  latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
+  longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
+});
+
+export const attendanceStartSchema = z.object({
+  classSessionId: z.string().uuid(),
+  title: optionalSanitizedString(FIELD_LIMITS.TITLE).optional(),
+  durationMinutes: z.coerce
+    .number()
+    .int()
+    .min(MIN_SESSION_DURATION_MINUTES)
+    .max(MAX_SESSION_DURATION_MINUTES)
+    .default(DEFAULT_SESSION_DURATION_MINUTES),
+  requireGps: z.boolean().optional().default(false),
+});
+
+export const exportStudentPerformanceSchema = z
+  .object({
+    attendanceWeight: z.coerce.number().int().min(0).max(100).optional(),
+    assignmentWeight: z.coerce.number().int().min(0).max(100).optional(),
+    testWeight: z.coerce.number().int().min(0).max(100).optional(),
+  })
+  .refine(
+    (data) => {
+      const keys = [data.attendanceWeight, data.assignmentWeight, data.testWeight];
+      const provided = keys.filter((value) => value !== undefined).length;
+      return provided === 0 || provided === 3;
+    },
+    { message: "Provide all CA weight overrides or none." }
+  );
+
 export const testScoresBulkSchema = z.object({
   scores: z
     .array(
@@ -130,9 +174,45 @@ export const testScoresBulkSchema = z.object({
         score: z.coerce.number().min(0),
       })
     )
+    .max(BULK_GRADE_ENTRY_MAX, `Cannot save more than ${BULK_GRADE_ENTRY_MAX} grades at once`)
     .default([]),
-  deleteEnrollmentIds: z.array(z.string().uuid()).optional(),
+  deleteEnrollmentIds: z
+    .array(z.string().uuid())
+    .max(BULK_GRADE_ENTRY_MAX, `Cannot clear more than ${BULK_GRADE_ENTRY_MAX} grades at once`)
+    .optional(),
 });
+
+export const monimeWebhookEventSchema = z.object({
+  type: z.string().max(120).optional(),
+  data: z
+    .object({
+      reference: z.string().max(200).optional(),
+      id: z.string().max(200).optional(),
+      status: z.string().max(80).optional(),
+      paymentStatus: z.string().max(80).optional(),
+      metadata: z
+        .object({
+          payment_id: z.string().uuid().optional(),
+          lecturer_id: z.string().uuid().optional(),
+          billing_plan: z.enum(["monthly", "semester", "annual"]).optional(),
+        })
+        .passthrough()
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
+});
+
+export const studentRowsWeightQuerySchema = z
+  .object({
+    attendanceWeight: z.coerce.number().int().min(0).max(100),
+    assignmentWeight: z.coerce.number().int().min(0).max(100),
+    testWeight: z.coerce.number().int().min(0).max(100),
+  })
+  .refine(
+    (data) => data.attendanceWeight + data.assignmentWeight + data.testWeight <= 100,
+    { message: "CA weight overrides cannot exceed 100% combined." }
+  );
 
 export const contactInquirySchema = z.object({
   fullName: sanitizedRequiredString({

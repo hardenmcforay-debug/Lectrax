@@ -42,7 +42,7 @@ export function StudentPerformanceExportButton({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows, assignmentCount, testCount }),
+          body: JSON.stringify({}),
         }
       );
 

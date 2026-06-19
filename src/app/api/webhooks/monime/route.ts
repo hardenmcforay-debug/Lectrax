@@ -5,6 +5,8 @@ import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivatio
 import type { BillingPlan } from "@/types/database";
 import { logAudit } from "@/lib/audit";
 import { handleApiRouteError } from "@/lib/errors/api";
+import { monimeWebhookEventSchema } from "@/lib/validations";
+import { logServerError } from "@/lib/errors/logger";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -14,20 +16,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const event = JSON.parse(rawBody) as {
-    type?: string;
-    data?: {
-      reference?: string;
-      id?: string;
-      status?: string;
-      paymentStatus?: string;
-      metadata?: {
-        payment_id?: string;
-        lecturer_id?: string;
-        billing_plan?: BillingPlan;
-      };
-    };
-  };
+  let eventJson: unknown;
+  try {
+    eventJson = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  const eventParsed = monimeWebhookEventSchema.safeParse(eventJson);
+  if (!eventParsed.success) {
+    logServerError("webhooks.monime.invalid_payload", eventParsed.error);
+    return NextResponse.json({ received: true });
+  }
+
+  const event = eventParsed.data;
 
   const service = await createServiceClient();
   const metadata = event.data?.metadata;

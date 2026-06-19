@@ -9,6 +9,7 @@ import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscrip
 import { requireStudentRole } from "@/lib/auth/require-api-role";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { parseRouteUuid } from "@/lib/security/parse-request";
 
 async function logRejectedSubmission(params: {
   userId: string;
@@ -37,6 +38,8 @@ export async function POST(
   { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   const { assignmentId } = await params;
+  const routeId = parseRouteUuid(assignmentId, "assignment ID");
+  if (!routeId.ok) return routeId.response;
 
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
@@ -51,7 +54,7 @@ export async function POST(
   const { data: assignment, error: assignmentError } = await auth.supabase
     .from("assignments")
     .select("id, lecturer_id, class_session_id, deadline, semester, academic_year, is_published")
-    .eq("id", assignmentId)
+    .eq("id", routeId.id)
     .eq("is_published", true)
     .maybeSingle();
 
@@ -69,17 +72,17 @@ export async function POST(
   }
 
   const service = await createServiceClient();
-  await lockExpiredAssignmentSubmissions(service, assignmentId);
+  await lockExpiredAssignmentSubmissions(service, routeId.id);
 
   const beforeDeadline = await isAssignmentBeforeDeadline(
     null,
-    assignmentId,
+    routeId.id,
     assignment.deadline as string
   );
   if (!beforeDeadline) {
     await logRejectedSubmission({
       userId: auth.userId,
-      assignmentId,
+      assignmentId: routeId.id,
       classSessionId: assignment.class_session_id as string,
       deadline: assignment.deadline as string,
       reason: "deadline_passed",
@@ -113,7 +116,7 @@ export async function POST(
   const { data: existing } = await auth.supabase
     .from("assignment_submissions")
     .select("id")
-    .eq("assignment_id", assignmentId)
+    .eq("assignment_id", routeId.id)
     .eq("enrollment_id", enrollment.id)
     .eq("student_id", auth.userId)
     .maybeSingle();
@@ -145,7 +148,7 @@ export async function POST(
     if (isDeadlineRejection) {
       await logRejectedSubmission({
         userId: auth.userId,
-        assignmentId,
+        assignmentId: routeId.id,
         classSessionId: assignment.class_session_id as string,
         deadline: assignment.deadline as string,
         reason: "deadline_passed",
@@ -154,7 +157,7 @@ export async function POST(
     } else if (!error.includes("already submitted")) {
       await logRejectedSubmission({
         userId: auth.userId,
-        assignmentId,
+        assignmentId: routeId.id,
         classSessionId: assignment.class_session_id as string,
         deadline: assignment.deadline as string,
         reason:
