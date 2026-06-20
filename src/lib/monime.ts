@@ -5,7 +5,7 @@ import "server-only";
  * Docs: https://docs.monime.io
  */
 
-import { createHmac, randomUUID, timingSafeEqual } from "crypto";
+import { createHmac, createVerify, randomUUID, timingSafeEqual } from "crypto";
 import type { BillingPlan } from "@/types/database";
 import {
   getBillingChargeAmount,
@@ -244,16 +244,133 @@ export async function verifyMonimePaymentCode(paymentCodeId: string): Promise<{
   }
 }
 
+const MONIME_WEBHOOK_TOLERANCE_SEC = 300;
+
+function parseMonimeSignatureHeader(header: string): {
+  timestamp: string | null;
+  signatures: Map<string, string>;
+} {
+  const signatures = new Map<string, string>();
+  let timestamp: string | null = null;
+
+  for (const part of header.split(",")) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (key === "t") {
+      timestamp = value;
+    } else if (key.startsWith("v")) {
+      signatures.set(key, value);
+    }
+  }
+
+  return { timestamp, signatures };
+}
+
+function safeEqualHex(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, "hex");
+    const bufB = Buffer.from(b, "hex");
+    if (bufA.length !== bufB.length || bufA.length === 0) return false;
+    return timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
+function computeHmacHex(secret: string, message: string): string {
+  return createHmac("sha256", secret).update(message).digest("hex");
+}
+
+function isWebhookTimestampFresh(timestamp: string): boolean {
+  const parsed = Number(timestamp);
+  if (!Number.isFinite(parsed)) return true;
+
+  const tsSec = parsed > 1e12 ? Math.floor(parsed / 1000) : Math.floor(parsed);
+  const nowSec = Math.floor(Date.now() / 1000);
+  return Math.abs(nowSec - tsSec) <= MONIME_WEBHOOK_TOLERANCE_SEC;
+}
+
+function verifyEs256WebhookSignature(
+  publicKeyPem: string,
+  payload: string,
+  header: string
+): boolean {
+  const { timestamp, signatures } = parseMonimeSignatureHeader(header);
+  const signature = signatures.get("v1");
+  if (!signature) return false;
+
+  const messages = timestamp
+    ? [`${timestamp}.${payload}`, `${timestamp}${payload}`, payload]
+    : [payload];
+
+  for (const message of messages) {
+    for (const encoding of ["base64", "hex"] as const) {
+      try {
+        if (createVerify("SHA256").update(message).verify(publicKeyPem, signature, encoding)) {
+          return !timestamp || isWebhookTimestampFresh(timestamp);
+        }
+      } catch {
+        // try next encoding
+      }
+    }
+  }
+
+  return false;
+}
+
+function verifyHmacWebhookSignature(
+  secret: string,
+  payload: string,
+  header: string
+): boolean {
+  const { timestamp, signatures } = parseMonimeSignatureHeader(header);
+  const v1 = signatures.get("v1");
+
+  if (v1) {
+    const candidates = timestamp
+      ? [`${timestamp}.${payload}`, `${timestamp}${payload}`, payload]
+      : [payload];
+
+    for (const message of candidates) {
+      if (safeEqualHex(computeHmacHex(secret, message), v1)) {
+        return !timestamp || isWebhookTimestampFresh(timestamp);
+      }
+    }
+    return false;
+  }
+
+  if (!header.includes("=")) {
+    if (safeEqualHex(computeHmacHex(secret, payload), header)) {
+      return true;
+    }
+  }
+
+  const expected = computeHmacHex(secret, payload);
+  try {
+    return timingSafeEqual(Buffer.from(header), Buffer.from(expected));
+  } catch {
+    return header === expected;
+  }
+}
+
+/** Monime sends `Monime-Signature`; keep legacy alias for older configs. */
+export function getMonimeWebhookSignature(request: Request): string | null {
+  return request.headers.get("monime-signature") ?? request.headers.get("x-monime-signature");
+}
+
 export function verifyMonimeWebhookSignature(
   payload: string,
   signature: string | null
 ): boolean {
   const secret = process.env.MONIME_WEBHOOK_SECRET;
   if (!secret || !signature) return false;
-  const expected = createHmac("sha256", secret).update(payload).digest("hex");
-  try {
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  } catch {
-    return signature === expected;
+
+  if (secret.includes("BEGIN PUBLIC KEY") || secret.includes("BEGIN CERTIFICATE")) {
+    return verifyEs256WebhookSignature(secret, payload, signature);
   }
+
+  return verifyHmacWebhookSignature(secret, payload, signature);
 }

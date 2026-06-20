@@ -183,7 +183,21 @@ export const testScoresBulkSchema = z.object({
 });
 
 export const monimeWebhookEventSchema = z.object({
+  apiVersion: z.string().max(40).optional(),
   type: z.string().max(120).optional(),
+  event: z
+    .object({
+      id: z.string().max(200).optional(),
+      name: z.string().max(120).optional(),
+      timestamp: z.string().max(20).optional(),
+    })
+    .optional(),
+  object: z
+    .object({
+      id: z.string().max(200).optional(),
+      type: z.string().max(80).optional(),
+    })
+    .optional(),
   data: z
     .object({
       reference: z.string().max(200).optional(),

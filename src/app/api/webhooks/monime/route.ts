@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { verifyMonimeWebhookSignature, verifyMonimePayment, verifyMonimePaymentCode } from "@/lib/monime";
+import {
+  getMonimeWebhookSignature,
+  verifyMonimeWebhookSignature,
+  verifyMonimePayment,
+  verifyMonimePaymentCode,
+} from "@/lib/monime";
+import { isTransientError } from "@/lib/errors/classify";
 import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
 import { logAudit, logSystemAudit } from "@/lib/audit";
@@ -10,9 +16,12 @@ import { logServerError } from "@/lib/errors/logger";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
-  const signature = request.headers.get("x-monime-signature");
+  const signature = getMonimeWebhookSignature(request);
 
   if (!verifyMonimeWebhookSignature(rawBody, signature)) {
+    logServerError("webhooks.monime.invalid_signature", {
+      hasSignature: Boolean(signature),
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
@@ -33,8 +42,21 @@ export async function POST(request: Request) {
 
   const service = await createServiceClient();
   const metadata = event.data?.metadata;
-  const paymentId = metadata?.payment_id ?? event.data?.reference;
-  const monimeResourceId = event.data?.id;
+  const monimeResourceId = event.data?.id ?? event.object?.id;
+  const eventName = event.event?.name ?? event.type;
+
+  let paymentId = metadata?.payment_id ?? event.data?.reference;
+  if (!paymentId && monimeResourceId) {
+    const { data: linkedPayments } = await service
+      .from("payments")
+      .select("id")
+      .or(
+        `monime_payment_id.eq.${monimeResourceId},transaction_reference.eq.${monimeResourceId}`
+      )
+      .order("created_at", { ascending: false })
+      .limit(1);
+    paymentId = linkedPayments?.[0]?.id;
+  }
 
   if (!paymentId) {
     return NextResponse.json({ received: true });
@@ -42,9 +64,10 @@ export async function POST(request: Request) {
 
   const status = (event.data?.paymentStatus ?? event.data?.status ?? "").toLowerCase();
   const eventCompleted =
-    event.type === "payment.completed" ||
-    event.type === "checkout.session.completed" ||
-    event.type === "payment_code.completed" ||
+    eventName === "payment.completed" ||
+    eventName === "checkout.session.completed" ||
+    eventName === "checkout_session.completed" ||
+    eventName === "payment_code.completed" ||
     status === "completed" ||
     status === "paid" ||
     status === "success";
@@ -85,9 +108,9 @@ export async function POST(request: Request) {
       action: "payment_webhook_invalid_plan",
       entityType: "payment",
       entityId: payment.id,
-      metadata: { event_type: event.type },
+      metadata: { event_type: eventName },
     });
-    return NextResponse.json({ error: "Missing billing plan" }, { status: 400 });
+    return NextResponse.json({ received: true, skipped: "missing_billing_plan" });
   }
 
   try {
@@ -123,7 +146,10 @@ export async function POST(request: Request) {
         error: err instanceof Error ? err.message : "Activation failed",
       },
     });
-    return handleApiRouteError("webhooks.monime.activate", err);
+    if (isTransientError(err)) {
+      return handleApiRouteError("webhooks.monime.activate", err);
+    }
+    return NextResponse.json({ received: true, error: "activation_failed" });
   }
 
   return NextResponse.json({ received: true });
