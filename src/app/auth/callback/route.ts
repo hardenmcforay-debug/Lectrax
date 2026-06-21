@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import {
   getPlatformAdminLoginRedirectUrl,
   isMainAppDeployment,
@@ -15,9 +14,17 @@ import {
 } from "@/lib/auth/roles";
 import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
 import { logServerError } from "@/lib/errors/logger";
+import { createRouteHandlerClient } from "@/lib/supabase/route-handler";
 
 function redirectToPasswordReset(origin: string): NextResponse {
   return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
+}
+
+function copyResponseCookies(from: NextResponse, to: NextResponse): NextResponse {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie);
+  });
+  return to;
 }
 
 export async function GET(request: Request) {
@@ -28,16 +35,16 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/";
   const isRecoveryFlow = isPasswordRecoveryCallback({ type: flowType, next });
 
-  const supabase = await createClient();
-
   if (tokenHash && flowType === "recovery") {
+    const response = redirectToPasswordReset(origin);
+    const supabase = await createRouteHandlerClient(response);
     const { error } = await supabase.auth.verifyOtp({
       type: "recovery",
       token_hash: tokenHash,
     });
 
     if (!error) {
-      return redirectToPasswordReset(origin);
+      return response;
     }
 
     logServerError("auth.callback.recoveryVerifyOtp", error);
@@ -45,10 +52,17 @@ export async function GET(request: Request) {
   }
 
   if (code) {
+    const recoveryRedirect = isRecoveryFlow || flowType === "recovery";
+    const sessionResponse = recoveryRedirect
+      ? redirectToPasswordReset(origin)
+      : NextResponse.redirect(`${origin}/`);
+
+    const supabase = await createRouteHandlerClient(sessionResponse);
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+
     if (!error) {
-      if (isRecoveryFlow || flowType === "recovery") {
-        return redirectToPasswordReset(origin);
+      if (recoveryRedirect) {
+        return sessionResponse;
       }
 
       const {
@@ -75,7 +89,8 @@ export async function GET(request: Request) {
       }
 
       const dest = resolvePostLoginRedirect(role, next === "/" ? null : next);
-      return NextResponse.redirect(`${origin}${dest}`);
+      const finalResponse = NextResponse.redirect(`${origin}${dest}`);
+      return copyResponseCookies(sessionResponse, finalResponse);
     }
 
     logServerError("auth.callback.exchangeCodeForSession", error);

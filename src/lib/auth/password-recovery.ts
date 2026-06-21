@@ -1,7 +1,17 @@
 const RESET_PASSWORD_PATH = "/reset-password";
 
+function normalizeAppOrigin(appOrigin: string): string {
+  return appOrigin.replace(/\/$/, "");
+}
+
+/** Direct reset page URL — preferred for PWA (client-side code exchange, no redirect cookie loss). */
+export function getPasswordResetRedirectUrl(appOrigin: string): string {
+  return new URL(RESET_PASSWORD_PATH, normalizeAppOrigin(appOrigin)).toString();
+}
+
+/** Server callback fallback when the reset page cannot exchange the code client-side. */
 export function getPasswordResetCallbackUrl(appOrigin: string): string {
-  const callbackUrl = new URL("/auth/callback", appOrigin.replace(/\/$/, ""));
+  const callbackUrl = new URL("/auth/callback", normalizeAppOrigin(appOrigin));
   callbackUrl.searchParams.set("next", RESET_PASSWORD_PATH);
   return callbackUrl.toString();
 }

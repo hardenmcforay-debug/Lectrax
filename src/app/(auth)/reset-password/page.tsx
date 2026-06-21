@@ -17,7 +17,6 @@ import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
-import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-recovery-session-bootstrap";
 
 type ResetPasswordInput = {
   password: string;
@@ -85,7 +84,6 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4">
-      <PasswordRecoverySessionBootstrap />
       <Logo className="mb-8" />
       <Card className="w-full max-w-md">
         <CardHeader>

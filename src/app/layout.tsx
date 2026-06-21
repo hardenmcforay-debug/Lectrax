@@ -7,6 +7,7 @@ import { SiteBrandingProvider } from "@/components/layout/site-branding-provider
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
 import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
 import { AuthSessionSync } from "@/components/auth/auth-session-sync";
+import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-recovery-session-bootstrap";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
@@ -82,6 +83,7 @@ export default async function RootLayout({
         <PwaBootstrapScripts />
         <PwaProvider />
         <AuthSessionSync />
+        <PasswordRecoverySessionBootstrap />
         <PortalChromeSync />
         <SiteBrandingProvider logoUrl={logoUrl}>
           <PlatformErrorProvider>
