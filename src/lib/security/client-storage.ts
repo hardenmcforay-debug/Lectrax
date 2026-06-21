@@ -5,8 +5,11 @@
 
 import { clearAllOfflineCache } from "@/lib/offline/cache";
 
-/** Login email saved only when the user opts into "Remember me". */
-export const REMEMBER_EMAIL_STORAGE_KEY = "lectrax_remember_email";
+/** Login identifier saved only when the user opts into "Remember me". */
+export const REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY = "lectrax_remember_login_identifier";
+
+/** @deprecated Use REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY */
+export const REMEMBER_EMAIL_STORAGE_KEY = REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY;
 
 /** Attendance device UUID — operational anti-fraud identifier, not an auth secret. */
 export { ATTENDANCE_DEVICE_ID_KEY } from "@/lib/attendance/device-identity";

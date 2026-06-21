@@ -107,11 +107,11 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
   }
 
   if (context === "login" && /invalid login credentials/i.test(message)) {
-    return "Sign in failed. Please check your email and password.";
+    return "Sign in failed. Please check your phone number or email and password.";
   }
 
   if (context === "signup" && /user already registered/i.test(message)) {
-    return "If an account exists for this email, check your inbox or try signing in.";
+    return "An account already exists with this phone number or email. Sign in instead.";
   }
 
   if (context === "signup" && /email not confirmed/i.test(message)) {
@@ -127,7 +127,7 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
   }
 
   return context === "login"
-    ? "Sign in failed. Please check your email and password."
+    ? "Sign in failed. Please check your phone number or email and password."
     : "Could not complete your request. Please try again.";
 }
 

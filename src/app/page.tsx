@@ -8,11 +8,26 @@ import "./landing.css";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+function readParam(
+  value: string | string[] | undefined
+): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const dashboardPath = await getAuthenticatedHomeRedirect();
   if (dashboardPath) {
     redirect(dashboardPath);
   }
+
+  const params = await searchParams;
+  const showLoginFailed =
+    readParam(params.login_failed) === "1" || readParam(params.error) === "auth";
 
   let heroImageUrl: string | null = null;
   try {
@@ -25,7 +40,7 @@ export default async function HomePage() {
 
   return (
     <AuthLaunchGate>
-      <LoginFailedBanner />
+      <LoginFailedBanner show={showLoginFailed} />
       <LandingPage heroImageUrl={heroImageUrl} />
     </AuthLaunchGate>
   );

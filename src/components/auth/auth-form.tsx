@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient, getSupabaseConfigError } from "@/lib/supabase/client";
 import { loginSchema, signupSchema, type LoginInput, type SignupInput } from "@/lib/validations";
+import { buildPhoneAuthEmail, isEmailIdentifier, parseSignupIdentifier } from "@/lib/auth/phone-number";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -26,7 +27,7 @@ import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
 import { sanitizeQueryParam } from "@/lib/security/sanitize";
-import { REMEMBER_EMAIL_STORAGE_KEY } from "@/lib/security/client-storage";
+import { REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY } from "@/lib/security/client-storage";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 
 const authInputClass =
@@ -46,7 +47,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     if (authError === "auth") {
       return toAuthMessage(
         "Sign In Failed",
-        "Sign in failed. Please check your email and password."
+        "Sign in failed. Please check your phone number or email and password."
       );
     }
     if (authError === "admin") {
@@ -57,6 +58,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
   const [info, setInfo] = useState<string | null>(() => {
     if (sanitizeQueryParam(searchParams.get("message"), 30) === "confirm-email") {
       return "Account created. Check your email to confirm, then sign in.";
+    }
+    if (sanitizeQueryParam(searchParams.get("message"), 30) === "account-created") {
+      return "Account created. Sign in with your phone number and password.";
     }
     if (sanitizeQueryParam(searchParams.get("message"), 30) === "password-updated") {
       return "Your password has been updated. You can sign in now.";
@@ -71,9 +75,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_STORAGE_KEY);
-    if (savedEmail) {
-      setValue("email", savedEmail);
+    const savedIdentifier = localStorage.getItem(REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY);
+    if (savedIdentifier) {
+      setValue("identifier", savedIdentifier);
       setRememberMe(true);
     }
   }, [setValue]);
@@ -94,12 +98,49 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     }
 
     if (rememberMe) {
-      localStorage.setItem(REMEMBER_EMAIL_STORAGE_KEY, data.email);
+      localStorage.setItem(REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY, data.identifier);
     } else {
-      localStorage.removeItem(REMEMBER_EMAIL_STORAGE_KEY);
+      localStorage.removeItem(REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY);
     }
 
     try {
+      const loginResponse = await appFetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: data.identifier,
+          password: data.password,
+        }),
+      });
+
+      if (loginResponse.status === 429) {
+        setError({
+          title: "Too Many Requests",
+          description: "Too many sign-in attempts. Please wait a few minutes and try again.",
+          retryable: true,
+        });
+        return;
+      }
+
+      if (!loginResponse.ok) {
+        const body = (await loginResponse.json().catch(() => null)) as { error?: string } | null;
+        try {
+          const client = createClient();
+          await client.auth.signOut();
+        } catch {
+          // Ignore sign-out errors after a failed login attempt.
+        }
+        clearClientStorageAfterAuthReset();
+        setError(
+          toAuthMessage(
+            "Sign In Failed",
+            body?.error ?? "Sign in failed. Please check your phone number or email and password.",
+            false
+          )
+        );
+        return;
+      }
+
       let supabase;
       try {
         supabase = createClient();
@@ -108,20 +149,17 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { data: authData, error: sessionError } = await supabase.auth.getUser();
 
-      if (authError) {
+      if (sessionError || !authData.user) {
         await supabase.auth.signOut();
         clearClientStorageAfterAuthReset();
         setError(
-          mapSupabaseAuthError(authError, "login", "auth.login.signIn") ?? {
-            title: "Sign In Failed",
-            description: "Sign in failed. Please check your email and password.",
-            retryable: false,
-          }
+          toAuthMessage(
+            "Sign In Failed",
+            "Sign in succeeded but the session could not be established. Please try again.",
+            true
+          )
         );
         return;
       }
@@ -194,18 +232,20 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className={authLabelClass}>
-            Email
+          <Label htmlFor="identifier" className={authLabelClass}>
+            Phone Number or Email
           </Label>
           <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="Enter your Email"
+            id="identifier"
+            type="text"
+            autoComplete="username"
+            placeholder="Phone number or email address"
             className={authInputClass}
-            {...register("email")}
+            {...register("identifier")}
           />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {errors.identifier && (
+            <p className="text-sm text-destructive">{errors.identifier.message}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -327,21 +367,85 @@ export function SignupForm() {
       }
 
       const collegeId = data.collegeId?.trim() || undefined;
+      const signupId = parseSignupIdentifier(data.identifier);
+
+      const signupCheck = await appFetch("/api/auth/check-signup-identifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: data.identifier }),
+      });
+
+      if (signupCheck.status === 409) {
+        const body = (await signupCheck.json().catch(() => null)) as {
+          error?: string;
+          message?: string;
+        } | null;
+        setError(
+          toAuthMessage(
+            body?.error ??
+              (signupId.type === "phone"
+                ? "Phone Number Already Registered"
+                : "Email Already Registered"),
+            body?.message ??
+              (signupId.type === "phone"
+                ? "An account already exists with this phone number. Sign in instead."
+                : "An account already exists with this email address. Sign in instead."),
+            false
+          )
+        );
+        return;
+      }
+
+      if (!signupCheck.ok) {
+        const body = (await signupCheck.json().catch(() => null)) as { error?: string } | null;
+        setError(
+          toAuthMessage(
+            "Request Failed",
+            body?.error ?? "Could not verify your details. Please try again.",
+            true
+          )
+        );
+        return;
+      }
+
+      const authEmail =
+        signupId.type === "email" ? signupId.email : buildPhoneAuthEmail(signupId.phone);
+      const signupPhone = signupId.type === "phone" ? signupId.phone : null;
+      const contactEmail = signupId.type === "email" ? signupId.email : null;
 
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
+        email: authEmail,
         password: data.password,
         options: {
           data: {
             full_name: data.fullName,
             role: data.role,
             college_id: collegeId,
+            phone: signupPhone,
+            contact_email: contactEmail,
+            signup_method: signupId.type,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (authError) {
+        const alreadyRegistered = /user already registered/i.test(authError.message);
+        if (alreadyRegistered) {
+          setError(
+            toAuthMessage(
+              signupId.type === "phone"
+                ? "Phone Number Already Registered"
+                : "Email Already Registered",
+              signupId.type === "phone"
+                ? "An account already exists with this phone number. Sign in with your phone number and password."
+                : "An account already exists with this email address. Sign in instead.",
+              false
+            )
+          );
+          return;
+        }
+
         setError(
           mapSupabaseAuthError(authError, "signup", "auth.signup.signUp") ?? {
             title: "Request Failed",
@@ -362,6 +466,16 @@ export function SignupForm() {
           )
         );
         return;
+      }
+
+      if (signupId.type === "phone") {
+        await appFetch("/api/auth/finalize-phone-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, phoneNumber: signupId.phone }),
+        }).catch(() => {
+          // Login will retry activation for phone-only accounts.
+        });
       }
 
       if (signUpData.session) {
@@ -397,7 +511,11 @@ export function SignupForm() {
         return;
       }
 
-      router.push("/login?message=confirm-email");
+      router.push(
+        signupId.type === "email"
+          ? "/login?message=confirm-email"
+          : "/login?message=account-created"
+      );
     } catch (cause) {
       setError(mapAuthError(cause, "signup", "auth.signup.unhandled"));
     }
@@ -435,42 +553,43 @@ export function SignupForm() {
           <input type="hidden" {...register("role")} />
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName" className={authLabelClass}>
-              Full Name
-            </Label>
-            <Input
-              id="fullName"
-              placeholder="John Doe"
-              className={authInputClass}
-              {...register("fullName")}
-            />
-            {errors.fullName && (
-              <p className="text-sm text-destructive">{errors.fullName.message}</p>
-            )}
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="fullName" className={authLabelClass}>
+            Full Name
+          </Label>
+          <Input
+            id="fullName"
+            placeholder="John Doe"
+            className={authInputClass}
+            {...register("fullName")}
+          />
+          {errors.fullName && (
+            <p className="text-sm text-destructive">{errors.fullName.message}</p>
+          )}
+        </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className={authLabelClass}>
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="Enter your Email"
-              className={authInputClass}
-              {...register("email")}
-            />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="identifier" className={authLabelClass}>
+            Phone Number or Email
+          </Label>
+          <Input
+            id="identifier"
+            type="text"
+            autoComplete="username"
+            placeholder="+232 7612 **** or john@example.com"
+            className={authInputClass}
+            {...register("identifier")}
+          />
+          {errors.identifier && (
+            <p className="text-sm text-destructive">{errors.identifier.message}</p>
+          )}
+          <p className="text-xs text-slate-500">Use one — your phone number or email address.</p>
         </div>
 
         {role === "student" && (
           <div className="space-y-1.5">
             <Label htmlFor="collegeId" className={authLabelClass}>
-              College ID <span className="font-normal text-slate-400">(optional)</span>
+              Student ID <span className="font-normal text-slate-400">(optional)</span>
             </Label>
             <Input
               id="collegeId"

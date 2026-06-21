@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import type { UserRole } from "@/types/database";
-import { User, Phone, GraduationCap, CreditCard, Lock } from "lucide-react";
+import { User, Phone, GraduationCap, CreditCard, Lock, Mail } from "lucide-react";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ export function ProfileSettings({
       fullName: initialProfile.full_name,
       phone: initialProfile.phone ?? "",
       collegeId: initialProfile.college_id ?? "",
+      recoveryEmail: initialProfile.recoveryEmail,
     },
   });
 
@@ -76,16 +77,20 @@ export function ProfileSettings({
         fullName: data.fullName,
         phone: data.phone,
         collegeId: role === "student" ? data.collegeId : undefined,
+        recoveryEmail: data.recoveryEmail,
       }),
     });
 
     const result = (await res.json()) as {
       error?: string;
+      message?: string;
       profile?: ProfileSettingsInitial;
     };
 
     if (!res.ok || !result.profile) {
-      setProfileError(result.error ?? "Could not save profile. Please try again.");
+      setProfileError(
+        result.message ?? result.error ?? "Could not save profile. Please try again."
+      );
       return;
     }
 
@@ -94,6 +99,7 @@ export function ProfileSettings({
       fullName: result.profile.full_name,
       phone: result.profile.phone ?? "",
       collegeId: result.profile.college_id ?? "",
+      recoveryEmail: result.profile.recoveryEmail,
     });
 
     router.refresh();
@@ -124,20 +130,20 @@ export function ProfileSettings({
         role === "lecturer" && "lecturer-stagger"
       )}
     >
-      <Card className={portalCardClass}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-accent" />
-            Profile
-          </CardTitle>
-          <CardDescription>
-            {role === "student"
-              ? "Your college ID syncs automatically to every class you join."
-              : "Update your account details visible to students and the platform."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSaveProfile)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSaveProfile)} className="space-y-6">
+        <Card className={portalCardClass}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-accent" />
+              Profile
+            </CardTitle>
+            <CardDescription>
+              {role === "student"
+                ? "Your college ID syncs automatically to every class you join."
+                : "Update your account details visible to students and the platform."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
               <span className="text-sm text-muted-foreground">Role</span>
               <Badge>{ROLE_LABELS[profile?.role as UserRole] ?? role}</Badge>
@@ -174,19 +180,67 @@ export function ProfileSettings({
                 </p>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className={portalCardClass}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-accent" />
+              Password recovery email
+            </CardTitle>
+            <CardDescription>
+              Add or update the email address used for password reset links.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="recoveryEmail">Recovery email</Label>
+              {profile.recoveryEmailEditable ? (
+                <>
+                  <Input
+                    id="recoveryEmail"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    {...register("recoveryEmail")}
+                  />
+                  {errors.recoveryEmail && (
+                    <p className="text-sm text-destructive">{errors.recoveryEmail.message}</p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {profile.recoveryEmail
+                      ? "Password reset links are sent here. You can still sign in with your phone number."
+                      : "Recommended if you signed up with a phone number. Add an email to recover your account."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="recoveryEmail"
+                    type="email"
+                    value={profile.recoveryEmail}
+                    readOnly
+                    className="bg-slate-50"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This is the email you use to sign in. Password reset links are sent here.
+                  </p>
+                </>
+              )}
+            </div>
 
             {profileError && <p className="text-sm text-destructive">{profileError}</p>}
-
             {profileSaved && (
-              <p className="text-sm font-medium text-accent">Profile saved successfully.</p>
+              <p className="text-sm font-medium text-accent">Settings saved successfully.</p>
             )}
 
             <Button type="submit" variant="accent" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save profile"}
+              {isSubmitting ? "Saving..." : "Save settings"}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </form>
 
       {role === "lecturer" && (
         <Card className={portalCardClass}>
@@ -240,7 +294,7 @@ export function ProfileSettings({
           <p className="mt-4 text-sm text-muted-foreground">
             Forgot your password?{" "}
             <Link href="/forgot-password" className="text-primary hover:underline">
-              Reset via email
+              Reset via email or phone
             </Link>
           </p>
         </CardContent>

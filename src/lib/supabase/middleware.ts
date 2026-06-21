@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { UserRole } from "@/types/database";
-import { AUTH_ROUTES, PUBLIC_API_ROUTES, PUBLIC_ROUTES } from "@/lib/constants";
+import {
+  AUTH_ROUTES,
+  isPublicAuthApiRoute,
+  PUBLIC_API_ROUTES,
+  PUBLIC_ROUTES,
+} from "@/lib/constants";
 import {
   getAdminAppUrl,
   getPlatformAdminLoginRedirectUrl,
@@ -80,6 +85,7 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) ||
     PUBLIC_API_ROUTES.some((r) => pathname === r) ||
+    isPublicAuthApiRoute(pathname) ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron");
 

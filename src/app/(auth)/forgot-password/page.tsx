@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
       const response = await appFetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.email }),
+        body: JSON.stringify({ identifier: data.identifier }),
       });
 
       if (response.status === 429) {
@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
         setError({
           title: "Request Failed",
-          description: body?.error ?? "Please enter a valid email address.",
+          description: body?.error ?? "Please enter a valid phone number or email address.",
           retryable: false,
         });
         return;
@@ -67,7 +67,8 @@ export default function ForgotPasswordPage() {
         <CardHeader>
           <CardTitle>Reset password</CardTitle>
           <CardDescription>
-            Reset your Lectrax account password. We&apos;ll send you a secure link.
+            Reset your Lectrax account password. Enter your phone number or email and we&apos;ll send
+            you a secure link when an email is on file.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,15 +77,17 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="identifier">Phone Number or Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
+                  id="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Phone number or email address"
+                  {...register("identifier")}
                   required
                 />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                {errors.identifier && (
+                  <p className="text-sm text-destructive">{errors.identifier.message}</p>
                 )}
               </div>
               {error && (

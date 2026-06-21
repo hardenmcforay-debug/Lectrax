@@ -9,6 +9,7 @@ import { getSiteLogoUrl } from "@/lib/landing/site-branding";
 import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
 import { AuthSessionSync } from "@/components/auth/auth-session-sync";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
 
 const geistSans = Geist({
@@ -85,10 +86,14 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         <PwaHeadLinks />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        <PwaBootstrapScripts />
         <PwaProvider />
         <AuthSessionSync />
         <PortalChromeSync />

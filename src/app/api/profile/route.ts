@@ -2,7 +2,48 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { profileUpdateSchema } from "@/lib/validations";
+import { normalizePhoneNumber } from "@/lib/auth/phone-number";
+import { applyRecoveryEmailUpdate } from "@/lib/auth/recovery-email";
+import { canEditRecoveryEmail, getRecoveryEmailDisplay } from "@/lib/auth/phone-number";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+
+type ProfileResponse = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  college_id: string | null;
+  role: string;
+  email: string;
+  created_at: string;
+  updated_at?: string;
+  recoveryEmail: string;
+  recoveryEmailEditable: boolean;
+};
+
+function buildProfileResponse(
+  profile: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    college_id: string | null;
+    role: string;
+    email: string;
+    created_at: string;
+    updated_at?: string;
+  },
+  authEmail: string | null | undefined,
+  userMetadata?: Record<string, unknown>
+): ProfileResponse {
+  return {
+    ...profile,
+    recoveryEmail: getRecoveryEmailDisplay(profile.email),
+    recoveryEmailEditable: canEditRecoveryEmail({
+      authEmail,
+      profilePhone: profile.phone,
+      userMetadata,
+    }),
+  };
+}
 
 export async function GET() {
   const supabase = await createClient();
@@ -28,7 +69,9 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ profile });
+  return NextResponse.json({
+    profile: profile ? buildProfileResponse(profile, user.email, user.user_metadata) : null,
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -56,14 +99,22 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const { fullName, phone, collegeId } = parsed.data;
+  const { fullName, phone, collegeId, recoveryEmail } = parsed.data;
   const trimmedName = fullName;
-  const trimmedPhone = phone ?? null;
+  let trimmedPhone: string | null = null;
+
+  if (phone) {
+    try {
+      trimmedPhone = normalizePhoneNumber(phone);
+    } catch {
+      return NextResponse.json({ error: "Invalid phone number format" }, { status: 400 });
+    }
+  }
 
   const service = await createServiceClient();
   const { data: existing, error: readError } = await service
     .from("profiles")
-    .select("id, role")
+    .select("id, role, phone, email")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -74,8 +125,52 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const role =
-    existing?.role ?? "student";
+  if (trimmedPhone) {
+    const { data: phoneConflict, error: phoneConflictError } = await service
+      .from("profiles")
+      .select("id")
+      .eq("phone", trimmedPhone)
+      .neq("id", user.id)
+      .maybeSingle();
+
+    if (phoneConflictError) {
+      return NextResponse.json(
+        { error: sanitizeErrorMessage(phoneConflictError.message) },
+        { status: 500 }
+      );
+    }
+
+    if (phoneConflict) {
+      return NextResponse.json(
+        {
+          error: "Phone Number Already Registered",
+          message: "An account already exists with this phone number.",
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  const role = existing?.role ?? "student";
+
+  const recoveryEmailEditable = canEditRecoveryEmail({
+    authEmail: user.email,
+    profilePhone: trimmedPhone ?? existing?.phone ?? null,
+    userMetadata: user.user_metadata,
+  });
+
+  if (recoveryEmail && recoveryEmailEditable) {
+    const recoveryResult = await applyRecoveryEmailUpdate(user.id, recoveryEmail, service);
+    if (!recoveryResult.ok) {
+      return NextResponse.json(
+        {
+          error: recoveryResult.error,
+          message: recoveryResult.message,
+        },
+        { status: recoveryResult.status }
+      );
+    }
+  }
 
   const payload: Record<string, string | boolean | null> = {
     full_name: trimmedName,
@@ -151,5 +246,7 @@ export async function PATCH(request: Request) {
   revalidatePath("/student/academic-overview");
   revalidatePath("/lecturer/settings");
 
-  return NextResponse.json({ profile: savedProfile });
+  return NextResponse.json({
+    profile: buildProfileResponse(savedProfile, user.email, user.user_metadata),
+  });
 }
