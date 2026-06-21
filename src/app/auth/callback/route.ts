@@ -5,24 +5,50 @@ import {
   isMainAppDeployment,
 } from "@/lib/auth/admin-deployment";
 import {
+  isPasswordRecoveryCallback,
+  PASSWORD_RESET_PAGE_PATH,
+} from "@/lib/auth/password-recovery";
+import {
   resolveUserRoleOrNull,
   resolvePostLoginRedirect,
   getLoginFailureUrl,
 } from "@/lib/auth/roles";
 import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
+import { logServerError } from "@/lib/errors/logger";
+
+function redirectToPasswordReset(origin: string): NextResponse {
+  return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
+}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const tokenHash = searchParams.get("token_hash");
   const flowType = searchParams.get("type");
+  const next = searchParams.get("next") ?? "/";
+  const isRecoveryFlow = isPasswordRecoveryCallback({ type: flowType, next });
+
+  const supabase = await createClient();
+
+  if (tokenHash && flowType === "recovery") {
+    const { error } = await supabase.auth.verifyOtp({
+      type: "recovery",
+      token_hash: tokenHash,
+    });
+
+    if (!error) {
+      return redirectToPasswordReset(origin);
+    }
+
+    logServerError("auth.callback.recoveryVerifyOtp", error);
+    return NextResponse.redirect(getLoginFailureUrl(origin));
+  }
 
   if (code) {
-    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (flowType === "recovery") {
-        return NextResponse.redirect(`${origin}/reset-password`);
+      if (isRecoveryFlow || flowType === "recovery") {
+        return redirectToPasswordReset(origin);
       }
 
       const {
@@ -51,6 +77,8 @@ export async function GET(request: Request) {
       const dest = resolvePostLoginRedirect(role, next === "/" ? null : next);
       return NextResponse.redirect(`${origin}${dest}`);
     }
+
+    logServerError("auth.callback.exchangeCodeForSession", error);
   }
 
   return NextResponse.redirect(getLoginFailureUrl(origin));

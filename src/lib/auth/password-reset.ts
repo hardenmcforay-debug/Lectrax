@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/env";
 import { logServerError } from "@/lib/errors/logger";
 import { PASSWORD_RESET_SUCCESS_MESSAGE } from "@/lib/auth/password-reset-constants";
+import { getPasswordResetCallbackUrl } from "@/lib/auth/password-recovery";
 import { resolvePasswordResetTargetEmail } from "@/lib/auth/recovery-email";
 
 export { PASSWORD_RESET_SUCCESS_MESSAGE };
@@ -50,7 +51,7 @@ export async function sendPasswordResetEmail(params: {
 }): Promise<boolean> {
   const supabase = params.service ?? (await createServiceClient());
   const normalized = normalizeAuthEmail(params.email);
-  const redirectTo = `${getAppUrl(params.redirectOrigin)}/auth/callback?type=recovery`;
+  const redirectTo = getPasswordResetCallbackUrl(getAppUrl(params.redirectOrigin));
 
   const { error } = await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
 

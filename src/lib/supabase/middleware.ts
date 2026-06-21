@@ -73,6 +73,10 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  if (pathname === "/reset-password") {
+    return supabaseResponse;
+  }
+
   if (isAdminHostedSeparately() && !isAdminDeployment()) {
     if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
       const adminUrl = getAdminAppUrl();
