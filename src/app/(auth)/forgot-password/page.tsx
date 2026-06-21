@@ -65,10 +65,11 @@ export default function ForgotPasswordPage() {
       <Logo className="mb-8" />
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Reset password</CardTitle>
+          <CardTitle>Need to reset your password?</CardTitle>
           <CardDescription>
-            Reset your Lectrax account password. Enter your phone number or email and we&apos;ll send
-            you a secure link when an email is on file.
+            Provide your email address or phone number, and we&apos;ll help you regain access to your
+            Lectrax account. If an email is associated with your account, a secure password reset link
+            will be sent to you.
           </CardDescription>
         </CardHeader>
         <CardContent>
