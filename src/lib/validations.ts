@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  isEmailIdentifier,
+  isValidPhoneInput,
+} from "@/lib/auth/phone-number";
+import {
   attendanceDeviceIdentitySchema,
 } from "@/lib/attendance/device-verification";
 import {
@@ -10,6 +14,8 @@ import {
 import {
   emailField,
   FIELD_LIMITS,
+  normalizedRequiredPhoneField,
+  optionalEmailField,
   optionalPhoneField,
   optionalSanitizedString,
   passwordField,
@@ -17,9 +23,23 @@ import {
   sanitizedRequiredString,
   sessionCodeField,
 } from "@/lib/security/zod-helpers";
+import { sanitizeTextInput } from "@/lib/security/sanitize";
+
+export const loginIdentifierField = z
+  .string()
+  .transform((value) => sanitizeTextInput(value))
+  .pipe(
+    z
+      .string()
+      .min(1, "Phone number or email is required")
+      .refine(
+        (value) => isEmailIdentifier(value) || isValidPhoneInput(value),
+        "Enter a valid phone number or email address"
+      )
+  );
 
 export const loginSchema = z.object({
-  email: emailField,
+  identifier: loginIdentifierField,
   password: passwordField(6, "Password must be at least 6 characters"),
 });
 
@@ -30,7 +50,7 @@ export const signupSchema = z
       max: FIELD_LIMITS.FULL_NAME,
       minMessage: "Name is required",
     }),
-    email: emailField,
+    identifier: loginIdentifierField,
     password: passwordField(8, "Password must be at least 8 characters"),
     confirmPassword: passwordField(8, "Please confirm your password"),
     role: z.enum(["lecturer", "student"]),
@@ -42,7 +62,7 @@ export const signupSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  email: emailField,
+  identifier: loginIdentifierField,
 });
 
 export const profileUpdateSchema = z.object({
@@ -53,6 +73,7 @@ export const profileUpdateSchema = z.object({
   }),
   phone: optionalPhoneField,
   collegeId: optionalSanitizedString(FIELD_LIMITS.COLLEGE_ID),
+  recoveryEmail: optionalEmailField,
 });
 
 export const passwordChangeSchema = z
@@ -183,7 +204,21 @@ export const testScoresBulkSchema = z.object({
 });
 
 export const monimeWebhookEventSchema = z.object({
+  apiVersion: z.string().max(40).optional(),
   type: z.string().max(120).optional(),
+  event: z
+    .object({
+      id: z.string().max(200).optional(),
+      name: z.string().max(120).optional(),
+      timestamp: z.string().max(20).optional(),
+    })
+    .optional(),
+  object: z
+    .object({
+      id: z.string().max(200).optional(),
+      type: z.string().max(80).optional(),
+    })
+    .optional(),
   data: z
     .object({
       reference: z.string().max(200).optional(),

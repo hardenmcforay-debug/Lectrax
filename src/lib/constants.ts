@@ -38,4 +38,19 @@ export const PUBLIC_API_ROUTES = [
   "/api/contact",
 ] as const;
 
+/** Auth API routes callable without a session (login, signup helpers, password reset). */
+export const PUBLIC_AUTH_API_ROUTES = [
+  "/api/auth/login",
+  "/api/auth/forgot-password",
+  "/api/auth/check-signup-identifier",
+  "/api/auth/finalize-phone-signup",
+  "/api/auth/activate-phone-account",
+  "/api/auth/check-phone",
+  "/api/auth/resolve-login",
+] as const;
+
+export function isPublicAuthApiRoute(pathname: string): boolean {
+  return PUBLIC_AUTH_API_ROUTES.some((route) => pathname === route);
+}
+
 export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];

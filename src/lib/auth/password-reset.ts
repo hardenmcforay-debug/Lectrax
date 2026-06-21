@@ -5,10 +5,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/env";
 import { logServerError } from "@/lib/errors/logger";
 import { PASSWORD_RESET_SUCCESS_MESSAGE } from "@/lib/auth/password-reset-constants";
+import { resolvePasswordResetTargetEmail } from "@/lib/auth/recovery-email";
 
 export { PASSWORD_RESET_SUCCESS_MESSAGE };
 
-/** Minimum response time to reduce email-existence timing probes. */
+/** Minimum response time to reduce account-existence timing probes. */
 export const PASSWORD_RESET_MIN_RESPONSE_MS = 450;
 
 type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
@@ -17,30 +18,29 @@ export function normalizeAuthEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+export function buildPasswordResetRateLimitKey(identifier: string): string {
+  const hash = createHash("sha256").update(identifier.trim().toLowerCase()).digest("hex");
+  return `identifier:${hash.slice(0, 24)}:passwordReset`;
+}
+
+/** @deprecated Use buildPasswordResetRateLimitKey */
 export function buildPasswordResetEmailRateLimitKey(email: string): string {
-  const hash = createHash("sha256").update(normalizeAuthEmail(email)).digest("hex");
-  return `email:${hash.slice(0, 24)}:passwordReset`;
+  return buildPasswordResetRateLimitKey(email);
+}
+
+export async function authAccountExistsForIdentifier(
+  identifier: string,
+  service?: ServiceClient
+): Promise<{ exists: boolean; email: string | null; recoverable: boolean }> {
+  return resolvePasswordResetTargetEmail(identifier, service);
 }
 
 export async function authAccountExistsForEmail(
   email: string,
   service?: ServiceClient
 ): Promise<boolean> {
-  const supabase = service ?? (await createServiceClient());
-  const normalized = normalizeAuthEmail(email);
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", normalized)
-    .maybeSingle();
-
-  if (error) {
-    logServerError("auth.passwordReset.lookup", error);
-    return false;
-  }
-
-  return Boolean(data?.id);
+  const result = await authAccountExistsForIdentifier(email, service);
+  return result.exists;
 }
 
 export async function sendPasswordResetEmail(params: {

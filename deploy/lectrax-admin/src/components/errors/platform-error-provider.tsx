@@ -34,10 +34,13 @@ const PlatformErrorContext = createContext<PlatformErrorContextValue | null>(nul
 
 export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [globalError, setGlobalError] = useState<PlatformErrorState | null>(null);
 
   useEffect(() => {
+    setMounted(true);
+
     const updateOnline = () => {
       setIsOnline(navigator.onLine);
       if (navigator.onLine) {
@@ -105,9 +108,11 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     [isOnline, globalError, showGlobalError, clearGlobalError, retryGlobal]
   );
 
+  const showOfflineChrome = mounted && !isOnline;
+
   return (
     <PlatformErrorContext.Provider value={value}>
-      {!isOnline && <ConnectionBanner />}
+      {showOfflineChrome && <ConnectionBanner />}
       {globalError && (
         <div className="fixed inset-x-0 bottom-4 z-[90] mx-auto max-w-lg px-4">
           <ErrorFallback
@@ -120,7 +125,7 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
           />
         </div>
       )}
-      <div className={!isOnline ? "pt-12" : undefined}>{children}</div>
+      {showOfflineChrome ? <div className="pt-12">{children}</div> : children}
     </PlatformErrorContext.Provider>
   );
 }

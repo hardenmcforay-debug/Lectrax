@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  isValidPhoneInput,
+  normalizePhoneNumber,
+} from "@/lib/auth/phone-number";
+import {
   sanitizeOptionalText,
   sanitizePhoneInput,
   sanitizeSessionCode,
@@ -61,6 +65,23 @@ export const emailField = z
       .max(FIELD_LIMITS.EMAIL, "Email is too long")
   );
 
+export const optionalEmailField = z
+  .union([z.string(), z.undefined()])
+  .transform((value) => {
+    const sanitized = sanitizeOptionalText(value ?? "");
+    if (!sanitized) return undefined;
+    return sanitized.toLowerCase();
+  })
+  .pipe(
+    z.union([
+      z.undefined(),
+      z
+        .string()
+        .email("Invalid email address")
+        .max(FIELD_LIMITS.EMAIL, "Email is too long"),
+    ])
+  );
+
 export const passwordField = (minLength: number, minMessage: string) =>
   z
     .string()
@@ -94,6 +115,26 @@ export const requiredPhoneField = z
       .max(FIELD_LIMITS.PHONE, "Phone number is too long")
       .regex(/^[\d+\-() ]+$/, "Invalid phone number format")
   );
+
+export const normalizedRequiredPhoneField = requiredPhoneField.transform((value, ctx) => {
+  if (!isValidPhoneInput(value)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Invalid phone number format",
+    });
+    return z.NEVER;
+  }
+
+  try {
+    return normalizePhoneNumber(value);
+  } catch {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Invalid phone number format",
+    });
+    return z.NEVER;
+  }
+});
 
 export const sessionCodeField = z
   .string()

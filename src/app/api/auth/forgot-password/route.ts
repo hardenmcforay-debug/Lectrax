@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { forgotPasswordSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
-  authAccountExistsForEmail,
-  buildPasswordResetEmailRateLimitKey,
-  normalizeAuthEmail,
+  authAccountExistsForIdentifier,
+  buildPasswordResetRateLimitKey,
   PASSWORD_RESET_SUCCESS_MESSAGE,
   sendPasswordResetEmail,
   waitForMinimumResponseTime,
@@ -29,11 +28,11 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
 
   try {
-    const emailLimitKey = (email: string) =>
+    const identifierLimitKey = (identifier: string) =>
       rejectIfKeyRateLimited(
-        buildPasswordResetEmailRateLimitKey(email),
+        buildPasswordResetRateLimitKey(identifier),
         "passwordResetEmail",
-        "auth.forgot-password.email"
+        "auth.forgot-password.identifier"
       );
 
     let body: unknown;
@@ -46,21 +45,21 @@ export async function POST(request: Request) {
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid email address" },
+        { error: parsed.error.errors[0]?.message ?? "Invalid phone number or email address" },
         { status: 400 }
       );
     }
 
-    const email = normalizeAuthEmail(parsed.data.email);
-    const emailLimited = emailLimitKey(email);
-    if (emailLimited) return emailLimited;
+    const identifier = parsed.data.identifier;
+    const identifierLimited = identifierLimitKey(identifier);
+    if (identifierLimited) return identifierLimited;
 
     const service = await createServiceClient();
-    const accountExists = await authAccountExistsForEmail(email, service);
+    const account = await authAccountExistsForIdentifier(identifier, service);
 
-    if (accountExists) {
+    if (account.exists && account.email && account.recoverable) {
       await sendPasswordResetEmail({
-        email,
+        email: account.email,
         redirectOrigin: new URL(request.url).origin,
         service,
       });
@@ -72,7 +71,11 @@ export async function POST(request: Request) {
       entity_type: "auth",
       entity_id: null,
       metadata: {
-        outcome: accountExists ? "email_attempted" : "suppressed",
+        outcome: account.exists
+          ? account.recoverable
+            ? "email_attempted"
+            : "suppressed_no_contact_email"
+          : "suppressed",
         client_ip: getClientIp(request),
       },
     });

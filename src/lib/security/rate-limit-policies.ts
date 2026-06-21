@@ -13,6 +13,12 @@ export const RATE_LIMIT_POLICIES = {
   authCallback: { limit: 20, windowMs: 15 * 60_000 },
   passwordReset: { limit: 5, windowMs: 15 * 60_000 },
   passwordResetEmail: { limit: 3, windowMs: 15 * 60_000 },
+  resolveLogin: { limit: 20, windowMs: 15 * 60_000 },
+  authLogin: { limit: 20, windowMs: 15 * 60_000 },
+  checkPhone: { limit: 10, windowMs: 15 * 60_000 },
+  checkSignupIdentifier: { limit: 10, windowMs: 15 * 60_000 },
+  finalizePhoneSignup: { limit: 10, windowMs: 15 * 60_000 },
+  activatePhoneAccount: { limit: 10, windowMs: 15 * 60_000 },
 
   // Academic — attendance
   attendanceScan: { limit: 40, windowMs: 60_000 },
