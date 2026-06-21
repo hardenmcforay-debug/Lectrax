@@ -6,11 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { ConnectionBanner } from "@/components/errors/connection-banner";
+import { ConnectionNoticeToast } from "@/components/errors/connection-banner";
 import { ErrorFallback } from "@/components/errors/error-fallback";
 import type { ErrorCategory } from "@/lib/errors/types";
 import { logPlatformError } from "@/lib/errors/logger";
@@ -19,6 +20,10 @@ import {
   subscribeToConnectionQuality,
   type ConnectionQuality,
 } from "@/lib/network/connection-quality";
+
+const POOR_CONNECTION_TOAST_MS = 5_000;
+const OFFLINE_TOAST_MS = 6_000;
+const SLOW_TOAST_COOLDOWN_MS = 60_000;
 
 type PlatformErrorState = {
   category: ErrorCategory;
@@ -41,22 +46,82 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>("online");
+  const [connectionNoticeVisible, setConnectionNoticeVisible] = useState(false);
   const [globalError, setGlobalError] = useState<PlatformErrorState | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
+  const lastSlowToastAtRef = useRef(0);
+  const previousQualityRef = useRef<ConnectionQuality>("online");
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current !== null) {
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const hideConnectionNotice = useCallback(() => {
+    clearHideTimer();
+    setConnectionNoticeVisible(false);
+  }, [clearHideTimer]);
+
+  const showConnectionNotice = useCallback(
+    (durationMs: number) => {
+      clearHideTimer();
+      setConnectionNoticeVisible(true);
+      hideTimerRef.current = window.setTimeout(() => {
+        setConnectionNoticeVisible(false);
+        hideTimerRef.current = null;
+      }, durationMs);
+    },
+    [clearHideTimer]
+  );
 
   useEffect(() => {
     setMounted(true);
     return subscribeToConnectionQuality(setConnectionQuality);
   }, []);
 
-  const isOnline = connectionQuality !== "offline";
+  useEffect(() => {
+    return () => {
+      clearHideTimer();
+    };
+  }, [clearHideTimer]);
 
   useEffect(() => {
+    const previous = previousQualityRef.current;
+    previousQualityRef.current = connectionQuality;
+
     if (connectionQuality === "online") {
+      hideConnectionNotice();
       setGlobalError((current) =>
         current?.category === "network" ? null : current
       );
+      return;
     }
-  }, [connectionQuality]);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (connectionQuality === "offline") {
+      if (previous !== "offline") {
+        showConnectionNotice(OFFLINE_TOAST_MS);
+      }
+      return;
+    }
+
+    if (connectionQuality === "slow") {
+      const now = Date.now();
+      const onCooldown = now - lastSlowToastAtRef.current < SLOW_TOAST_COOLDOWN_MS;
+      if (previous === "slow" || onCooldown) {
+        return;
+      }
+      lastSlowToastAtRef.current = now;
+      showConnectionNotice(POOR_CONNECTION_TOAST_MS);
+    }
+  }, [connectionQuality, mounted, hideConnectionNotice, showConnectionNotice]);
+
+  const isOnline = connectionQuality !== "offline";
 
   const showGlobalError = useCallback((error: PlatformErrorState) => {
     setGlobalError(error);
@@ -107,12 +172,14 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     [isOnline, connectionQuality, globalError, showGlobalError, clearGlobalError, retryGlobal]
   );
 
-  const showConnectionBanner =
-    mounted && (connectionQuality === "offline" || connectionQuality === "slow");
+  const showConnectionNoticeToast =
+    mounted && connectionQuality !== "online" && connectionNoticeVisible;
 
   return (
     <PlatformErrorContext.Provider value={value}>
-      {showConnectionBanner && <ConnectionBanner quality={connectionQuality} />}
+      {showConnectionNoticeToast && (
+        <ConnectionNoticeToast quality={connectionQuality} visible={connectionNoticeVisible} />
+      )}
       {globalError && (
         <div className="fixed inset-x-0 bottom-4 z-[90] mx-auto max-w-lg px-4">
           <ErrorFallback
@@ -125,7 +192,7 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
           />
         </div>
       )}
-      {showConnectionBanner ? <div className="pt-12">{children}</div> : children}
+      {children}
     </PlatformErrorContext.Provider>
   );
 }
