@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-v3";
+const CACHE_VERSION = "lectrax-v4";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
@@ -82,7 +82,7 @@ self.addEventListener("fetch", (event) => {
   if (shouldNeverCache(url)) return;
 
   if (isStaticAsset(url)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
     return;
   }
 
@@ -93,6 +93,32 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(networkFirst(request));
 });
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  const networkPromise = fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    void networkPromise;
+    return cached;
+  }
+
+  const networkResponse = await networkPromise;
+  if (networkResponse) {
+    return networkResponse;
+  }
+
+  return caches.match("/offline") ?? new Response("Offline", { status: 503 });
+}
 
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
@@ -11,16 +10,6 @@ import { AuthSessionSync } from "@/components/auth/auth-session-sync";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
 
@@ -89,10 +78,7 @@ export default async function RootLayout({
       <head suppressHydrationWarning>
         <PwaHeadLinks />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className="antialiased" suppressHydrationWarning>
         <PwaBootstrapScripts />
         <PwaProvider />
         <AuthSessionSync />

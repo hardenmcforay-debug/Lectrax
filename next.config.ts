@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   serverExternalPackages: ["exceljs"],
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86_400,
     remotePatterns: [
       {
         protocol: "https",

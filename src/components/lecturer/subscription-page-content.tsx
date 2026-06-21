@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { deferNonCriticalTask } from "@/lib/low-data/defer-non-critical";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -83,7 +84,9 @@ export function SubscriptionPageContent({
   const [deletePaymentError, setDeletePaymentError] = useState<string | null>(null);
 
   useEffect(() => {
-    void appFetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
+    deferNonCriticalTask(() => {
+      void appFetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
+    });
     stripSensitiveUrlParams();
   }, []);
 

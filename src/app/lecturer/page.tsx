@@ -54,26 +54,21 @@ export default async function LecturerDashboard() {
   let attendanceData: Awaited<ReturnType<typeof getLecturerAttendanceAnalytics>> = [];
 
   try {
-    const [sessionsResult, countResult, allSessionsResult, analyticsResult] = await Promise.all([
+    const [allSessionsResult, analyticsResult] = await Promise.all([
       supabase
         .from("class_sessions")
         .select("id, title, course_code, session_code")
         .eq("lecturer_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(5),
-      supabase
-        .from("class_sessions")
-        .select("id", { count: "exact", head: true })
-        .eq("lecturer_id", user.id),
-      supabase.from("class_sessions").select("id").eq("lecturer_id", user.id),
+        .order("created_at", { ascending: false }),
       getLecturerAttendanceAnalytics(user.id),
     ]);
 
-    sessions = sessionsResult.data ?? [];
-    sessionCount = countResult.count ?? 0;
+    const allSessions = allSessionsResult.data ?? [];
+    sessionCount = allSessions.length;
+    sessions = allSessions.slice(0, 5);
     attendanceData = analyticsResult;
 
-    const allSessionIds = (allSessionsResult.data ?? []).map((s) => s.id);
+    const allSessionIds = allSessions.map((s) => s.id);
     if (allSessionIds.length) {
       const studentResult = await supabase
         .from("enrollments")

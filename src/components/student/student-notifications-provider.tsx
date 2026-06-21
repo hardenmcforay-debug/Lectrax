@@ -1,7 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
-
+import { deferNonCriticalTask } from "@/lib/low-data/defer-non-critical";
 import {
   createContext,
   useCallback,
@@ -87,7 +87,7 @@ export function StudentNotificationsProvider({ children }: { children: ReactNode
   }, []);
 
   useEffect(() => {
-    void refreshCounts();
+    deferNonCriticalTask(() => refreshCounts());
   }, [refreshCounts]);
 
   useEffect(() => {

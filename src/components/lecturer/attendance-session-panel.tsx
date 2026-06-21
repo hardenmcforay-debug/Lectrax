@@ -30,6 +30,7 @@ import {
   formatAttendanceDate,
   formatAttendanceTime,
   formatSessionDurationLabel,
+  PRESENT_COUNT_POLL_FALLBACK_MS,
   PRESENT_COUNT_POLL_INTERVAL_MS,
   QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
@@ -129,6 +130,7 @@ export function AttendanceSessionPanel({
   >(async () => {});
   const presentLoadedForSessionRef = useRef<string | null>(null);
   const skipInitialRefreshRef = useRef(false);
+  const realtimeConnectedRef = useRef(false);
 
   const activeSessionId = activeSession?.id ?? null;
 
@@ -369,6 +371,7 @@ export function AttendanceSessionPanel({
           }
         )
         .subscribe((status) => {
+          realtimeConnectedRef.current = status === "SUBSCRIBED";
           if (DEBUG_ATTENDANCE_COUNT) {
             console.debug("[AttendanceCount] realtime:status", {
               attendanceSessionId,
@@ -380,6 +383,7 @@ export function AttendanceSessionPanel({
 
     return () => {
       cancelled = true;
+      realtimeConnectedRef.current = false;
       if (channel) {
         void supabase.removeChannel(channel);
       }
@@ -390,12 +394,23 @@ export function AttendanceSessionPanel({
     if (!activeSession) return;
 
     const attendanceSessionId = activeSession.id;
-    const intervalId = window.setInterval(() => {
+    const runPoll = () => {
       void syncPresentRecordsRef.current(attendanceSessionId, "poll");
+    };
+
+    const fastPollId = window.setInterval(() => {
+      if (realtimeConnectedRef.current) return;
+      runPoll();
     }, PRESENT_COUNT_POLL_INTERVAL_MS);
 
+    const fallbackPollId = window.setInterval(() => {
+      if (!realtimeConnectedRef.current) return;
+      runPoll();
+    }, PRESENT_COUNT_POLL_FALLBACK_MS);
+
     return () => {
-      window.clearInterval(intervalId);
+      window.clearInterval(fastPollId);
+      window.clearInterval(fallbackPollId);
     };
   }, [activeSession]);
 

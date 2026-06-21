@@ -15,6 +15,10 @@ import { ErrorFallback } from "@/components/errors/error-fallback";
 import type { ErrorCategory } from "@/lib/errors/types";
 import { logPlatformError } from "@/lib/errors/logger";
 import { createPlatformError } from "@/lib/errors/classify";
+import {
+  subscribeToConnectionQuality,
+  type ConnectionQuality,
+} from "@/lib/network/connection-quality";
 
 type PlatformErrorState = {
   category: ErrorCategory;
@@ -24,6 +28,7 @@ type PlatformErrorState = {
 
 type PlatformErrorContextValue = {
   isOnline: boolean;
+  connectionQuality: ConnectionQuality;
   globalError: PlatformErrorState | null;
   showGlobalError: (error: PlatformErrorState) => void;
   clearGlobalError: () => void;
@@ -35,30 +40,23 @@ const PlatformErrorContext = createContext<PlatformErrorContextValue | null>(nul
 export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>("online");
   const [globalError, setGlobalError] = useState<PlatformErrorState | null>(null);
 
   useEffect(() => {
     setMounted(true);
-
-    const updateOnline = () => {
-      setIsOnline(navigator.onLine);
-      if (navigator.onLine) {
-        setGlobalError((current) =>
-          current?.category === "network" ? null : current
-        );
-      }
-    };
-
-    updateOnline();
-    window.addEventListener("online", updateOnline);
-    window.addEventListener("offline", updateOnline);
-
-    return () => {
-      window.removeEventListener("online", updateOnline);
-      window.removeEventListener("offline", updateOnline);
-    };
+    return subscribeToConnectionQuality(setConnectionQuality);
   }, []);
+
+  const isOnline = connectionQuality !== "offline";
+
+  useEffect(() => {
+    if (connectionQuality === "online") {
+      setGlobalError((current) =>
+        current?.category === "network" ? null : current
+      );
+    }
+  }, [connectionQuality]);
 
   const showGlobalError = useCallback((error: PlatformErrorState) => {
     setGlobalError(error);
@@ -100,19 +98,21 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       isOnline,
+      connectionQuality,
       globalError,
       showGlobalError,
       clearGlobalError,
       retryGlobal,
     }),
-    [isOnline, globalError, showGlobalError, clearGlobalError, retryGlobal]
+    [isOnline, connectionQuality, globalError, showGlobalError, clearGlobalError, retryGlobal]
   );
 
-  const showOfflineChrome = mounted && !isOnline;
+  const showConnectionBanner =
+    mounted && (connectionQuality === "offline" || connectionQuality === "slow");
 
   return (
     <PlatformErrorContext.Provider value={value}>
-      {showOfflineChrome && <ConnectionBanner />}
+      {showConnectionBanner && <ConnectionBanner quality={connectionQuality} />}
       {globalError && (
         <div className="fixed inset-x-0 bottom-4 z-[90] mx-auto max-w-lg px-4">
           <ErrorFallback
@@ -125,7 +125,7 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
           />
         </div>
       )}
-      {showOfflineChrome ? <div className="pt-12">{children}</div> : children}
+      {showConnectionBanner ? <div className="pt-12">{children}</div> : children}
     </PlatformErrorContext.Provider>
   );
 }

@@ -7,6 +7,9 @@ export const QR_REFRESH_INTERVAL_MS = QR_TOKEN_TTL_SECONDS * 1000;
 /** How often the active-session present count is synced while collecting attendance. */
 export const PRESENT_COUNT_POLL_INTERVAL_MS = QR_REFRESH_INTERVAL_MS;
 
+/** Fallback poll interval when realtime is connected (safety net only). */
+export const PRESENT_COUNT_POLL_FALLBACK_MS = 30_000;
+
 export const QR_REFRESH_INTERVAL_SECONDS = QR_TOKEN_TTL_SECONDS;
 
 /** Default overall attendance collection window (minutes). */
