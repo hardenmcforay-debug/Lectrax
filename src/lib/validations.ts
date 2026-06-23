@@ -62,7 +62,7 @@ export const signupSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  identifier: loginIdentifierField,
+  identifier: emailField,
 });
 
 export const profileUpdateSchema = z.object({

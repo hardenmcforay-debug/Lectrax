@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid phone number or email address" },
+        { error: parsed.error.errors[0]?.message ?? "Invalid email address" },
         { status: 400 }
       );
     }

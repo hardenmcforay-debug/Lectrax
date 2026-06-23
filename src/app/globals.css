@@ -169,12 +169,20 @@ body {
   }
 
   .auth-pwa-form-inner {
+    position: relative;
     min-height: min(100dvh, 100%);
-    justify-content: flex-start;
+    justify-content: center;
     padding-top: max(0.75rem, env(safe-area-inset-top));
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .auth-back-link {
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(1rem, env(safe-area-inset-left));
+    z-index: 20;
   }
 
   .auth-form-content {
@@ -200,7 +208,6 @@ body {
 /* PWA installed app: form-only auth (login / signup) */
 @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   .auth-branding-panel,
-  .auth-form-decorations,
   .auth-form-marketing-copy {
     display: none !important;
   }
@@ -220,16 +227,27 @@ body {
   }
 
   .auth-form-panel {
-    background: #ffffff;
+    background: transparent;
+  }
+
+  .auth-form-decorations {
+    display: block !important;
   }
 
   .auth-pwa-form-inner {
     min-height: 100dvh;
-    justify-content: flex-start;
+    justify-content: center;
     padding-top: max(1.5rem, env(safe-area-inset-top));
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
     padding-left: max(1.25rem, env(safe-area-inset-left));
     padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+
+  .auth-back-link {
+    position: absolute;
+    top: max(1.5rem, env(safe-area-inset-top));
+    left: max(1.25rem, env(safe-area-inset-left));
+    z-index: 20;
   }
 
   .auth-form-content {
@@ -246,9 +264,12 @@ body {
 }
 
 html[data-pwa-standalone="true"] .auth-branding-panel,
-html[data-pwa-standalone="true"] .auth-form-decorations,
 html[data-pwa-standalone="true"] .auth-form-marketing-copy {
   display: none !important;
+}
+
+html[data-pwa-standalone="true"] .auth-form-decorations {
+  display: block !important;
 }
 
 html[data-pwa-standalone="true"] .auth-route-root {
@@ -266,16 +287,23 @@ html[data-pwa-standalone="true"] .auth-shell {
 }
 
 html[data-pwa-standalone="true"] .auth-form-panel {
-  background: #ffffff;
+  background: transparent;
 }
 
 html[data-pwa-standalone="true"] .auth-pwa-form-inner {
   min-height: 100dvh;
-  justify-content: flex-start;
+  justify-content: center;
   padding-top: max(1.5rem, env(safe-area-inset-top));
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   padding-left: max(1.25rem, env(safe-area-inset-left));
   padding-right: max(1.25rem, env(safe-area-inset-right));
+}
+
+html[data-pwa-standalone="true"] .auth-back-link {
+  position: absolute;
+  top: max(1.5rem, env(safe-area-inset-top));
+  left: max(1.25rem, env(safe-area-inset-left));
+  z-index: 20;
 }
 
 html[data-pwa-standalone="true"] .auth-form-content {

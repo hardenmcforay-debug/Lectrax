@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
         setError({
           title: "Request Failed",
-          description: body?.error ?? "Please enter a valid phone number or email address.",
+          description: body?.error ?? "Please enter a valid email address.",
           retryable: false,
         });
         return;
@@ -67,9 +67,9 @@ export default function ForgotPasswordPage() {
         <CardHeader>
           <CardTitle>Need to reset your password?</CardTitle>
           <CardDescription>
-            Provide your email address or phone number, and we&apos;ll help you regain access to your
-            Lectrax account. If an email is associated with your account, a secure password reset link
-            will be sent to you.
+            Provide your email address, and we&apos;ll help you regain access to your Lectrax
+            account. If an email is associated with your account, a secure password reset link will
+            be sent to you.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -78,12 +78,12 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="identifier">Phone Number or Email</Label>
+                <Label htmlFor="identifier">Email</Label>
                 <Input
                   id="identifier"
-                  type="text"
-                  autoComplete="username"
-                  placeholder="Phone number or email address"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email address"
                   {...register("identifier")}
                   required
                 />
