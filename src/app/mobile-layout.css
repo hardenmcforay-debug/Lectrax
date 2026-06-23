@@ -294,6 +294,41 @@ html[data-portal-mobile="true"]:has(.portal-shell-root) body {
   padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
 
+@keyframes portal-mobile-menu-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes portal-mobile-menu-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-mobile-menu-backdrop {
+  animation: portal-mobile-menu-fade-in 0.2s ease-out both;
+}
+
+.portal-mobile-menu-panel {
+  animation: portal-mobile-menu-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-mobile-menu-backdrop,
+  .portal-mobile-menu-panel {
+    animation: none !important;
+  }
+}
+
 /* PWA / installed app: mobile chrome on first paint (no JS wait) */
 @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   .student-desktop-sidebar,

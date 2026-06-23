@@ -5,16 +5,28 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
+import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
+import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
 import { cn } from "@/lib/utils";
 import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
-import { STUDENT_SETTINGS_HREF } from "@/lib/student/navigation";
+import {
+  getActiveStudentNavHref,
+  STUDENT_NAV_ITEMS,
+  STUDENT_SETTINGS_HREF,
+} from "@/lib/student/navigation";
+import { useStudentNotifications } from "@/components/student/student-notifications-provider";
 
 export function StudentMobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const activeHref =
+    getActiveStudentNavHref(pathname) ??
+    (pathname === STUDENT_SETTINGS_HREF || pathname.startsWith(`${STUDENT_SETTINGS_HREF}/`)
+      ? STUDENT_SETTINGS_HREF
+      : null);
+  const { counts } = useStudentNotifications();
 
   useEffect(() => {
     setOpen(false);
@@ -46,58 +58,90 @@ export function StudentMobileHeader() {
       <div className="portal-mobile-header-bar flex w-full items-center justify-between border-b border-slate-200/80 bg-white/95 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <Logo href="/student" className="text-primary" iconClassName="h-7 w-7" labelClassName="text-lg" />
 
-        <div className="relative" ref={menuRef}>
-          <button
-            ref={triggerRef}
-            type="button"
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            aria-haspopup="menu"
-            onClick={() => setOpen((current) => !current)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-primary transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
-          </button>
-
-          {open && (
-            <>
-              <button
-                type="button"
-                aria-label="Close menu"
-                className="fixed inset-0 z-40 bg-black/20 student-mobile-menu-backdrop"
-                onClick={() => setOpen(false)}
-              />
-              <nav
-                role="menu"
-                aria-label="Account menu"
-                className={cn(
-                  "absolute right-0 top-[calc(100%+0.5rem)] z-50 min-w-[11rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl",
-                  "student-mobile-menu-panel"
-                )}
-              >
-                <Link
-                  href={STUDENT_SETTINGS_HREF}
-                  role="menuitem"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none"
-                >
-                  <Settings className="h-4 w-4 text-primary" aria-hidden />
-                  Settings
-                </Link>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={handleLogout}
-                  className="mx-3 mb-3 mt-1 flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 active:bg-primary/90"
-                >
-                  <LogOut className="h-4 w-4" aria-hidden />
-                  Log out
-                </button>
-              </nav>
-            </>
-          )}
-        </div>
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          onClick={() => setOpen((current) => !current)}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-primary transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
+        </button>
       </div>
+
+      <PortalMobileMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        ariaLabel="Student navigation"
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-1 py-3">
+          <Logo href="/student" className="text-primary" iconClassName="h-7 w-7" labelClassName="text-lg" />
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setOpen(false)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1 py-3">
+          {STUDENT_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = activeHref === item.href;
+            const badgeCount = item.notificationType ? counts[item.notificationType] : 0;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "student-nav-link mb-1 flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-slate-700 hover:bg-slate-50"
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                <span className="truncate">{item.label}</span>
+                <NavNotificationBadge count={badgeCount} />
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto space-y-2 border-t border-slate-100 px-1 py-3">
+          <Link
+            href={STUDENT_SETTINGS_HREF}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className={cn(
+              "student-nav-link flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+              activeHref === STUDENT_SETTINGS_HREF
+                ? "bg-primary text-primary-foreground"
+                : "text-slate-700 hover:bg-slate-50"
+            )}
+          >
+            <Settings className="h-5 w-5 shrink-0" aria-hidden />
+            Settings
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleLogout}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+          >
+            <LogOut className="h-4 w-4" aria-hidden />
+            Log out
+          </button>
+        </div>
+      </PortalMobileMenu>
     </header>
   );
 }

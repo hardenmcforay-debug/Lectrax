@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
+import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,11 @@ export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const isHome = pathname === "/";
   const transparent = isHome && !scrolled;
+  const mobileMenuOnHero = transparent;
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isHome) return;
@@ -80,11 +86,11 @@ export function LandingNav() {
 
   function navLinkClass(link: NavLink, mobile = false) {
     const active = isLinkActive(link);
-    const onHero = transparent || (mobile && isHome && !scrolled);
+    const onHero = transparent || (mobile && mobileMenuOnHero);
 
     return cn(
       mobile
-        ? "rounded-lg px-3 py-2.5 text-left text-sm font-medium"
+        ? "flex min-h-12 items-center rounded-xl px-3 py-3 text-base font-medium transition-colors"
         : "text-sm font-medium transition-colors",
       onHero
         ? active
@@ -108,6 +114,7 @@ export function LandingNav() {
         <Link
           key={link.href}
           href={link.href}
+          role={mobile ? "menuitem" : undefined}
           onClick={handleRouteNav}
           className={navLinkClass(link, mobile)}
         >
@@ -120,6 +127,7 @@ export function LandingNav() {
       <Link
         key={link.href}
         href={`/${link.href}`}
+        role={mobile ? "menuitem" : undefined}
         onClick={(event) => handleScrollNav(event, link)}
         className={navLinkClass(link, mobile)}
       >
@@ -166,34 +174,76 @@ export function LandingNav() {
             transparent ? "bg-white/10 text-white" : "landing-icon-bg"
           )}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMobileOpen((o) => !o)}
+          aria-expanded={mobileOpen}
+          aria-haspopup="menu"
+          onClick={() => setMobileOpen((open) => !open)}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
-      {mobileOpen && (
+      <PortalMobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        ariaLabel="Landing navigation"
+        panelClassName={cn(
+          mobileMenuOnHero &&
+            "bg-gradient-to-br from-[#0B3D91] via-[#0F4DA8] to-[#0A3580] text-white"
+        )}
+      >
         <div
           className={cn(
-            "landing-nav-inner border-t py-4 md:hidden",
-            transparent
-              ? "border-white/10 bg-[#0F3D91]/95 backdrop-blur-md"
-              : "border-slate-200/60 bg-white/95"
+            "flex items-center justify-between border-b px-1 py-3",
+            mobileMenuOnHero ? "border-white/10" : "border-slate-100"
           )}
         >
-          <nav className="flex flex-col gap-1" aria-label="Mobile">
-            {NAV_LINKS.map((link) => renderNavLink(link, true))}
-            <div className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
-              <Button variant="default" asChild className="w-full rounded-xl bg-primary text-white hover:bg-primary/90 active:bg-primary/90">
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button variant="accent" asChild className="w-full rounded-xl">
-                <Link href="/signup">Get Started</Link>
-              </Button>
-            </div>
-          </nav>
+          <Logo variant={mobileMenuOnHero ? "light" : "default"} iconWithBackground />
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+              mobileMenuOnHero
+                ? "text-white/80 hover:bg-white/10"
+                : "text-muted-foreground hover:bg-slate-50"
+            )}
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
         </div>
-      )}
+
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1 py-3" aria-label="Mobile">
+          {NAV_LINKS.map((link) => renderNavLink(link, true))}
+        </nav>
+
+        <div
+          className={cn(
+            "mt-auto flex flex-col gap-2 border-t px-1 py-3",
+            mobileMenuOnHero ? "border-white/10" : "border-slate-100"
+          )}
+        >
+          <Button
+            variant="default"
+            asChild
+            className={cn(
+              "h-12 w-full rounded-xl",
+              mobileMenuOnHero
+                ? "bg-white text-primary hover:bg-white/90"
+                : "bg-primary text-white hover:bg-primary/90"
+            )}
+          >
+            <Link href="/login" role="menuitem" onClick={handleRouteNav}>
+              Sign in
+            </Link>
+          </Button>
+          <Button variant="accent" asChild className="h-12 w-full rounded-xl">
+            <Link href="/signup" role="menuitem" onClick={handleRouteNav}>
+              Get Started
+            </Link>
+          </Button>
+        </div>
+      </PortalMobileMenu>
     </header>
   );
 }
