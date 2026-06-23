@@ -93,7 +93,7 @@ function MobileStepCard({
 
 export function LandingHowItWorks() {
   return (
-    <section id="solutions" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
+    <section id="how-it-works" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
           <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">

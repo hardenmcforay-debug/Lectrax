@@ -11,15 +11,16 @@ import { LandingFooter } from "@/components/landing/landing-footer";
 
 type LandingPageProps = {
   heroImageUrl?: string | null;
+  featureImages?: Record<string, string>;
 };
 
-export function LandingPage({ heroImageUrl }: LandingPageProps) {
+export function LandingPage({ heroImageUrl, featureImages }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <LandingNav />
       <main>
         <LandingHero heroImageUrl={heroImageUrl} />
-        <LandingFeatures />
+        <LandingFeatures featureImages={featureImages} />
         <LandingHowItWorks />
         <LandingBenefits />
         <LandingPricing />

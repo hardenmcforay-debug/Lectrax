@@ -1,5 +1,6 @@
 import { createPublicReadClient } from "@/lib/supabase/server";
 import { getPublicSupabaseUrl } from "@/lib/env/public";
+import { LANDING_FEATURE_CARDS } from "@/lib/landing/feature-cards";
 
 export {
   BRANDING_IMAGE_MAX_BYTES,
@@ -10,6 +11,7 @@ export {
 export const LANDING_ASSETS_BUCKET = "landing-assets";
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
 export const SITE_LOGO_SETTING_KEY = "site_logo";
+export const LANDING_FEATURE_CARDS_SETTING_KEY = "landing_feature_cards";
 
 export type BrandingImageSetting = {
   storage_path: string;
@@ -46,6 +48,14 @@ export function buildHeroImageStoragePath(ext: string): string {
 export function buildSiteLogoStoragePath(ext: string): string {
   return `brand/logo.${ext}`;
 }
+
+export function buildFeatureCardStoragePath(cardId: string, ext: string): string {
+  return `features/${cardId}.${ext}`;
+}
+
+export type LandingFeatureCardsSetting = {
+  cards: Record<string, BrandingImageSetting>;
+};
 
 async function getBrandingSetting(key: string): Promise<BrandingImageSetting | null> {
   const supabase = await createPublicReadClient();
@@ -84,6 +94,34 @@ export async function getSiteLogoUrl(): Promise<string | null> {
 
 export async function getSiteLogoSetting(): Promise<BrandingImageSetting | null> {
   return getBrandingSetting(SITE_LOGO_SETTING_KEY);
+}
+
+export async function getLandingFeatureCardsSetting(): Promise<Record<string, BrandingImageSetting>> {
+  const supabase = await createPublicReadClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", LANDING_FEATURE_CARDS_SETTING_KEY)
+    .maybeSingle();
+
+  if (error || !data?.value) return {};
+
+  const value = data.value as LandingFeatureCardsSetting;
+  return value.cards ?? {};
+}
+
+export async function getLandingFeatureCardImageUrls(): Promise<Record<string, string>> {
+  const cards = await getLandingFeatureCardsSetting();
+  const imageUrls: Record<string, string> = {};
+
+  for (const feature of LANDING_FEATURE_CARDS) {
+    const setting = cards[feature.id];
+    imageUrls[feature.id] = setting?.storage_path
+      ? buildLandingAssetPublicUrl(setting.storage_path)
+      : feature.defaultImage;
+  }
+
+  return imageUrls;
 }
 
 export async function getSiteBranding() {

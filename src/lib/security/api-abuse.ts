@@ -46,7 +46,11 @@ function isStudentRowsPath(pathname: string): boolean {
 }
 
 function isBrandingUploadPath(pathname: string): boolean {
-  return pathname === "/api/admin/site-logo" || pathname === "/api/admin/landing-hero";
+  return (
+    pathname === "/api/admin/site-logo" ||
+    pathname === "/api/admin/landing-hero" ||
+    pathname === "/api/admin/landing-feature-cards"
+  );
 }
 
 type ResolvedLimit = {

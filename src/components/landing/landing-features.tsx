@@ -1,105 +1,44 @@
+import Image from "next/image";
 import {
-
-  BarChart3,
-
-  BookOpen,
-
-  ClipboardCheck,
-
-  FileText,
-
-  QrCode,
-
-  Shield,
-
-} from "lucide-react";
-
-import {
-
   LandingReveal,
-
   LandingStagger,
-
   LandingStaggerItem,
-
 } from "@/components/landing/landing-motion";
+import {
+  LANDING_FEATURE_CARDS,
+  type FeatureCardId,
+} from "@/lib/landing/feature-cards";
+import { cn } from "@/lib/utils";
 
+const FEATURE_ACCENTS = [
+  { dot: "bg-primary", line: "from-primary/70 to-primary/15" },
+  { dot: "bg-accent", line: "from-accent/70 to-accent/15" },
+] as const;
 
-
-const features = [
-
-  {
-
-    icon: QrCode,
-
-    title: "Attendance Management",
-
-    description: "Track attendance using QR codes and manual verification.",
-
-  },
-
-  {
-
-    icon: FileText,
-
-    title: "Assignment Management",
-
-    description: "Create, distribute, and manage assignments efficiently.",
-
-  },
-
-  {
-
-    icon: ClipboardCheck,
-
-    title: "Continuous Assessment",
-
-    description: "Record tests, assignments, and automatically calculate CA scores.",
-
-  },
-
-  {
-
-    icon: BarChart3,
-
-    title: "Student Analytics",
-
-    description: "Monitor student performance and academic engagement.",
-
-  },
-
-  {
-
-    icon: BookOpen,
-
-    title: "Class Session Management",
-
-    description: "Create and manage academic sessions with ease.",
-
-  },
-
-  {
-
-    icon: Shield,
-
-    title: "Secure Academic Records",
-
-    description: "Keep academic data organized and protected.",
-
-  },
-
-];
-
-
-
-export function LandingFeatures() {
+function FeatureCardAccent({ index }: { index: number }) {
+  const accent = FEATURE_ACCENTS[index % FEATURE_ACCENTS.length];
 
   return (
+    <div className="landing-feature-accent mb-3 flex items-center gap-2" aria-hidden>
+      <span className={cn("h-2 w-2 shrink-0 rounded-full shadow-sm", accent.dot)} />
+      <span
+        className={cn(
+          "h-px w-10 rounded-full bg-gradient-to-r sm:w-12",
+          accent.line
+        )}
+      />
+    </div>
+  );
+}
 
+type LandingFeaturesProps = {
+  featureImages?: Partial<Record<FeatureCardId, string>>;
+};
+
+export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
+  return (
     <section id="features" className="relative -mt-px scroll-mt-20 bg-white py-20 sm:py-24">
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
           <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
             Everything You Need to Manage Academic Activities
@@ -110,31 +49,38 @@ export function LandingFeatures() {
           </p>
         </LandingReveal>
 
+        <LandingStagger className="mt-10 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-6 lg:grid-cols-3 lg:gap-8">
+          {LANDING_FEATURE_CARDS.map((feature, index) => {
+            const image = featureImages?.[feature.id] ?? feature.defaultImage;
 
-
-        <LandingStagger className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
-          {features.map(({ icon: Icon, title, description }) => (
-            <LandingStaggerItem key={title}>
-              <article className="landing-feature-card flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-5 lg:p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary lg:h-12 lg:w-12">
-                  <Icon className="h-5 w-5 text-white lg:h-6 lg:w-6" />
-                </div>
-                <h3 className="mt-4 text-balance text-base font-semibold leading-snug text-slate-900 lg:mt-5 lg:text-lg">
-                  {title}
-                </h3>
-                <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600">
-                  {description}
-                </p>
-              </article>
-            </LandingStaggerItem>
-          ))}
+            return (
+              <LandingStaggerItem key={feature.id}>
+                <article className="landing-feature-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                  <div className="relative aspect-[16/10] w-full overflow-hidden">
+                    <Image
+                      src={image}
+                      alt=""
+                      fill
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      className="landing-feature-card-image object-cover transition-transform duration-500 ease-out"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-5 sm:p-6">
+                    <FeatureCardAccent index={index} />
+                    <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-3 sm:text-base">
+                      {feature.description}
+                    </p>
+                  </div>
+                </article>
+              </LandingStaggerItem>
+            );
+          })}
         </LandingStagger>
       </div>
-
     </section>
-
   );
-
 }
-
-

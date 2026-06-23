@@ -277,8 +277,26 @@ html {
 
 .landing-feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px -12px rgba(11, 61, 145, 0.15);
-  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow:
+    0 4px 6px -1px rgba(15, 23, 42, 0.06),
+    0 20px 40px -16px rgba(11, 61, 145, 0.18);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.landing-feature-card:hover .landing-feature-card-image {
+  transform: scale(1.04);
+}
+
+.landing-feature-card:hover .landing-feature-accent span:first-child {
+  transform: scale(1.15);
+}
+
+.landing-feature-card-image {
+  will-change: transform;
+}
+
+.landing-feature-accent span:first-child {
+  transition: transform 0.25s ease;
 }
 
 @keyframes accordion-down {
@@ -320,6 +338,14 @@ html {
 
   .landing-feature-card:hover,
   .hero-feature-card:hover {
+    transform: none;
+  }
+
+  .landing-feature-card:hover .landing-feature-card-image {
+    transform: none;
+  }
+
+  .landing-feature-card:hover .landing-feature-accent span:first-child {
     transform: none;
   }
 }
