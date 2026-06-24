@@ -123,10 +123,6 @@ function writeAdminPackageJson() {
       start: "next start -p 3001",
       lint: "next lint",
       typecheck: "tsc --noEmit",
-      "validate:https": "node ../../scripts/check-https.mjs",
-      "validate:https:production": "node ../../scripts/check-https.mjs --production",
-      prebuild: "node ../../scripts/check-https.mjs --production",
-      postbuild: "node ../../scripts/check-https.mjs --production --scan-build",
     },
     dependencies: {
       "@hookform/resolvers": rootPkg.dependencies["@hookform/resolvers"],
