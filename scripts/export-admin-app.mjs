@@ -35,17 +35,23 @@ const COPY_DIRS = [
   "src/hooks",
   "src/lib/admin",
   "src/lib/api",
+  "src/lib/attendance",
   "src/lib/auth",
   "src/lib/contact",
+  "src/lib/concurrency",
   "src/lib/errors",
   "src/lib/hooks",
+  "src/lib/env",
   "src/lib/landing",
   "src/lib/low-data",
+  "src/lib/network",
+  "src/lib/offline",
   "src/lib/partnerships",
   "src/lib/pwa",
   "src/lib/security",
   "src/lib/subscription",
   "src/lib/supabase",
+  "src/store",
   "src/types",
   "public/icons",
 ];
@@ -72,6 +78,16 @@ const ADMIN_PRUNE_PATHS = [
   "src/components/errors/form-error-message.tsx",
   "src/components/errors/offline-cache-writer.tsx",
   "src/lib/subscription/guards.ts",
+  "src/app/api/auth/login/route.ts",
+  "src/app/api/auth/resolve-login/route.ts",
+  "src/app/api/auth/check-signup-identifier/route.ts",
+  "src/app/api/auth/finalize-phone-signup/route.ts",
+  "src/app/api/auth/activate-phone-account/route.ts",
+  "src/app/api/auth/check-phone/route.ts",
+  "src/app/api/auth/acknowledge-portal-onboarding/route.ts",
+  "src/lib/attendance/qr-rotation.ts",
+  "src/lib/attendance/present-records.ts",
+  "src/lib/attendance/sessions.ts",
 ];
 
 const ADMIN_TEMPLATES = {
@@ -147,6 +163,7 @@ function writeAdminPackageJson() {
       recharts: rootPkg.dependencies.recharts,
       "tailwind-merge": rootPkg.dependencies["tailwind-merge"],
       zod: rootPkg.dependencies.zod,
+      zustand: rootPkg.dependencies.zustand,
     },
     devDependencies: {
       "@eslint/eslintrc": rootPkg.devDependencies["@eslint/eslintrc"],
@@ -388,6 +405,21 @@ export default function AdminLoginPage() {
   );
 }
 
+function patchAdminValidations() {
+  const validationsPath = join(OUT, "src/lib/validations.ts");
+  if (!existsSync(validationsPath)) return;
+
+  let validations = readFileSync(validationsPath, "utf8");
+  validations = validations.replace(
+    /export const loginSchema = z\.object\(\{\s*identifier: loginIdentifierField,\s*password: passwordField\(6, "Password must be at least 6 characters"\),\s*\}\);/,
+    `export const loginSchema = z.object({
+  email: emailField,
+  password: passwordField(6, "Password must be at least 6 characters"),
+});`
+  );
+  writeFileSync(validationsPath, validations);
+}
+
 function pruneAdminOnlyPaths() {
   for (const relativePath of ADMIN_PRUNE_PATHS) {
     const target = join(OUT, relativePath);
@@ -416,8 +448,8 @@ function applyAdminTemplates() {
   if (existsSync(globalsCssPath)) {
     let globalsCss = readFileSync(globalsCssPath, "utf8");
     globalsCss = globalsCss
-      .replace('@import "./student-portal-animations.css";\n', "")
-      .replace('@import "./lecturer-portal-animations.css";\n', "");
+      .replace(/@import "\.\/student-portal-animations\.css";\r?\n/g, "")
+      .replace(/@import "\.\/lecturer-portal-animations\.css";\r?\n/g, "");
     writeFileSync(globalsCssPath, globalsCss);
   }
 }
@@ -457,6 +489,7 @@ function main() {
   writeAdminPwaAssets();
   writeAdminAppShell();
   applyAdminTemplates();
+  patchAdminValidations();
   pruneAdminOnlyPaths();
 
   console.log("Done. Next steps:");
