@@ -283,16 +283,89 @@ html {
   border-color: rgba(16, 185, 129, 0.3);
 }
 
-.landing-feature-card:hover .landing-feature-card-image {
-  transform: scale(1.04);
+.landing-feature-card-media {
+  isolation: isolate;
+  background-color: #0b3d91;
+}
+
+.landing-feature-card-image {
+  animation: landing-feature-image-zoom 14s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+  will-change: transform;
+}
+
+.landing-feature-card-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    165deg,
+    rgba(11, 61, 145, 0.14) 0%,
+    rgba(11, 61, 145, 0.4) 100%
+  );
+  opacity: 0.34;
+  animation: landing-feature-overlay-pulse 14s ease-in-out infinite alternate;
+}
+
+.landing-feature-card-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.06) 44%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.06) 56%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  animation: landing-feature-shine-periodic 11s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes landing-feature-image-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes landing-feature-overlay-pulse {
+  from {
+    opacity: 0.28;
+  }
+  to {
+    opacity: 0.4;
+  }
+}
+
+@keyframes landing-feature-shine-periodic {
+  0%,
+  72%,
+  100% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  24% {
+    transform: translateX(130%);
+    opacity: 1;
+  }
+
+  30% {
+    opacity: 0;
+  }
 }
 
 .landing-feature-card:hover .landing-feature-accent span:first-child {
   transform: scale(1.15);
-}
-
-.landing-feature-card-image {
-  will-change: transform;
 }
 
 .landing-feature-accent span:first-child {
@@ -330,6 +403,26 @@ html {
   color: #cbd5e1;
 }
 
+.landing-how-icon-shell {
+  position: relative;
+  animation: landing-how-icon-glow 3.5s ease-in-out infinite;
+}
+
+@keyframes landing-how-icon-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 6px -1px rgba(11, 61, 145, 0.18),
+      0 0 0 0 rgba(16, 185, 129, 0);
+  }
+
+  50% {
+    box-shadow:
+      0 10px 22px -6px rgba(11, 61, 145, 0.32),
+      0 0 0 4px rgba(16, 185, 129, 0.12);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-fade-up,
   .landing-float {
@@ -341,8 +434,25 @@ html {
     transform: none;
   }
 
-  .landing-feature-card:hover .landing-feature-card-image {
+  .landing-feature-card:hover .landing-feature-card-image,
+  .landing-feature-card-image {
+    animation: none;
     transform: none;
+  }
+
+  .landing-feature-card-overlay {
+    animation: none;
+    opacity: 0.22;
+  }
+
+  .landing-feature-card-shine {
+    animation: none;
+    opacity: 0;
+  }
+
+  .landing-how-icon-shell {
+    animation: none;
+    box-shadow: 0 4px 6px -1px rgba(11, 61, 145, 0.18);
   }
 
   .landing-feature-card:hover .landing-feature-accent span:first-child {

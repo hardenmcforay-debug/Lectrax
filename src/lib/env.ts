@@ -135,17 +135,22 @@ export type EnvValidationResult = {
   warnings: string[];
 };
 
+function isAdminDeploymentEnv(): boolean {
+  return process.env.NEXT_PUBLIC_DEPLOYMENT_TARGET?.trim() === "admin";
+}
+
 /** Validate all required production environment variables at startup. */
 export function validateProductionEnv(): EnvValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const adminDeployment = isAdminDeploymentEnv();
 
   const required = [
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "NEXT_PUBLIC_APP_URL",
-    "QR_TOKEN_SECRET",
+    ...(adminDeployment ? [] : (["QR_TOKEN_SECRET"] as const)),
   ] as const;
 
   for (const name of required) {
@@ -159,41 +164,51 @@ export function validateProductionEnv(): EnvValidationResult {
     }
   }
 
-  const qrSecret = readEnv("QR_TOKEN_SECRET");
-  if (qrSecret && qrSecret.length < 32) {
-    errors.push("QR_TOKEN_SECRET must be at least 32 characters");
+  if (!adminDeployment) {
+    const qrSecret = readEnv("QR_TOKEN_SECRET");
+    if (qrSecret && qrSecret.length < 32) {
+      errors.push("QR_TOKEN_SECRET must be at least 32 characters");
+    }
   }
 
-  if (!readEnv("CRON_SECRET")) {
-    warnings.push(
-      "CRON_SECRET not set — the daily subscription lifecycle cron will return 401 until configured"
-    );
-  } else if (isPlaceholder(readEnv("CRON_SECRET")!)) {
-    warnings.push("CRON_SECRET is still a placeholder");
-  }
+  if (adminDeployment) {
+    if (!readEnv("NEXT_PUBLIC_MAIN_APP_URL")) {
+      warnings.push(
+        "NEXT_PUBLIC_MAIN_APP_URL not set — non-admin users will not be redirected to the main app"
+      );
+    }
+  } else {
+    if (!readEnv("CRON_SECRET")) {
+      warnings.push(
+        "CRON_SECRET not set — the daily subscription lifecycle cron will return 401 until configured"
+      );
+    } else if (isPlaceholder(readEnv("CRON_SECRET")!)) {
+      warnings.push("CRON_SECRET is still a placeholder");
+    }
 
-  if (isAntivirusScanRequired() && !getVirusTotalApiKey()) {
-    errors.push(
-      "SUBMISSION_ANTIVIRUS_REQUIRED is true but VIRUSTOTAL_API_KEY is not configured"
-    );
-  } else if (!getVirusTotalApiKey()) {
-    warnings.push(
-      "VIRUSTOTAL_API_KEY not set — assignment uploads use deep PDF inspection only (no antivirus)"
-    );
-  }
+    if (isAntivirusScanRequired() && !getVirusTotalApiKey()) {
+      errors.push(
+        "SUBMISSION_ANTIVIRUS_REQUIRED is true but VIRUSTOTAL_API_KEY is not configured"
+      );
+    } else if (!getVirusTotalApiKey()) {
+      warnings.push(
+        "VIRUSTOTAL_API_KEY not set — assignment uploads use deep PDF inspection only (no antivirus)"
+      );
+    }
 
-  try {
-    getMonimeEnv();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (
-      readEnv("MONIME_API_KEY") ||
-      readEnv("MONIME_SPACE_ID") ||
-      readEnv("MONIME_WEBHOOK_SECRET")
-    ) {
-      warnings.push(`Monime payment configuration issue: ${message}`);
-    } else {
-      warnings.push("Monime payments not configured (optional until checkout is enabled)");
+    try {
+      getMonimeEnv();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        readEnv("MONIME_API_KEY") ||
+        readEnv("MONIME_SPACE_ID") ||
+        readEnv("MONIME_WEBHOOK_SECRET")
+      ) {
+        warnings.push(`Monime payment configuration issue: ${message}`);
+      } else {
+        warnings.push("Monime payments not configured (optional until checkout is enabled)");
+      }
     }
   }
 

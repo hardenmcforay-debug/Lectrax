@@ -19,11 +19,11 @@ export default async function AdminLandingPage() {
   ]);
 
   const heroImageUrl = heroSetting?.storage_path
-    ? buildLandingAssetPublicUrl(heroSetting.storage_path)
+    ? buildLandingAssetPublicUrl(heroSetting.storage_path, heroSetting.updated_at)
     : null;
 
   const logoUrl = logoSetting?.storage_path
-    ? buildLandingAssetPublicUrl(logoSetting.storage_path)
+    ? buildLandingAssetPublicUrl(logoSetting.storage_path, logoSetting.updated_at)
     : null;
 
   const featureImages = LANDING_FEATURE_CARDS.reduce(
@@ -31,7 +31,7 @@ export default async function AdminLandingPage() {
       const setting = featureCardSettings[card.id];
       acc[card.id] = {
         imageUrl: setting?.storage_path
-          ? buildLandingAssetPublicUrl(setting.storage_path)
+          ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
           : card.defaultImage,
         isCustom: Boolean(setting?.storage_path),
         updatedAt: setting?.updated_at ?? null,
@@ -51,7 +51,37 @@ export default async function AdminLandingPage() {
       description="Manage the site logo, hero image, and feature card covers on the public homepage"
     >
       <div className="space-y-6">
-        <Card>
+        <nav
+          aria-label="Landing page sections"
+          className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-slate-700"
+        >
+          <p className="font-medium text-slate-900">
+            This page has three upload areas (logo, hero, and six feature cards):
+          </p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5">
+            <li>
+              <a href="#site-logo" className="text-primary underline-offset-2 hover:underline">
+                Site logo
+              </a>
+            </li>
+            <li>
+              <a href="#hero-image" className="text-primary underline-offset-2 hover:underline">
+                Hero circle image
+              </a>
+            </li>
+            <li>
+              <a
+                href="#feature-card-images"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Feature card images
+              </a>{" "}
+              — covers for &quot;Everything You Need to Manage Academic Activities&quot; (6 cards)
+            </li>
+          </ol>
+        </nav>
+
+        <Card id="site-logo" className="scroll-mt-6">
           <CardHeader>
             <CardTitle>Site logo</CardTitle>
             <CardDescription>
@@ -67,7 +97,7 @@ export default async function AdminLandingPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="hero-image" className="scroll-mt-6">
           <CardHeader>
             <CardTitle>Hero circle image</CardTitle>
             <CardDescription>
@@ -83,9 +113,11 @@ export default async function AdminLandingPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="feature-card-images" className="scroll-mt-6 border-primary/30 ring-1 ring-primary/10">
           <CardHeader>
-            <CardTitle>Feature card images</CardTitle>
+            <CardTitle>
+              Feature card images — &quot;Everything You Need to Manage Academic Activities&quot;
+            </CardTitle>
             <CardDescription>
               Upload cover images for the six feature cards in the &quot;Everything You Need to
               Manage Academic Activities&quot; section on the landing page.

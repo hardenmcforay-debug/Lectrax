@@ -54,6 +54,7 @@ const COPY_DIRS = [
   "src/store",
   "src/types",
   "public/icons",
+  "public/landing",
 ];
 
 const COPY_SHARED_FILES = [
@@ -241,11 +242,11 @@ export default nextConfig;
 
   writeFileSync(
     join(OUT, ".env.example"),
-    `# Lectrax platform-admin deployment
+    `# Lectrax platform-admin deployment (set all of these in Vercel → Settings → Environment Variables)
 NEXT_PUBLIC_DEPLOYMENT_TARGET=admin
-# Development: http://localhost:3001 | Production: https://admin.lectrax.app (HTTPS required)
+# This deployment's public URL (required in production)
 NEXT_PUBLIC_APP_URL=http://localhost:3001
-# Development: http://localhost:3000 | Production: https://lectrax.app (HTTPS required)
+# Main lecturer/student app URL (used to redirect non-admin sign-ins)
 NEXT_PUBLIC_MAIN_APP_URL=http://localhost:3000
 
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co

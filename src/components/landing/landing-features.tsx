@@ -56,19 +56,22 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
             return (
               <LandingStaggerItem key={feature.id}>
                 <article className="landing-feature-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-                  <div className="relative aspect-[16/10] w-full overflow-hidden">
+                  <div className="landing-feature-card-media relative aspect-[16/10] w-full overflow-hidden">
                     <Image
+                      key={image}
                       src={image}
                       alt=""
                       fill
                       unoptimized
                       sizes="(max-width: 1024px) 100vw, 33vw"
-                      className="landing-feature-card-image object-cover transition-transform duration-500 ease-out"
+                      className="landing-feature-card-image object-cover"
                     />
+                    <div className="landing-feature-card-overlay" aria-hidden />
+                    <div className="landing-feature-card-shine" aria-hidden />
                   </div>
-                  <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  <div className="group/cardbody flex flex-1 flex-col p-5 sm:p-6">
                     <FeatureCardAccent index={index} />
-                    <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
+                    <h3 className="landing-feature-card-title text-balance text-lg font-bold leading-snug tracking-tight text-slate-900 transition-colors duration-300 group-hover/cardbody:text-primary hover:text-primary active:text-primary sm:text-xl">
                       {feature.title}
                     </h3>
                     <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-3 sm:text-base">

@@ -21,7 +21,13 @@ export async function requireRoleLayout(requiredRole: UserRole): Promise<RoleLay
     return { status: "redirect", href: "/login" };
   }
 
-  const service = await createServiceClient();
+  let service;
+  try {
+    service = await createServiceClient();
+  } catch {
+    return { status: "service_unavailable" };
+  }
+
   const supabase = await createClient();
   const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
 

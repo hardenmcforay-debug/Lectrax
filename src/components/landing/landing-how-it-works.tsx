@@ -1,32 +1,40 @@
-import { BarChart3, BookOpen, UserPlus, Users } from "lucide-react";
 import {
   LandingReveal,
   LandingStaggerList,
   LandingStaggerListItem,
 } from "@/components/landing/landing-motion";
+import {
+  LandingHowItWorksIcon,
+  type HowItWorksIconName,
+} from "@/components/landing/landing-how-it-works-icon";
 
-const steps = [
+const steps: Array<{
+  step: string;
+  iconName: HowItWorksIconName;
+  title: string;
+  description: string;
+}> = [
   {
     step: "01",
-    icon: UserPlus,
+    iconName: "user-plus",
     title: "Create Your Account",
     description: "Sign up as a lecturer or student and set up your academic profile in minutes.",
   },
   {
     step: "02",
-    icon: BookOpen,
+    iconName: "book-open",
     title: "Create a Class Session",
     description: "Launch a session with course details and share a unique code for students to join.",
   },
   {
     step: "03",
-    icon: Users,
+    iconName: "users",
     title: "Manage Attendance and Assessments",
     description: "Run QR attendance, record tests, grade assignments, and manage CA in one workflow.",
   },
   {
     step: "04",
-    icon: BarChart3,
+    iconName: "bar-chart-3",
     title: "Track Academic Performance",
     description: "Review analytics, export records, and monitor student progress with confidence.",
   },
@@ -60,21 +68,19 @@ function StepContent({
 
 function MobileStepCard({
   step,
-  icon: Icon,
+  iconName,
   title,
   description,
 }: {
   step: string;
-  icon: typeof UserPlus;
+  iconName: HowItWorksIconName;
   title: string;
   description: string;
 }) {
   return (
     <article className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4 lg:hidden">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm sm:h-11 sm:w-11">
-          <Icon className="h-5 w-5 text-white" aria-hidden />
-        </div>
+        <LandingHowItWorksIcon step={step} iconName={iconName} size="sm" />
         <div className="min-w-0 flex-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-accent sm:text-xs">
             Step {step}
@@ -112,7 +118,6 @@ export function LandingHowItWorks() {
 
           <LandingStaggerList className="flex flex-col gap-3 sm:gap-4 lg:gap-0">
             {steps.map((item, index) => {
-              const Icon = item.icon;
               const isRight = index % 2 === 1;
 
               return (
@@ -122,7 +127,7 @@ export function LandingHowItWorks() {
                 >
                   <MobileStepCard
                     step={item.step}
-                    icon={Icon}
+                    iconName={item.iconName}
                     title={item.title}
                     description={item.description}
                   />
@@ -143,9 +148,11 @@ export function LandingHowItWorks() {
                   </div>
 
                   <div className="relative z-10 hidden justify-center lg:col-start-2 lg:row-start-1 lg:flex">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-md">
-                      <Icon className="h-7 w-7 text-white" aria-hidden />
-                    </div>
+                    <LandingHowItWorksIcon
+                      step={item.step}
+                      iconName={item.iconName}
+                      size="lg"
+                    />
                   </div>
                 </LandingStaggerListItem>
               );

@@ -4,6 +4,7 @@ import { isFeatureCardId } from "@/lib/landing/feature-cards";
 import {
   LANDING_ASSETS_BUCKET,
   LANDING_FEATURE_CARDS_SETTING_KEY,
+  BRANDING_ASSET_CACHE_CONTROL,
   buildFeatureCardStoragePath,
   extensionForImageMime,
   getLandingFeatureCardsSetting,
@@ -76,11 +77,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
   }
 
-  const storagePath = buildFeatureCardStoragePath(cardId, ext);
+  const version = Date.now();
+  const storagePath = buildFeatureCardStoragePath(cardId, ext, version);
   const existingCards = await getLandingFeatureCardsSetting();
   const previous = existingCards[cardId];
 
-  if (previous?.storage_path && previous.storage_path !== storagePath) {
+  if (previous?.storage_path) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
@@ -89,8 +91,8 @@ export async function POST(request: Request) {
     .from(LANDING_ASSETS_BUCKET)
     .upload(storagePath, buffer, {
       contentType: file.type,
-      upsert: true,
-      cacheControl: "3600",
+      upsert: false,
+      cacheControl: BRANDING_ASSET_CACHE_CONTROL,
     });
 
   if (uploadError) {
@@ -128,6 +130,7 @@ export async function POST(request: Request) {
     card_id: cardId,
     storage_path: storagePath,
     updated_at: updatedAt,
+    card_updated_at: cardUpdatedAt,
   });
 }
 

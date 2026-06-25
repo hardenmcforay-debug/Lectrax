@@ -3,6 +3,7 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import {
   HERO_IMAGE_SETTING_KEY,
   LANDING_ASSETS_BUCKET,
+  BRANDING_ASSET_CACHE_CONTROL,
   buildHeroImageStoragePath,
   extensionForImageMime,
   getLandingHeroImageSetting,
@@ -42,10 +43,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
   }
 
-  const storagePath = buildHeroImageStoragePath(ext);
+  const version = Date.now();
+  const storagePath = buildHeroImageStoragePath(ext, version);
   const previous = await getLandingHeroImageSetting();
 
-  if (previous?.storage_path && previous.storage_path !== storagePath) {
+  if (previous?.storage_path) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
@@ -54,8 +56,8 @@ export async function POST(request: Request) {
     .from(LANDING_ASSETS_BUCKET)
     .upload(storagePath, buffer, {
       contentType: file.type,
-      upsert: true,
-      cacheControl: "3600",
+      upsert: false,
+      cacheControl: BRANDING_ASSET_CACHE_CONTROL,
     });
 
   if (uploadError) {

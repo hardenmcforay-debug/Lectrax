@@ -11,7 +11,7 @@ import {
 } from "@/lib/landing/feature-cards";
 import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { getPublicSupabaseUrl } from "@/lib/env/public";
+import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
 
 type CardImageState = {
   imageUrl: string;
@@ -23,11 +23,8 @@ type AdminLandingFeatureCardsProps = {
   initialImages: Record<FeatureCardId, CardImageState>;
 };
 
-function publicFeatureCardUrl(storagePath: string, cacheBust?: number) {
-  const base = getPublicSupabaseUrl();
-  if (!base) return null;
-  const url = `${base}/storage/v1/object/public/landing-assets/${storagePath}`;
-  return cacheBust ? `${url}?v=${cacheBust}` : url;
+function publicFeatureCardUrl(storagePath: string, cacheVersion?: string | number) {
+  return buildLandingAssetPublicUrl(storagePath, cacheVersion);
 }
 
 function FeatureCardImageUpload({
@@ -75,7 +72,11 @@ function FeatureCardImageUpload({
         throw new Error(payload.error ?? "Upload failed.");
       }
 
-      const nextUrl = publicFeatureCardUrl(payload.storage_path as string, Date.now());
+      const cardUpdatedAt =
+        (payload.card_updated_at as string) ??
+        (payload.updated_at as string) ??
+        new Date().toISOString();
+      const nextUrl = publicFeatureCardUrl(payload.storage_path as string, cardUpdatedAt);
       if (!nextUrl) {
         throw new Error("Could not build image URL.");
       }
@@ -83,7 +84,7 @@ function FeatureCardImageUpload({
       onStateChange({
         imageUrl: nextUrl,
         isCustom: true,
-        updatedAt: (payload.updated_at as string) ?? new Date().toISOString(),
+        updatedAt: cardUpdatedAt,
       });
       setMessage("Image updated.");
     } catch (uploadError) {
@@ -130,6 +131,7 @@ function FeatureCardImageUpload({
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
       <div className="relative aspect-[16/10] overflow-hidden rounded-xl border bg-slate-50">
         <Image
+          key={state.imageUrl}
           src={state.imageUrl}
           alt={`${title} cover`}
           fill
