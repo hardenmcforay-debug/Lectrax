@@ -59,6 +59,7 @@ export function getContentSecurityPolicy(): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    "frame-src 'self' blob:",
     "frame-ancestors 'none'",
   ];
 
