@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
+import { isProtectedPortalPath } from "@/lib/auth/route-protection";
 import { PASSWORD_RESET_PAGE_PATH } from "@/lib/auth/password-recovery";
 import { createClient } from "@/lib/supabase/client";
 
@@ -21,6 +22,9 @@ export function AuthSessionSync() {
 
       if (event === "SIGNED_OUT") {
         clearClientStorageAfterAuthReset();
+        if (isProtectedPortalPath(window.location.pathname)) {
+          window.location.replace("/login");
+        }
       }
     });
 

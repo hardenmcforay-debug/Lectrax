@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Settings, LogOut } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,6 @@ export function DashboardSidebar({
   className?: string;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const nav = NAV_BY_ROLE[role];
   const { counts: studentNotificationCounts } = useStudentNotifications();
   const isLecturer = role === "lecturer";
@@ -77,8 +76,6 @@ export function DashboardSidebar({
 
   async function handleLogout() {
     await signOutAndClearClientStorage();
-    router.push("/login");
-    router.refresh();
   }
 
   return (

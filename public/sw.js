@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-v5";
+const CACHE_VERSION = "lectrax-v6";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
@@ -24,6 +24,9 @@ const NEVER_CACHE_PATTERNS = [
   /\/forgot-password/,
   /\/reset-password/,
   /\/auth\/callback/,
+  /^\/student/,
+  /^\/lecturer/,
+  /^\/admin/,
 ];
 
 function isProtectedRoute(pathname) {
@@ -173,6 +176,12 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch {
+    if (isProtectedRoute(url.pathname)) {
+      const offlinePage = await caches.match("/offline");
+      if (offlinePage) return offlinePage;
+      return new Response("Authentication required", { status: 401 });
+    }
+
     const cached = await caches.match(request);
     if (cached) return cached;
 

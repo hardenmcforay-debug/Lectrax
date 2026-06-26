@@ -91,14 +91,14 @@ export default async function AdminDashboard() {
 
         <Card className="min-w-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Recent platform activity</CardTitle>
+            <CardTitle className="text-base">Recent transactions</CardTitle>
             <Link href="/admin/audit" className="text-xs text-primary hover:underline">
               View all
             </Link>
           </CardHeader>
           <CardContent>
             {stats.recentLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+              <p className="text-sm text-muted-foreground">No transaction activity recorded yet.</p>
             ) : (
               <ul className="space-y-3">
                 {stats.recentLogs.map((log) => (

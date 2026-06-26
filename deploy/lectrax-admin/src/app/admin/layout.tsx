@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireRoleLayout } from "@/lib/auth/require-role-layout";
 import { ServiceUnavailablePage } from "@/components/errors/service-unavailable-page";
+import { ProtectedSessionGuard } from "@/components/auth/protected-session-guard";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const guard = await requireRoleLayout("platform_admin");
@@ -13,5 +14,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect(guard.href);
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <ProtectedSessionGuard />
+      {children}
+    </>
+  );
 }

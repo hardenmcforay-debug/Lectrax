@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-admin-v2";
+const CACHE_VERSION = "lectrax-admin-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
@@ -20,7 +20,10 @@ const NEVER_CACHE_PATTERNS = [
   /supabase\.co/,
   /\/auth\//,
   /\/login/,
+  /\/forgot-password/,
+  /\/reset-password/,
   /\/auth\/callback/,
+  /^\/admin/,
 ];
 
 function isProtectedRoute(pathname) {
@@ -165,6 +168,12 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch {
+    if (isProtectedRoute(url.pathname)) {
+      const offlinePage = await caches.match("/offline");
+      if (offlinePage) return offlinePage;
+      return new Response("Authentication required", { status: 401 });
+    }
+
     const cached = await caches.match(request);
     if (cached) return cached;
 
@@ -172,7 +181,7 @@ async function networkFirstNavigation(request) {
     if (offlinePage) return offlinePage;
 
     return new Response(
-      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline — Lectrax Admin</title><style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;color:#0B3D91;text-align:center;padding:2rem}h1{font-size:1.5rem;margin-bottom:.5rem}p{color:#64748b;max-width:24rem;line-height:1.6}</style></head><body><div><h1>You're currently offline</h1><p>Reconnect to manage Lectrax from this device.</p></div></body></html>`,
+      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline — Lectrax</title><style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;color:#0B3D91;text-align:center;padding:2rem}h1{font-size:1.5rem;margin-bottom:.5rem}p{color:#64748b;max-width:24rem;line-height:1.6}</style></head><body><div><h1>You're currently offline</h1><p>Some features may be unavailable until your connection is restored.</p></div></body></html>`,
       { headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }

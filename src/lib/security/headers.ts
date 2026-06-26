@@ -92,10 +92,16 @@ export function getSecurityHeaders(options?: { allowCamera?: boolean }): Securit
   return headers;
 }
 
-const PRIVATE_NO_STORE: SecurityHeader = {
-  key: "Cache-Control",
-  value: "private, no-store, max-age=0, must-revalidate",
-};
+const PRIVATE_NO_STORE: SecurityHeader[] = [
+  {
+    key: "Cache-Control",
+    value: "private, no-store, max-age=0, must-revalidate",
+  },
+  { key: "Pragma", value: "no-cache" },
+  { key: "Expires", value: "0" },
+  { key: "CDN-Cache-Control", value: "no-store" },
+  { key: "Vary", value: "Cookie" },
+];
 
 /** Next.js `headers()` configuration for the main Lectrax application. */
 export function getAppSecurityHeaderRoutes(): Array<{ source: string; headers: SecurityHeader[] }> {
@@ -105,19 +111,19 @@ export function getAppSecurityHeaderRoutes(): Array<{ source: string; headers: S
     { source: "/:path*", headers: securityHeaders },
     {
       source: "/(student|lecturer|admin)/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/(login|signup|forgot-password|reset-password)",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/api/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/auth/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/sw.js",
@@ -141,19 +147,19 @@ export function getAdminSecurityHeaderRoutes(): Array<{ source: string; headers:
     { source: "/:path*", headers: securityHeaders },
     {
       source: "/admin/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/(login|signup|forgot-password|reset-password)",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/api/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/auth/:path*",
-      headers: [PRIVATE_NO_STORE],
+      headers: PRIVATE_NO_STORE,
     },
     {
       source: "/sw.js",

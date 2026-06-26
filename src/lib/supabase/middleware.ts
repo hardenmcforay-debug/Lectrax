@@ -16,6 +16,7 @@ import {
   isAdminHostedSeparately,
   isMainAppDeployment,
 } from "@/lib/auth/admin-deployment";
+import { getRequiredApiRole, getRequiredPortalRole } from "@/lib/auth/route-protection";
 import { isUserRole, resolveUserRoleOrNull } from "@/lib/auth/roles";
 import {
   hasSupabaseAuthCookies,
@@ -131,8 +132,17 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
-    if (!isPublic && hasAuthCookies) {
-      return supabaseResponse;
+    if (!isPublic) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "Service temporarily unavailable. Please try again." },
+          { status: 503 },
+        );
+      }
+
+      if (hasAuthCookies) {
+        return supabaseResponse;
+      }
     }
   }
 
@@ -169,6 +179,12 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (!role && roleServiceUnavailable) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "Service temporarily unavailable. Please try again." },
+          { status: 503 },
+        );
+      }
       return supabaseResponse;
     }
 
@@ -213,19 +229,13 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/admin") && role !== "platform_admin") {
-      const destination = isAbsoluteUrl(roleHome)
-        ? roleHome
-        : new URL(roleHome, request.url).toString();
-      return NextResponse.redirect(destination);
+    const requiredApiRole = getRequiredApiRole(pathname);
+    if (requiredApiRole && role !== requiredApiRole) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    if (pathname.startsWith("/lecturer") && role !== "lecturer") {
-      const destination = isAbsoluteUrl(roleHome)
-        ? roleHome
-        : new URL(roleHome, request.url).toString();
-      return NextResponse.redirect(destination);
-    }
-    if (pathname.startsWith("/student") && role !== "student") {
+
+    const requiredPortalRole = getRequiredPortalRole(pathname);
+    if (requiredPortalRole && role !== requiredPortalRole) {
       const destination = isAbsoluteUrl(roleHome)
         ? roleHome
         : new URL(roleHome, request.url).toString();

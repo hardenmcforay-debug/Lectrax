@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
@@ -19,7 +19,6 @@ import { useStudentNotifications } from "@/components/student/student-notificati
 export function StudentMobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const activeHref =
     getActiveStudentNavHref(pathname) ??
@@ -49,8 +48,6 @@ export function StudentMobileHeader() {
   async function handleLogout() {
     setOpen(false);
     await signOutAndClearClientStorage();
-    router.push("/login");
-    router.refresh();
   }
 
   return (

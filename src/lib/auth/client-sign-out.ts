@@ -7,12 +7,18 @@ function resetInMemoryAuthState(): void {
   useAuthStore.getState().setLoading(false);
 }
 
-/** Sign out and purge client-side caches that may hold user data. */
-export async function signOutAndClearClientStorage(): Promise<void> {
+/** Sign out, purge client caches, and hard-navigate so protected pages cannot remain in history. */
+export async function signOutAndClearClientStorage(options?: {
+  redirectTo?: string | null;
+}): Promise<void> {
   const supabase = createClient();
   await supabase.auth.signOut();
   clearSensitiveClientStorage();
   resetInMemoryAuthState();
+
+  if (options?.redirectTo !== null) {
+    window.location.replace(options?.redirectTo ?? "/login");
+  }
 }
 
 /** Clear cached client data after a failed or partial auth without signing out again. */

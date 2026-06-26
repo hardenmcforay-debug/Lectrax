@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDataPageSize } from "@/lib/low-data/server";
+import { PLATFORM_TRANSACTION_AUDIT_ACTIONS } from "@/lib/admin/platform-transaction-audit";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { TablePagination } from "@/components/shared/table-pagination";
@@ -24,6 +25,7 @@ export default async function AdminAuditPage({
     .select("id, action, entity_type, metadata, created_at, profiles(full_name, email)", {
       count: "exact",
     })
+    .in("action", [...PLATFORM_TRANSACTION_AUDIT_ACTIONS])
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -33,7 +35,7 @@ export default async function AdminAuditPage({
     <DashboardShell
       role="platform_admin"
       title="Audit Logs"
-      description="Permanent record of platform activity — attendance sessions, admin actions, and system events"
+      description="Permanent record of platform payment and subscription transactions"
     >
       <div className="mb-4">
         <TablePagination basePath="/admin/audit" page={page} pageSize={pageSize} total={total} />
@@ -80,7 +82,7 @@ export default async function AdminAuditPage({
             {(logs ?? []).length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                  No audit logs yet.
+                  No transaction audit logs yet.
                 </TableCell>
               </TableRow>
             )}

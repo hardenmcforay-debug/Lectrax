@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { PLATFORM_TRANSACTION_AUDIT_ACTIONS } from "@/lib/admin/platform-transaction-audit";
 
 export async function getAdminOverview() {
   const supabase = await createClient();
@@ -31,6 +32,7 @@ export async function getAdminOverview() {
     supabase
       .from("audit_logs")
       .select("id, action, created_at, entity_type, profiles(full_name)")
+      .in("action", [...PLATFORM_TRANSACTION_AUDIT_ACTIONS])
       .order("created_at", { ascending: false })
       .limit(8),
     supabase
@@ -113,25 +115,5 @@ export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
       { name: "Pending pay", value: pending.count ?? 0 },
     ],
     revenueByPlan,
-  };
-}
-
-export async function requirePlatformAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, isAdmin: false };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  return {
-    supabase,
-    user,
-    isAdmin: profile?.role === "platform_admin",
   };
 }
