@@ -187,7 +187,7 @@ export function AssignmentGradesClient({
         assignmentTitle: assignment.title,
         submittedAt: row.submittedAt,
         fileName: row.fileName,
-        viewUrl: `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}&inline=1`,
+        viewUrl: `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}`,
       });
     },
     [assignment.id, assignment.title, classSessionId, rows],

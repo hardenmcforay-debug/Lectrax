@@ -18,7 +18,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  ExternalLink,
   Loader2,
   X,
   ZoomIn,
@@ -45,18 +44,37 @@ export type AssignmentSubmissionViewerGrading = {
 
 export type AssignmentSubmissionViewerData = {
   enrollmentId: string;
-  studentName: string;
-  studentId: string | null;
   assignmentTitle: string;
   submittedAt: string | null;
   fileName: string | null;
   viewUrl: string;
+  viewerTitle?: string;
+  studentName?: string;
+  studentId?: string | null;
 };
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.5;
 const SCALE_STEP = 0.25;
 const DEFAULT_SCALE = 1.75;
+const MAX_RENDER_DPR = 2;
+const LAZY_PAGE_ROOT_MARGIN = "320px 0px";
+
+let pdfjsModulePromise: Promise<typeof import("pdfjs-dist")> | null = null;
+
+function getPdfJsModule() {
+  if (!pdfjsModulePromise) {
+    pdfjsModulePromise = import("pdfjs-dist").then((pdfjs) => {
+      configurePdfWorker(pdfjs);
+      return pdfjs;
+    });
+  }
+  return pdfjsModulePromise;
+}
+
+function configurePdfWorker(pdfjs: typeof import("pdfjs-dist")) {
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+}
 
 function formatSubmittedAt(value: string | null): string {
   if (!value) return "Not available";
@@ -65,10 +83,6 @@ function formatSubmittedAt(value: string | null): string {
   } catch {
     return "Not available";
   }
-}
-
-function configurePdfWorker(pdfjs: typeof import("pdfjs-dist")) {
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 }
 
 function PdfPageCanvas({
@@ -97,7 +111,7 @@ function PdfPageCanvas({
       const context = canvas.getContext("2d");
       if (!context) return;
 
-      const outputScale = window.devicePixelRatio || 1;
+      const outputScale = Math.min(window.devicePixelRatio || 1, MAX_RENDER_DPR);
       canvas.width = Math.floor(viewport.width * outputScale);
       canvas.height = Math.floor(viewport.height * outputScale);
       canvas.style.width = `${viewport.width}px`;
@@ -131,6 +145,62 @@ function PdfPageCanvas({
   );
 }
 
+function LazyPdfPage({
+  pdf,
+  pageNumber,
+  scale,
+  scrollRootRef,
+}: {
+  pdf: PDFDocumentProxy;
+  pageNumber: number;
+  scale: number;
+  scrollRootRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldRender, setShouldRender] = useState(pageNumber === 1);
+
+  useEffect(() => {
+    if (shouldRender) return;
+
+    const root = scrollRootRef.current;
+    const target = containerRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShouldRender(true);
+          observer.disconnect();
+        }
+      },
+      {
+        root,
+        rootMargin: LAZY_PAGE_ROOT_MARGIN,
+        threshold: 0.01,
+      },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [pageNumber, scrollRootRef, shouldRender]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex min-h-[420px] w-full justify-center"
+    >
+      {shouldRender ? (
+        <PdfPageCanvas pdf={pdf} pageNumber={pageNumber} scale={scale} />
+      ) : (
+        <div
+          className="mx-auto w-full max-w-3xl animate-pulse rounded-sm bg-white/90 shadow-sm"
+          aria-hidden
+        />
+      )}
+    </div>
+  );
+}
+
 export function AssignmentSubmissionPdfViewer({
   open,
   data,
@@ -148,12 +218,13 @@ export function AssignmentSubmissionPdfViewer({
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [pdfSourceUrl, setPdfSourceUrl] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(DEFAULT_SCALE);
   const [loading, setLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [blob, setBlob] = useState<Blob | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const resetViewer = useCallback(() => {
@@ -165,38 +236,64 @@ export function AssignmentSubmissionPdfViewer({
     setCurrentPage(1);
     setScale(DEFAULT_SCALE);
     setLoading(false);
+    setLoadProgress(null);
     setLoadError(false);
-    setBlob(null);
+    setPdfSourceUrl(null);
     pageRefs.current.clear();
   }, []);
 
-  const loadDocument = useCallback(async (viewUrl: string) => {
+  const loadDocument = useCallback(async (fetchUrl: string) => {
     setLoading(true);
     setLoadError(false);
+    setLoadProgress(null);
+    setPdfSourceUrl(null);
     setPdfDoc((prev) => {
       void prev?.cleanup();
       return null;
     });
-    setBlob(null);
     setPageCount(0);
     setCurrentPage(1);
 
     try {
-      const res = await appFetch(viewUrl, { dedupe: false, timeoutMs: 60_000 });
-      if (!res.ok) {
-        throw new Error("load_failed");
+      const [pdfjs, response] = await Promise.all([
+        getPdfJsModule(),
+        appFetch(fetchUrl),
+      ]);
+
+      if (!response.ok) {
+        throw new Error("Could not resolve submission PDF.");
       }
 
-      const fileBlob = await res.blob();
-      const pdfjs = await import("pdfjs-dist");
-      configurePdfWorker(pdfjs);
+      const payload = (await response.json()) as { url?: string };
+      if (!payload.url) {
+        throw new Error("Missing submission PDF URL.");
+      }
 
-      const buffer = await fileBlob.arrayBuffer();
-      const doc = await pdfjs.getDocument({ data: buffer }).promise;
+      setPdfSourceUrl(payload.url);
 
-      setBlob(fileBlob);
+      const loadingTask = pdfjs.getDocument({
+        url: payload.url,
+        disableAutoFetch: false,
+        disableStream: false,
+      });
+
+      loadingTask.onProgress = ({
+        loaded,
+        total,
+      }: {
+        loaded: number;
+        total: number;
+      }) => {
+        if (total > 0) {
+          setLoadProgress(Math.min(99, Math.round((loaded / total) * 100)));
+        }
+      };
+
+      const doc = await loadingTask.promise;
+
       setPdfDoc(doc);
       setPageCount(doc.numPages);
+      setLoadProgress(100);
     } catch {
       setLoadError(true);
     } finally {
@@ -206,6 +303,7 @@ export function AssignmentSubmissionPdfViewer({
 
   useEffect(() => {
     setMounted(true);
+    void getPdfJsModule();
   }, []);
 
   useEffect(() => {
@@ -303,22 +401,35 @@ export function AssignmentSubmissionPdfViewer({
     setScale((prev) => Math.max(MIN_SCALE, Number((prev - SCALE_STEP).toFixed(2))));
   }, []);
 
-  const handleDownload = useCallback(() => {
-    if (!blob || !data) return;
-    const url = URL.createObjectURL(blob);
+  const handleDownload = useCallback(async () => {
+    if (!data) return;
+
+    const fileName = data.fileName ?? "assignment-submission.pdf";
+
+    if (pdfSourceUrl) {
+      const response = await fetch(pdfSourceUrl);
+      if (!response.ok) return;
+
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      return;
+    }
+
+    if (!pdfDoc) return;
+    const bytes = await pdfDoc.getData();
+    const url = URL.createObjectURL(
+      new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+    );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = data.fileName ?? "assignment-submission.pdf";
+    anchor.download = fileName;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, [blob, data]);
-
-  const handleOpenInBrowser = useCallback(() => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  }, [blob]);
+  }, [data, pdfDoc, pdfSourceUrl]);
 
   const handleRetry = useCallback(() => {
     if (!data?.viewUrl) return;
@@ -327,6 +438,8 @@ export function AssignmentSubmissionPdfViewer({
 
   if (!mounted) return null;
 
+  const showStudentInfo = Boolean(data?.studentName?.trim());
+  const headerTitle = data?.viewerTitle ?? (showStudentInfo ? "Student Assignment" : "Your Submission");
   const studentIdLabel = data?.studentId?.trim() ? data.studentId : "Not Provided";
   const gradeStatus =
     grading?.savedGrade !== null && grading?.savedGrade !== undefined
@@ -367,19 +480,21 @@ export function AssignmentSubmissionPdfViewer({
               <div className="flex items-start justify-between gap-3 px-4 py-2 md:px-6 md:py-3">
                 <div className="min-w-0 space-y-1 pr-2">
                   <p id={titleId} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student Assignment
+                    {headerTitle}
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-5 md:gap-8">
-                    <div className="space-y-0.5 text-sm">
-                      <p>
-                        <span className="font-medium text-foreground">Student Name:</span>{" "}
-                        <span className="text-muted-foreground">{data.studentName}</span>
-                      </p>
-                      <p>
-                        <span className="font-medium text-foreground">Student ID:</span>{" "}
-                        <span className="text-muted-foreground">{studentIdLabel}</span>
-                      </p>
-                    </div>
+                    {showStudentInfo ? (
+                      <div className="space-y-0.5 text-sm">
+                        <p>
+                          <span className="font-medium text-foreground">Student Name:</span>{" "}
+                          <span className="text-muted-foreground">{data.studentName}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium text-foreground">Student ID:</span>{" "}
+                          <span className="text-muted-foreground">{studentIdLabel}</span>
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="space-y-0.5 text-sm">
                       <p>
                         <span className="font-medium text-foreground">Assignment:</span>{" "}
@@ -451,21 +566,11 @@ export function AssignmentSubmissionPdfViewer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleDownload}
-                    disabled={!blob || loading || loadError}
+                    onClick={() => void handleDownload()}
+                    disabled={!pdfDoc || loading || loadError}
                   >
                     <Download className="mr-1.5 h-4 w-4" />
                     Download
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleOpenInBrowser}
-                    disabled={!blob || loading || loadError}
-                  >
-                    <ExternalLink className="mr-1.5 h-4 w-4" />
-                    Open in Browser
                   </Button>
                 </div>
               </div>
@@ -544,9 +649,19 @@ export function AssignmentSubmissionPdfViewer({
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-foreground">Loading Assignment...</p>
                     <p className="text-sm text-muted-foreground">
-                      Please wait while we prepare the document.
+                      {loadProgress !== null
+                        ? `Preparing document… ${loadProgress}%`
+                        : "Please wait while we prepare the document."}
                     </p>
                   </div>
+                  {loadProgress !== null ? (
+                    <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-200"
+                        style={{ width: `${loadProgress}%` }}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -577,15 +692,19 @@ export function AssignmentSubmissionPdfViewer({
                     const pageNumber = index + 1;
                     return (
                       <div
-                        key={`${data.enrollmentId}-page-${pageNumber}-${scale}`}
+                        key={`${data.enrollmentId}-page-${pageNumber}`}
                         data-page={pageNumber}
                         ref={(node) => {
                           if (node) pageRefs.current.set(pageNumber, node);
                           else pageRefs.current.delete(pageNumber);
                         }}
-                        className="flex justify-center"
                       >
-                        <PdfPageCanvas pdf={pdfDoc} pageNumber={pageNumber} scale={scale} />
+                        <LazyPdfPage
+                          pdf={pdfDoc}
+                          pageNumber={pageNumber}
+                          scale={scale}
+                          scrollRootRef={scrollRef}
+                        />
                       </div>
                     );
                   })}
