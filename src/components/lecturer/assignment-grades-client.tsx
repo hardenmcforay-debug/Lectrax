@@ -159,27 +159,24 @@ export function AssignmentGradesClient({
   }, []);
 
   const openPdf = useCallback(
-    async (enrollmentId: string) => {
-      try {
-        const res = await appFetch(
-          `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}`,
-        );
+    (enrollmentId: string) => {
+      const row = rows.find((r) => r.enrollmentId === enrollmentId);
 
-        const body = (await res.json()) as { url?: string; error?: string };
-
-        if (!res.ok || !body.url) {
-          setError(body.error ?? "Could not open submission PDF.");
-
-          return;
-        }
-
-        window.open(body.url, "_blank", "noopener,noreferrer");
-      } catch {
-        setError("Network error. Could not open submission PDF.");
+      if (!row?.hasSubmission) {
+        setError("Could not open submission PDF.");
+        return;
       }
-    },
 
-    [assignment.id, classSessionId],
+      setError(null);
+
+      const params = new URLSearchParams({ enrollmentId });
+      if (row.fileName) params.set("fileName", row.fileName);
+
+      router.push(
+        `/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/view?${params.toString()}`,
+      );
+    },
+    [assignment.id, classSessionId, router, rows],
   );
 
   async function saveAllGrades() {
