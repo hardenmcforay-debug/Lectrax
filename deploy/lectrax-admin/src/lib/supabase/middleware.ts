@@ -73,6 +73,30 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  if (pathname === "/reset-password") {
+    return supabaseResponse;
+  }
+
+  const recoveryType = request.nextUrl.searchParams.get("type");
+  if (
+    (pathname === "/login" || pathname === "/") &&
+    (recoveryType === "recovery" || request.nextUrl.searchParams.has("token_hash"))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/reset-password";
+    return NextResponse.redirect(url);
+  }
+
+  if (
+    pathname === "/login" &&
+    request.nextUrl.searchParams.has("code") &&
+    request.nextUrl.searchParams.get("next") === "/reset-password"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/reset-password";
+    return NextResponse.redirect(url);
+  }
+
   if (isAdminHostedSeparately() && !isAdminDeployment()) {
     if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
       const adminUrl = getAdminAppUrl();
@@ -140,7 +164,7 @@ export async function updateSession(request: NextRequest) {
       if (profileError && isTransientDbError(profileError)) {
         roleServiceUnavailable = true;
       } else {
-        role = resolveUserRoleOrNull(profile?.role, user);
+        role = resolveUserRoleOrNull(profile?.role);
       }
     }
 

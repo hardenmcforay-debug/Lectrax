@@ -3,11 +3,14 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import {
   LANDING_ASSETS_BUCKET,
   SITE_LOGO_SETTING_KEY,
+  BRANDING_ASSET_CACHE_CONTROL,
   buildSiteLogoStoragePath,
   extensionForImageMime,
   getSiteLogoSetting,
   isAllowedBrandingImage,
 } from "@/lib/landing/site-branding";
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { brandingExtensionMatchesMime } from "@/lib/security/file-validation";
 
 export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
@@ -28,15 +31,23 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!brandingExtensionMatchesMime(file)) {
+    return NextResponse.json(
+      { error: "File extension does not match the image type." },
+      { status: 400 }
+    );
+  }
+
   const ext = extensionForImageMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
   }
 
-  const storagePath = buildSiteLogoStoragePath(ext);
+  const version = Date.now();
+  const storagePath = buildSiteLogoStoragePath(ext, version);
   const previous = await getSiteLogoSetting();
 
-  if (previous?.storage_path && previous.storage_path !== storagePath) {
+  if (previous?.storage_path) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
@@ -45,13 +56,13 @@ export async function POST(request: Request) {
     .from(LANDING_ASSETS_BUCKET)
     .upload(storagePath, buffer, {
       contentType: file.type,
-      upsert: true,
-      cacheControl: "3600",
+      upsert: false,
+      cacheControl: BRANDING_ASSET_CACHE_CONTROL,
     });
 
   if (uploadError) {
     return NextResponse.json(
-      { error: uploadError.message ?? "Could not upload logo." },
+      { error: sanitizeErrorMessage(uploadError.message ?? "Could not upload logo.") },
       { status: 500 }
     );
   }
@@ -69,7 +80,7 @@ export async function POST(request: Request) {
 
   if (settingsError) {
     return NextResponse.json(
-      { error: settingsError.message ?? "Logo uploaded but settings could not be saved." },
+      { error: sanitizeErrorMessage(settingsError.message ?? "Logo uploaded but settings could not be saved.") },
       { status: 500 }
     );
   }
@@ -96,7 +107,7 @@ export async function DELETE() {
 
   if (error) {
     return NextResponse.json(
-      { error: error.message ?? "Could not remove logo." },
+      { error: sanitizeErrorMessage(error.message ?? "Could not remove logo.") },
       { status: 500 }
     );
   }

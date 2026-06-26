@@ -6,7 +6,11 @@ import {
 } from "@/lib/errors/classify";
 import { logPlatformError } from "@/lib/errors/logger";
 import type { PlatformError } from "@/lib/errors/types";
-import { assertSecureClientRequest } from "@/lib/security/transport";
+import {
+  getCsrfRequestHeaders,
+  isMutationMethod,
+  isSameOriginAppApiUrl,
+} from "@/lib/security/csrf";
 
 export type PlatformFetchResult<T> =
   | { ok: true; data: T; response: Response }
@@ -34,9 +38,30 @@ async function fetchWithTimeout(
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
+  const method = (init.method ?? "GET").toUpperCase();
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input instanceof Request
+          ? input.url
+          : String(input);
+
+  const headers = new Headers(init.headers);
+  const isAppApi = isSameOriginAppApiUrl(url);
+
+  if (isAppApi && isMutationMethod(method)) {
+    for (const [key, value] of Object.entries(getCsrfRequestHeaders())) {
+      headers.set(key, value);
+    }
+  }
+
   try {
     return await fetch(input, {
       ...init,
+      credentials: init.credentials ?? (isAppApi ? "include" : "same-origin"),
+      headers,
       signal: controller.signal,
     });
   } finally {
@@ -61,14 +86,6 @@ export async function platformFetch<T = unknown>(
 
   if (isOffline()) {
     const error = classifyFetchFailure(null, true);
-    logPlatformError("platformFetch", error, { url: String(input) });
-    return { ok: false, error };
-  }
-
-  try {
-    assertSecureClientRequest(input);
-  } catch (cause) {
-    const error = classifyFetchFailure(cause, false);
     logPlatformError("platformFetch", error, { url: String(input) });
     return { ok: false, error };
   }

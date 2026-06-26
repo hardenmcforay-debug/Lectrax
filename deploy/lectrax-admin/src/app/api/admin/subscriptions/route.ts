@@ -1,32 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import {
   adminActivatePremium,
   adminExtendPremium,
   revokePremiumSubscription,
 } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.role !== "platform_admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { user };
-}
+import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const activateSchema = z.object({
   lecturerId: z.string().uuid(),
@@ -34,8 +15,8 @@ const activateSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   let body: unknown;
   try {
@@ -53,12 +34,14 @@ export async function POST(request: Request) {
     const subscription = await adminActivatePremium({
       lecturerId: parsed.data.lecturerId,
       billingPlan: parsed.data.billingPlan as BillingPlan,
-      actorId: auth.user!.id,
+      actorId: auth.userId,
     });
 
     return NextResponse.json({ success: true, subscription });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to activate subscription";
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to activate subscription"
+    );
     return NextResponse.json({ error: message }, { status: 409 });
   }
 }
@@ -69,8 +52,8 @@ const extendSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   let body: unknown;
   try {
@@ -84,13 +67,20 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const subscription = await adminExtendPremium({
-    lecturerId: parsed.data.lecturerId,
-    days: parsed.data.days,
-    actorId: auth.user!.id,
-  });
+  try {
+    const subscription = await adminExtendPremium({
+      lecturerId: parsed.data.lecturerId,
+      days: parsed.data.days,
+      actorId: auth.userId,
+    });
 
-  return NextResponse.json({ success: true, subscription });
+    return NextResponse.json({ success: true, subscription });
+  } catch (error) {
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to extend subscription"
+    );
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
 }
 
 const revokeSchema = z.object({
@@ -98,8 +88,8 @@ const revokeSchema = z.object({
 });
 
 export async function DELETE(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   let body: unknown;
   try {
@@ -113,6 +103,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  await revokePremiumSubscription(parsed.data.lecturerId, auth.user!.id);
-  return NextResponse.json({ success: true });
+  try {
+    await revokePremiumSubscription(parsed.data.lecturerId, auth.userId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message = sanitizeErrorMessage(
+      error instanceof Error ? error.message : "Failed to revoke subscription"
+    );
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
 }

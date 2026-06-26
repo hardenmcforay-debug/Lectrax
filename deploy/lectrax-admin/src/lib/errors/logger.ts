@@ -20,7 +20,7 @@ function sanitizeContext(context: LogContext): LogContext {
   if (!isProduction) return context;
   const safe: LogContext = {};
   for (const [key, value] of Object.entries(context)) {
-    if (/secret|token|key|password|authorization/i.test(key)) continue;
+    if (/secret|token|key|password|authorization|cookie/i.test(key)) continue;
     safe[key] = value;
   }
   return safe;
@@ -54,5 +54,15 @@ export function logPlatformError(
 }
 
 export function logClientCrash(scope: string, error: Error, context: LogContext = {}): void {
+  if (isProduction) {
+    console.error(`[${scope}] ${error.name}: Application error`, sanitizeContext(context));
+    return;
+  }
+
   console.error(`[${scope}] ${error.name}: ${error.message}`, sanitizeContext(context));
+}
+
+/** Log server-side failures without echoing raw error text in production. */
+export function logServerError(scope: string, error: unknown, context: LogContext = {}): void {
+  logPlatformError(scope, error, context);
 }

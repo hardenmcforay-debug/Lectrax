@@ -21,7 +21,7 @@ export default async function AdminPartnershipsPage() {
         .eq("is_read", false),
     ]);
 
-  if (inquiriesError) {
+  if (inquiriesError && process.env.NODE_ENV === "development") {
     console.error("Failed to load partnership inquiries:", inquiriesError);
   }
 

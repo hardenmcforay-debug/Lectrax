@@ -8,20 +8,33 @@ function readCollegeIdFromMetadata(metadata: User["user_metadata"] | undefined):
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** Fill profile.college_id from signup metadata when the DB trigger did not persist it yet. */
+function readPhoneFromMetadata(metadata: User["user_metadata"] | undefined): string | null {
+  const raw = metadata?.phone;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Fill profile fields from signup metadata when the DB trigger did not persist them yet. */
 export async function syncStudentCollegeIdFromSignupMetadata(
   supabase: SupabaseClient,
   user: User
 ): Promise<void> {
   const role = getRoleFromUser(user);
-  if (role !== "student") return;
+  const phone = readPhoneFromMetadata(user.user_metadata);
 
-  const collegeId = readCollegeIdFromMetadata(user.user_metadata);
-  if (!collegeId) return;
+  if (role === "student") {
+    const collegeId = readCollegeIdFromMetadata(user.user_metadata);
+    if (collegeId) {
+      await supabase
+        .from("profiles")
+        .update({ college_id: collegeId })
+        .eq("id", user.id)
+        .is("college_id", null);
+    }
+  }
 
-  await supabase
-    .from("profiles")
-    .update({ college_id: collegeId })
-    .eq("id", user.id)
-    .is("college_id", null);
+  if (phone) {
+    await supabase.from("profiles").update({ phone }).eq("id", user.id).is("phone", null);
+  }
 }

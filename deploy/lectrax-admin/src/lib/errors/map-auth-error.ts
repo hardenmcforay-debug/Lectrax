@@ -6,7 +6,11 @@ import {
   type AuthErrorContext,
   type AuthUserMessage,
 } from "@/lib/errors/auth-messages";
-import { isTransientError, createPlatformError } from "@/lib/errors/classify";
+import {
+  isTransientError,
+  createPlatformError,
+  sanitizeErrorMessage,
+} from "@/lib/errors/classify";
 import { logPlatformError } from "@/lib/errors/logger";
 
 const RAW_NETWORK_PATTERNS = [
@@ -103,23 +107,27 @@ function sanitizeCredentialMessage(message: string, context: AuthErrorContext): 
   }
 
   if (context === "login" && /invalid login credentials/i.test(message)) {
-    return "Sign in failed. Please check your email and password.";
+    return "Sign in failed. Please check your phone number or email and password.";
   }
 
   if (context === "signup" && /user already registered/i.test(message)) {
-    return "An account with this email already exists. Try signing in instead.";
+    return "An account already exists with this phone number or email. Sign in instead.";
   }
 
   if (context === "signup" && /email not confirmed/i.test(message)) {
     return "Please confirm your email before signing in.";
   }
 
+  if (context === "password-reset") {
+    return "Could not send the reset link. Please try again.";
+  }
+
   if (message.length > 0 && message.length <= 180) {
-    return message;
+    return sanitizeErrorMessage(message);
   }
 
   return context === "login"
-    ? "Sign in failed. Please check your email and password."
+    ? "Sign in failed. Please check your phone number or email and password."
     : "Could not complete your request. Please try again.";
 }
 

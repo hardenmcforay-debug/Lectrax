@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 type SiteBrandingContextValue = {
   logoUrl: string | null;
@@ -17,8 +17,10 @@ export function SiteBrandingProvider({
   logoUrl: string | null;
   children: React.ReactNode;
 }) {
+  const value = useMemo(() => ({ logoUrl }), [logoUrl]);
+
   return (
-    <SiteBrandingContext.Provider value={{ logoUrl }}>{children}</SiteBrandingContext.Provider>
+    <SiteBrandingContext.Provider value={value}>{children}</SiteBrandingContext.Provider>
   );
 }
 

@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
-      <head suppressHydrationWarning>
+      <head>
         <PwaHeadLinks />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

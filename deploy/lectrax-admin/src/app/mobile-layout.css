@@ -57,7 +57,7 @@ html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
 }
 
 /* Desktop browser only: hide mobile chrome inside portal shell */
-@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (pointer: coarse)) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) and (not (display-mode: minimal-ui)) {
   html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-shell-root .portal-mobile-only {
     display: none !important;
   }
@@ -69,7 +69,7 @@ html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
 }
 
 /* ── Lock document scroll on portal pages (mobile + installed PWA) ── */
-@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
+@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   html:has(.portal-shell-root),
   html:has(.portal-shell-root) body {
     width: 100%;
@@ -81,7 +81,9 @@ html[data-portal-mobile="true"] .portal-shell-root .portal-mobile-only {
 }
 
 html[data-pwa-standalone="true"]:has(.portal-shell-root),
-html[data-pwa-standalone="true"]:has(.portal-shell-root) body {
+html[data-pwa-standalone="true"]:has(.portal-shell-root) body,
+html[data-portal-mobile="true"]:has(.portal-shell-root),
+html[data-portal-mobile="true"]:has(.portal-shell-root) body {
   width: 100%;
   height: 100%;
   height: 100dvh;
@@ -90,7 +92,7 @@ html[data-pwa-standalone="true"]:has(.portal-shell-root) body {
 }
 
 /* ── Portal shell: static header + scrollable content + static bottom nav ── */
-@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen) {
+@media (max-width: 1023px), (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   .portal-shell-root {
     width: 100%;
     height: 100dvh;
@@ -153,7 +155,7 @@ html[data-pwa-standalone="true"]:has(.portal-shell-root) body {
 }
 
 .admin-portal-content {
-  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-top: 1rem;
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   scroll-padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
 }
@@ -292,40 +294,89 @@ html[data-pwa-standalone="true"]:has(.portal-shell-root) body {
   padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
 
+@keyframes portal-mobile-menu-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes portal-mobile-menu-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-mobile-menu-backdrop {
+  animation: portal-mobile-menu-fade-in 0.2s ease-out both;
+}
+
+.portal-mobile-menu-panel {
+  animation: portal-mobile-menu-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-mobile-menu-backdrop,
+  .portal-mobile-menu-panel {
+    animation: none !important;
+  }
+}
+
 /* PWA / installed app: mobile chrome on first paint (no JS wait) */
-@media (display-mode: standalone), (display-mode: fullscreen) {
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   .student-desktop-sidebar,
   .lecturer-desktop-sidebar,
   .admin-desktop-sidebar {
     display: none !important;
   }
 
+  .portal-shell-root .portal-mobile-only,
   .portal-mobile-only {
     display: flex !important;
+  }
+
+  .portal-shell-root .portal-mobile-shell {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 }
 
 html[data-pwa-standalone="true"] .student-desktop-sidebar,
 html[data-pwa-standalone="true"] .lecturer-desktop-sidebar,
-html[data-pwa-standalone="true"] .admin-desktop-sidebar {
+html[data-pwa-standalone="true"] .admin-desktop-sidebar,
+html[data-portal-mobile="true"] .student-desktop-sidebar,
+html[data-portal-mobile="true"] .lecturer-desktop-sidebar,
+html[data-portal-mobile="true"] .admin-desktop-sidebar {
   display: none !important;
 }
 
-html[data-pwa-standalone="true"] .portal-mobile-only {
+html[data-pwa-standalone="true"] .portal-mobile-only,
+html[data-portal-mobile="true"] .portal-mobile-only {
   display: flex !important;
 }
 
-/* Installed PWA at any viewport width: same grid shell as mobile */
-html[data-pwa-standalone="true"] .portal-shell-root {
+/* Installed PWA / mobile portal at any viewport width: same grid shell as phone */
+html[data-pwa-standalone="true"] .portal-shell-root,
+html[data-portal-mobile="true"] .portal-shell-root {
   width: 100%;
+  height: 100svh;
   height: 100dvh;
   min-height: 0;
+  max-height: 100svh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-html[data-pwa-standalone="true"] .portal-mobile-shell {
-  display: grid;
+html[data-pwa-standalone="true"] .portal-mobile-shell,
+html[data-portal-mobile="true"] .portal-mobile-shell {
+  display: grid !important;
   grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
@@ -334,19 +385,26 @@ html[data-pwa-standalone="true"] .portal-mobile-shell {
   overflow: hidden;
 }
 
-html[data-pwa-standalone="true"] .portal-mobile-header {
+html[data-pwa-standalone="true"] .portal-mobile-header,
+html[data-portal-mobile="true"] .portal-mobile-header {
   grid-row: 1;
   touch-action: none;
 }
 
-html[data-pwa-standalone="true"] .portal-mobile-bottom-nav {
+html[data-pwa-standalone="true"] .portal-mobile-bottom-nav,
+html[data-portal-mobile="true"] .portal-mobile-bottom-nav {
   grid-row: 3;
   box-sizing: content-box;
+  flex-shrink: 0;
+  min-height: var(--portal-bottom-nav-height);
 }
 
 html[data-pwa-standalone="true"] .student-portal-content,
 html[data-pwa-standalone="true"] .lecturer-portal-content,
-html[data-pwa-standalone="true"] .admin-portal-content {
+html[data-pwa-standalone="true"] .admin-portal-content,
+html[data-portal-mobile="true"] .student-portal-content,
+html[data-portal-mobile="true"] .lecturer-portal-content,
+html[data-portal-mobile="true"] .admin-portal-content {
   grid-row: 2;
   min-height: 0;
   overflow-y: auto;
@@ -362,15 +420,15 @@ html[data-pwa-standalone="true"] .admin-portal-content {
   flex-shrink: 0;
 }
 
-/* Desktop browser only: hide mobile header/nav (never in standalone PWA) */
-@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) {
+/* Desktop browser only: hide mobile header/nav (never in standalone PWA or touch devices) */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (not (pointer: coarse)) and (not (display-mode: standalone)) and (not (display-mode: fullscreen)) and (not (display-mode: minimal-ui)) {
   html:not([data-pwa-standalone="true"]):not([data-portal-mobile="true"]) .portal-mobile-only {
     display: none;
   }
 }
 
-@media (max-width: 1023px) {
-  .portal-mobile-only {
+@media (max-width: 1023px), (pointer: coarse), (any-pointer: coarse) {
+  .portal-shell-root .portal-mobile-only {
     display: flex !important;
   }
 }
@@ -406,12 +464,16 @@ html[data-pwa-standalone="true"] .admin-portal-content {
 /* PWA standalone portal overrides */
 html[data-pwa-standalone="true"] .student-portal-content,
 html[data-pwa-standalone="true"] .lecturer-portal-content,
-html[data-pwa-standalone="true"] .admin-portal-content {
+html[data-pwa-standalone="true"] .admin-portal-content,
+html[data-portal-mobile="true"] .student-portal-content,
+html[data-portal-mobile="true"] .lecturer-portal-content,
+html[data-portal-mobile="true"] .admin-portal-content {
   padding-left: max(1rem, env(safe-area-inset-left, 0px));
   padding-right: max(1rem, env(safe-area-inset-right, 0px));
 }
 
-html[data-pwa-standalone="true"] .admin-portal-content {
+html[data-pwa-standalone="true"] .admin-portal-content,
+html[data-portal-mobile="true"] .admin-portal-content {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
-  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-top: 1rem;
 }

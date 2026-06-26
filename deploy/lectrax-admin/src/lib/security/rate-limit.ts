@@ -60,3 +60,8 @@ export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResul
 export function buildRateLimitKey(ip: string, scope: string): string {
   return `${scope}:${ip}`;
 }
+
+/** Log rate-limit violations without sensitive user data (scope + IP only). */
+export function logRateLimitViolation(scope: string, ip: string): void {
+  console.warn(`[rate-limit] scope=${scope} ip=${ip}`);
+}

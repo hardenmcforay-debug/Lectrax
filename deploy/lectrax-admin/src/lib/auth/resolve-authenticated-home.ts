@@ -12,7 +12,14 @@ export async function getAuthenticatedHomeRedirect(): Promise<string | null> {
   }
 
   const supabase = await createClient();
-  const service = await createServiceClient();
+
+  let service;
+  try {
+    service = await createServiceClient();
+  } catch {
+    return null;
+  }
+
   const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
 
   if (roleResult.status !== "ok") {

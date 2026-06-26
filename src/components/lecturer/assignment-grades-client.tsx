@@ -47,6 +47,10 @@ import {
 
 import { SEMESTER_LABELS } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
+import {
+  AssignmentSubmissionPdfViewer,
+  type AssignmentSubmissionViewerData,
+} from "@/components/lecturer/assignment-submission-pdf-viewer";
 
 function gradesFromRows(
   rows: AssignmentGradeEntryData["rows"],
@@ -91,6 +95,10 @@ export function AssignmentGradesClient({
   const [error, setError] = useState<string | null>(null);
 
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [pdfViewer, setPdfViewer] = useState<AssignmentSubmissionViewerData | null>(
+    null,
+  );
 
   const submittedRows = useMemo(
     () => rows.filter((r) => r.hasSubmission),
@@ -158,6 +166,10 @@ export function AssignmentGradesClient({
     setError(null);
   }, []);
 
+  const courseLabel = session.class_name
+    ? `${session.course_code} — ${session.class_name}`
+    : `${session.course_code} — ${session.title}`;
+
   const openPdf = useCallback(
     (enrollmentId: string) => {
       const row = rows.find((r) => r.enrollmentId === enrollmentId);
@@ -168,16 +180,108 @@ export function AssignmentGradesClient({
       }
 
       setError(null);
-
-      const params = new URLSearchParams({ enrollmentId });
-      if (row.fileName) params.set("fileName", row.fileName);
-
-      router.push(
-        `/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/view?${params.toString()}`,
-      );
+      setPdfViewer({
+        enrollmentId,
+        studentName: row.name,
+        studentId: row.collegeId,
+        assignmentTitle: assignment.title,
+        submittedAt: row.submittedAt,
+        fileName: row.fileName,
+        viewUrl: `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}&inline=1`,
+      });
     },
-    [assignment.id, classSessionId, router, rows],
+    [assignment.id, assignment.title, classSessionId, rows],
   );
+
+  const saveViewerGrade = useCallback(async () => {
+    if (!pdfViewer) return;
+
+    setError(null);
+    setSuccess(null);
+
+    const { payload, error: validationError } = buildGradeSavePayload(
+      [pdfViewer.enrollmentId],
+      grades,
+      savedGrades,
+      maxScore,
+    );
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (!payload) {
+      setError("No grade changes to save.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const res = await appFetch(
+        `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/grades`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setError(body.error ?? "Could not save grade.");
+        return;
+      }
+
+      setSavedGrades({ ...grades });
+      setSuccess("Grade saved successfully.");
+      router.refresh();
+    } catch {
+      setError("Network error. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    assignment.id,
+    classSessionId,
+    grades,
+    maxScore,
+    pdfViewer,
+    router,
+    savedGrades,
+  ]);
+
+  const viewerGrading = useMemo(() => {
+    if (!pdfViewer) return null;
+
+    const savedRaw = normalizeGradeInput(savedGrades[pdfViewer.enrollmentId] ?? "");
+    const savedGrade = savedRaw === "" ? null : Number(savedRaw);
+
+    return {
+      value: grades[pdfViewer.enrollmentId] ?? "",
+      savedGrade: Number.isNaN(savedGrade) ? null : savedGrade,
+      maxScore,
+      isDirty: dirtyByEnrollment.has(pdfViewer.enrollmentId),
+      saving,
+      disabled: saving || deleting,
+      onChange: (value: string) => updateGrade(pdfViewer.enrollmentId, value),
+      onSave: () => void saveViewerGrade(),
+    };
+  }, [
+    deleting,
+    dirtyByEnrollment,
+    grades,
+    maxScore,
+    pdfViewer,
+    saveViewerGrade,
+    savedGrades,
+    saving,
+    updateGrade,
+  ]);
 
   async function saveAllGrades() {
     setError(null);
@@ -295,10 +399,6 @@ export function AssignmentGradesClient({
       setDeleting(false);
     }
   }
-
-  const courseLabel = session.class_name
-    ? `${session.course_code} — ${session.class_name}`
-    : `${session.course_code} — ${session.title}`;
 
   return (
     <div className="space-y-6">
@@ -421,6 +521,13 @@ export function AssignmentGradesClient({
           {success && <p className="mt-3 text-sm text-green-700">{success}</p>}
         </CardContent>
       </Card>
+
+      <AssignmentSubmissionPdfViewer
+        open={pdfViewer !== null}
+        data={pdfViewer}
+        grading={viewerGrading}
+        onClose={() => setPdfViewer(null)}
+      />
     </div>
   );
 }

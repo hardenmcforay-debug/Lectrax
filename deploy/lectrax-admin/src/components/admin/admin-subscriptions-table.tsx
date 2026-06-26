@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdminSubscriptionActions } from "@/components/admin/admin-subscription-actions";
 import { formatDate } from "@/lib/utils";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import {
   SUBSCRIPTION_STATUS_LABELS,
   type SubscriptionLifecycleStatus,
@@ -39,7 +40,7 @@ export function AdminSubscriptionsTable({ lecturers }: { lecturers: AdminSubscri
         <Input
           type="search"
           value={emailQuery}
-          onChange={(event) => setEmailQuery(event.target.value)}
+          onChange={(event) => setEmailQuery(sanitizeSearchQuery(event.target.value))}
           placeholder="Search by email"
           className="pl-9"
           aria-label="Search lecturers by email"

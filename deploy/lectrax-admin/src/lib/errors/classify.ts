@@ -1,6 +1,7 @@
 import type { AuthError } from "@supabase/supabase-js";
 import type { ErrorCategory, PlatformError, PlatformErrorCode } from "@/lib/errors/types";
 import { getMessageForCode } from "@/lib/errors/messages";
+import { hasSupabaseAuthCookies as detectSupabaseAuthCookies } from "@/lib/security/cookies";
 
 const DEFINITIVE_AUTH_CODES = new Set([
   "refresh_token_not_found",
@@ -118,11 +119,7 @@ export function isTransientDbError(error: unknown): boolean {
 export function hasSupabaseAuthCookies(
   cookies: Array<{ name: string; value: string }>
 ): boolean {
-  return cookies.some(
-    (cookie) =>
-      cookie.name.includes("-auth-token") ||
-      (cookie.name.startsWith("sb-") && cookie.name.includes("auth"))
-  );
+  return detectSupabaseAuthCookies(cookies);
 }
 
 export function classifyFetchFailure(error: unknown, offline = false): PlatformError {
@@ -198,15 +195,38 @@ export function sanitizeErrorMessage(message: string | undefined | null): string
   const unsafePatterns = [
     /supabase/i,
     /postgres/i,
-    /sql/i,
+    /postgrest/i,
+    /\bsql\b/i,
     /pgrst/i,
-    /jwt/i,
+    /\bjwt\b/i,
     /api[_-]?key/i,
     /secret/i,
     /stack trace/i,
     /at\s+\w+\s*\(/i,
     /ECONNREFUSED/i,
     /\/api\//i,
+    /storage/i,
+    /bucket/i,
+    /row-level security/i,
+    /\brls\b/i,
+    /constraint/i,
+    /violates/i,
+    /duplicate key/i,
+    /relation\s+"/i,
+    /column\s+"/i,
+    /service[_\s-]?role/i,
+    /access_token/i,
+    /refresh_token/i,
+    /\bbearer\b/i,
+    /node_modules/i,
+    /process\.env/i,
+    /NEXT_PUBLIC_/i,
+    /SUPABASE_/i,
+    /MONIME_/i,
+    /CRON_SECRET/i,
+    /QR_TOKEN/i,
+    /[A-Za-z]:\\/, // Windows paths
+    /\/(?:var|home|usr|etc)\//i,
   ];
 
   if (unsafePatterns.some((pattern) => pattern.test(message))) {

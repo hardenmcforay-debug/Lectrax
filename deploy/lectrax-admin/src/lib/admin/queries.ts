@@ -76,26 +76,28 @@ export type AdminAnalyticsData = {
 export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
   const supabase = await createClient();
 
-  const [lecturers, students, sessions, payments, active, expired, free, pending] =
+  const [lecturers, students, sessions, paymentTotals, active, expired, free, pending] =
     await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "lecturer"),
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student"),
       supabase.from("class_sessions").select("id", { count: "exact", head: true }),
-      supabase.from("payments").select("amount, plan, status").eq("status", "completed"),
+      supabase.rpc("admin_completed_payment_totals"),
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "expired"),
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "free"),
       supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
     ]);
 
-  const paymentRows = payments.data ?? [];
-  const revenue = paymentRows.reduce((s, p) => s + Number(p.amount), 0);
+  const totalsPayload = paymentTotals.data as
+    | { total_revenue?: number; by_plan?: Record<string, number> }
+    | null;
+  const revenue = Number(totalsPayload?.total_revenue ?? 0);
+  const byPlanRaw = totalsPayload?.by_plan ?? {};
 
-  const byPlan: Record<string, number> = {};
-  for (const p of paymentRows) {
-    const plan = p.plan.replace("_", " ");
-    byPlan[plan] = (byPlan[plan] ?? 0) + Number(p.amount);
-  }
+  const revenueByPlan = Object.entries(byPlanRaw).map(([plan, rev]) => ({
+    plan: plan.replace("_", " "),
+    revenue: Number(rev),
+  }));
 
   return {
     totals: {
@@ -110,7 +112,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
       { name: "Expired", value: expired.count ?? 0 },
       { name: "Pending pay", value: pending.count ?? 0 },
     ],
-    revenueByPlan: Object.entries(byPlan).map(([plan, rev]) => ({ plan, revenue: rev })),
+    revenueByPlan,
   };
 }
 

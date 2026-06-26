@@ -1,4 +1,4 @@
-import { isStandaloneMode } from "@/lib/pwa/detect";
+import { isMobileDevice, isStandaloneMode, markPwaInstalled } from "@/lib/pwa/detect";
 
 const MOBILE_LAYOUT_MAX_WIDTH = 1023;
 
@@ -14,9 +14,15 @@ function isMobileLayoutViewport(): boolean {
     if (window.matchMedia("(pointer: coarse)").matches) {
       return true;
     }
+    if (window.matchMedia("(any-pointer: coarse)").matches) {
+      return true;
+    }
   } catch {
     // matchMedia may be unavailable in some embedded browsers.
   }
+
+  // Phones/tablets can report fine pointer + wide viewport in installed PWAs.
+  if (isMobileDevice()) return true;
 
   return false;
 }
@@ -29,8 +35,15 @@ export function applyPortalChromeMarks() {
   const standalone = isStandaloneMode();
   const mobile = standalone || isMobileLayoutViewport();
 
-  if (standalone && root.dataset.pwaStandalone !== "true") {
-    root.dataset.pwaStandalone = "true";
+  if (standalone) {
+    markPwaInstalled();
+    if (root.dataset.pwaStandalone !== "true") {
+      root.dataset.pwaStandalone = "true";
+    }
+    if (root.dataset.portalMobile !== "true") {
+      root.dataset.portalMobile = "true";
+    }
+    return;
   }
 
   if (mobile) {

@@ -1,35 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { CONTACT_INQUIRY_STATUSES } from "@/lib/contact/constants";
+import { logServerError } from "@/lib/errors/logger";
 
 const updateSchema = z.object({
   status: z.enum(CONTACT_INQUIRY_STATUSES),
 });
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.role !== "platform_admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { supabase, user };
-}
-
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
@@ -45,7 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const { data, error } = await auth.supabase
+  const { data, error } = await auth.service
     .from("contact_inquiries")
     .update({ status: parsed.data.status })
     .eq("id", id)
@@ -56,8 +37,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Could not update inquiry" }, { status: 500 });
   }
 
-  await auth.supabase.from("audit_logs").insert({
-    actor_id: auth.user.id,
+  await auth.service.from("audit_logs").insert({
+    actor_id: auth.userId,
     action: "contact_inquiry_status_updated",
     entity_type: "contact_inquiry",
     entity_id: id,
@@ -71,11 +52,11 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
-  const service = await createServiceClient();
+  const service = auth.service;
 
   const { data: inquiry } = await service
     .from("contact_inquiries")
@@ -94,7 +75,7 @@ export async function DELETE(
     .eq("reference_id", id);
 
   if (notificationError) {
-    console.error("Contact notification delete failed:", notificationError);
+    logServerError("contact.notification.delete", notificationError);
   }
 
   const { error } = await service.from("contact_inquiries").delete().eq("id", id);
@@ -104,7 +85,7 @@ export async function DELETE(
   }
 
   await service.from("audit_logs").insert({
-    actor_id: auth.user.id,
+    actor_id: auth.userId,
     action: "contact_inquiry_deleted",
     entity_type: "contact_inquiry",
     entity_id: id,

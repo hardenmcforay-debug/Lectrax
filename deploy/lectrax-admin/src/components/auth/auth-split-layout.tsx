@@ -48,7 +48,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
     <div className="auth-page-enter auth-shell flex flex-col md:flex-row">
       <AuthBrandingPanel />
 
-      <div className="auth-form-panel auth-shell-panel relative flex flex-1 flex-col bg-white">
+      <div className="auth-form-panel auth-shell-panel relative flex flex-1 flex-col bg-transparent md:bg-white">
         <AuthFormPanelDecorations />
 
         <div className="auth-pwa-form-inner relative z-10 flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-6 sm:py-8 md:px-12 lg:px-16 xl:px-20">
@@ -60,7 +60,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </Link>
 
-          <div className="flex flex-1 items-start justify-center py-2 md:items-center md:py-0">
+          <div className="flex flex-1 items-center justify-center py-2 md:py-0">
             <div className="auth-form-content mx-auto w-full min-w-0 max-w-md lg:max-w-lg">{children}</div>
           </div>
         </div>

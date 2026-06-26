@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/api/client-fetch";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +18,7 @@ export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
 
   async function grantFree() {
     setLoading(true);
-    const res = await fetch("/api/admin/grant-free", {
+    const res = await appFetch("/api/admin/grant-free", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lecturerId, days: Number(days) }),
@@ -57,7 +59,7 @@ export function AdminToggleLecturerButton({
 
   async function toggle() {
     setLoading(true);
-    const res = await fetch("/api/admin/toggle-lecturer", {
+    const res = await appFetch("/api/admin/toggle-lecturer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lecturerId, isActive: !isActive }),
@@ -85,7 +87,7 @@ export function AdminExtendSubscriptionButton({ subscriptionId }: { subscription
 
   async function extend() {
     setLoading(true);
-    const res = await fetch("/api/admin/extend-subscription", {
+    const res = await appFetch("/api/admin/extend-subscription", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subscriptionId, days: Number(days) }),

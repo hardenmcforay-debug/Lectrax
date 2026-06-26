@@ -31,7 +31,7 @@ export async function getRoleForUserSafe(
     return { status: "service_unavailable", error: profileError };
   }
 
-  let role = resolveUserRoleOrNull(profile?.role, user);
+  let role = resolveUserRoleOrNull(profile?.role);
 
   if (!role && serviceClient) {
     const { data: profileAdmin, error: adminError } = await serviceClient
@@ -44,7 +44,7 @@ export async function getRoleForUserSafe(
       return { status: "service_unavailable", error: adminError };
     }
 
-    role = resolveUserRoleOrNull(profileAdmin?.role, user);
+    role = resolveUserRoleOrNull(profileAdmin?.role);
   }
 
   if (!role) {
@@ -72,7 +72,7 @@ export async function getRoleForUser(
     .eq("id", user.id)
     .maybeSingle();
 
-  let role = resolveUserRoleOrNull(profile?.role, user);
+  let role = resolveUserRoleOrNull(profile?.role);
 
   if (!role && serviceClient) {
     const { data: profileAdmin } = await serviceClient
@@ -80,7 +80,7 @@ export async function getRoleForUser(
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
-    role = resolveUserRoleOrNull(profileAdmin?.role, user);
+    role = resolveUserRoleOrNull(profileAdmin?.role);
   }
 
   return role;

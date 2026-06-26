@@ -17,22 +17,18 @@ export function getRoleFromUser(user: User | null | undefined): UserRole | null 
   return isUserRole(meta) ? meta : null;
 }
 
-export function resolveUserRoleOrNull(
-  profileRole: unknown,
-  user?: User | null
-): UserRole | null {
+export function resolveUserRoleOrNull(profileRole: unknown): UserRole | null {
   if (isUserRole(profileRole)) return profileRole;
-  const metaRole = getRoleFromUser(user);
-  if (metaRole) return metaRole;
   return null;
 }
 
-/** Resolves role for routing; falls back to student only when a session exists (middleware). */
-export function resolveUserRole(
-  profileRole: unknown,
-  user?: User | null
-): UserRole {
-  return resolveUserRoleOrNull(profileRole, user) ?? "student";
+/** @deprecated Do not use for authorization — metadata is client-influenceable. */
+export function resolveUserRoleFromMetadata(user?: User | null): UserRole | null {
+  return getRoleFromUser(user);
+}
+
+export function resolveUserRole(profileRole: unknown): UserRole {
+  return resolveUserRoleOrNull(profileRole) ?? "student";
 }
 
 export const LANDING_URL = "/";
@@ -107,12 +103,12 @@ export async function fetchUserRole(
       };
     };
   }
-): Promise<{ role: UserRole; userId: string | null }> {
+): Promise<{ role: UserRole | null; userId: string | null }> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { role: "student", userId: null };
+  if (!user) return { role: null, userId: null };
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -120,8 +116,9 @@ export async function fetchUserRole(
     .eq("id", user.id)
     .maybeSingle();
 
+  const role = resolveUserRoleOrNull(profile?.role);
   return {
-    role: resolveUserRole(profile?.role, user),
+    role: role ?? "student",
     userId: user.id,
   };
 }
