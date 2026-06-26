@@ -3,7 +3,6 @@ import {
   batchAssignmentsBeforeDeadline,
   isAssignmentBeforeDeadline,
 } from "@/lib/assignments/deadline-server";
-import { getSignedSubmissionUrl } from "@/lib/assignments/submissions";
 
 export type StudentAssignmentListItem = {
   id: string;
@@ -38,7 +37,6 @@ export type StudentAssignmentDetailData = {
   enrollmentId: string;
   submission: StudentAssignmentSubmission | null;
   grade: number | null;
-  downloadUrl: string | null;
   pastDeadline: boolean;
 };
 
@@ -214,18 +212,13 @@ export async function getStudentAssignmentDetail(
       }
     : null;
 
-  const [gradeResult, downloadUrl] = await Promise.all([
-    submission
-      ? supabase
-          .from("assignment_grades")
-          .select("grade")
-          .eq("assignment_submission_id", submission.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    submissionData?.storage_path
-      ? getSignedSubmissionUrl(supabase, submissionData.storage_path as string)
-      : Promise.resolve(null),
-  ]);
+  const gradeResult = submission
+    ? await supabase
+        .from("assignment_grades")
+        .select("grade")
+        .eq("assignment_submission_id", submission.id)
+        .maybeSingle()
+    : { data: null };
 
   const deadline = assignmentData.deadline as string;
   const beforeDeadline = await isAssignmentBeforeDeadline(null, assignmentId, deadline);
@@ -239,7 +232,6 @@ export async function getStudentAssignmentDetail(
       gradeResult.data?.grade !== undefined
         ? (gradeResult.data.grade as number | null)
         : null,
-    downloadUrl,
     pastDeadline,
   };
 }

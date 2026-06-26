@@ -21,6 +21,10 @@ import {
   ASSIGNMENT_OPEN_TITLE,
 } from "@/lib/assignments/deadline-messages";
 import {
+  AssignmentSubmissionPdfViewer,
+  type AssignmentSubmissionViewerData,
+} from "@/components/lecturer/assignment-submission-pdf-viewer";
+import {
   AssignmentUploadOverlay,
   type AssignmentUploadOverlayPhase,
 } from "@/components/student/assignment-upload-overlay";
@@ -35,7 +39,7 @@ export function StudentAssignmentDetailClient({
   initial: StudentAssignmentDetailData;
 }) {
   const router = useRouter();
-  const { assignment, submission, grade, downloadUrl } = initial;
+  const { assignment, submission, grade } = initial;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadInFlightRef = useRef(false);
   const successTimerRef = useRef<number | null>(null);
@@ -45,6 +49,7 @@ export function StudentAssignmentDetailClient({
   const [overlayPhase, setOverlayPhase] = useState<AssignmentUploadOverlayPhase>("uploading");
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [pdfViewer, setPdfViewer] = useState<AssignmentSubmissionViewerData | null>(null);
 
   const clearSuccessTimer = useCallback(() => {
     if (successTimerRef.current !== null) {
@@ -250,12 +255,24 @@ export function StudentAssignmentDetailClient({
             </dl>
           )}
 
-          {downloadUrl && (
+          {submission && (
             <div>
-              <Button variant="link" className="h-auto p-0" asChild>
-                <a href={downloadUrl} target="_blank" rel="noreferrer">
-                  View your uploaded PDF
-                </a>
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0"
+                onClick={() =>
+                  setPdfViewer({
+                    enrollmentId: initial.enrollmentId,
+                    assignmentTitle: assignment.title,
+                    submittedAt: submission.submitted_at,
+                    fileName: submission.file_name,
+                    viewUrl: `/api/student/assignments/${assignmentId}/download`,
+                    viewerTitle: "Your Submission",
+                  })
+                }
+              >
+                View your uploaded PDF
               </Button>
             </div>
           )}
@@ -322,6 +339,12 @@ export function StudentAssignmentDetailClient({
         progress={uploadProgress}
         onRetry={handleRetryUpload}
         onDismiss={handleDismissUploadFailure}
+      />
+
+      <AssignmentSubmissionPdfViewer
+        open={pdfViewer !== null}
+        data={pdfViewer}
+        onClose={() => setPdfViewer(null)}
       />
     </div>
   );
