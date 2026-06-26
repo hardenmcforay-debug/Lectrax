@@ -16,6 +16,7 @@ const FILE_UPLOAD_PATH_PREFIXES = [
 const BRANDING_UPLOAD_PATHS = new Set([
   "/api/admin/site-logo",
   "/api/admin/landing-hero",
+  "/api/admin/landing-feature-cards",
 ]);
 
 function isAssignmentSubmitPath(pathname: string): boolean {

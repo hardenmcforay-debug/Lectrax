@@ -1,6 +1,4 @@
 import { PWA_THEME_COLOR } from "@/lib/pwa/detect";
-import { PWA_INSTALL_BOOTSTRAP_SCRIPT } from "@/lib/pwa/install-prompt-bootstrap";
-import { PORTAL_CHROME_BOOTSTRAP_SCRIPT } from "@/lib/pwa/portal-chrome-bootstrap";
 
 const APPLE_SPLASH_SCREENS = [
   { href: "/splash/apple-splash-2048x2732.png", media: "(device-width: 1024px) and (device-height: 1366px)" },
@@ -17,16 +15,6 @@ const APPLE_SPLASH_SCREENS = [
 export function PwaHeadLinks() {
   return (
     <>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: PORTAL_CHROME_BOOTSTRAP_SCRIPT,
-        }}
-      />
-      <script
-        dangerouslySetInnerHTML={{
-          __html: PWA_INSTALL_BOOTSTRAP_SCRIPT,
-        }}
-      />
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
         <link key={href} rel="apple-touch-startup-image" href={href} media={media} />
       ))}

@@ -53,16 +53,36 @@ export function mergePresentRecords(
   local: PresentRecordMap,
   server: PresentRecordMap
 ): PresentRecordMap {
-  const merged = new Map(local);
-  for (const [enrollmentId, method] of server) {
-    if (!merged.has(enrollmentId)) {
-      merged.set(enrollmentId, method);
-      continue;
-    }
-    const existing = merged.get(enrollmentId)!;
-    if (isQrLockedAttendance(method) || !isQrLockedAttendance(existing)) {
-      merged.set(enrollmentId, method);
+  const merged = new Map(server);
+
+  for (const [enrollmentId, method] of local) {
+    if (method !== "manual" || server.has(enrollmentId)) continue;
+    merged.set(enrollmentId, method);
+  }
+
+  return merged;
+}
+
+/** Build present map from server truth plus in-flight manual mark/unmark operations. */
+export function buildPresentRecordsWithPending(
+  server: PresentRecordMap,
+  pendingMarks: ReadonlySet<string>,
+  pendingUnmarks: ReadonlySet<string>
+): PresentRecordMap {
+  const merged = new Map(server);
+
+  for (const enrollmentId of pendingMarks) {
+    if (!pendingUnmarks.has(enrollmentId) && !merged.has(enrollmentId)) {
+      merged.set(enrollmentId, "manual");
     }
   }
+
+  for (const enrollmentId of pendingUnmarks) {
+    const method = merged.get(enrollmentId);
+    if (method && !isQrLockedAttendance(method)) {
+      merged.delete(enrollmentId);
+    }
+  }
+
   return merged;
 }

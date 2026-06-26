@@ -4,10 +4,15 @@ import { isBodyTooLarge } from "@/lib/security/request-limits";
 import {
   buildRateLimitKey,
   checkRateLimit,
+  logRateLimitViolation,
   type RateLimitRule,
 } from "@/lib/security/rate-limit";
+import {
+  RATE_LIMIT_POLICIES,
+  type RateLimitPolicyName,
+} from "@/lib/security/rate-limit-policies";
 
-function getClientIp(request: NextRequest): string {
+export function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const first = forwarded.split(",")[0]?.trim();
@@ -28,79 +33,122 @@ function isExportPath(pathname: string): boolean {
   return pathname.includes("/export");
 }
 
-function resolveRateLimitRule(pathname: string, method: string): RateLimitRule | null {
+function isGradesPath(pathname: string): boolean {
+  return /\/assignments\/[^/]+\/grades$/.test(pathname);
+}
+
+function isScoresPath(pathname: string): boolean {
+  return /\/tests\/[^/]+\/scores$/.test(pathname);
+}
+
+function isStudentRowsPath(pathname: string): boolean {
+  return /\/student-rows$/.test(pathname);
+}
+
+function isBrandingUploadPath(pathname: string): boolean {
+  return (
+    pathname === "/api/admin/site-logo" ||
+    pathname === "/api/admin/landing-hero" ||
+    pathname === "/api/admin/landing-feature-cards"
+  );
+}
+
+type ResolvedLimit = {
+  policy: RateLimitPolicyName;
+  rule: RateLimitRule;
+};
+
+function resolveRateLimit(pathname: string, method: string): ResolvedLimit | null {
+  const upperMethod = method.toUpperCase();
+
+  if (pathname === "/auth/callback" && upperMethod === "GET") {
+    return { policy: "authCallback", rule: RATE_LIMIT_POLICIES.authCallback };
+  }
+
   if (!pathname.startsWith("/api/")) return null;
   if (isCsrfExemptPath(pathname)) return null;
 
-  const upperMethod = method.toUpperCase();
-
   if (pathname === "/api/contact" && upperMethod === "POST") {
-    return { limit: 5, windowMs: 15 * 60_000 };
+    return { policy: "contactForm", rule: RATE_LIMIT_POLICIES.contactForm };
   }
 
   if (pathname === "/api/partnerships/inquiry" && upperMethod === "POST") {
-    return { limit: 5, windowMs: 15 * 60_000 };
+    return { policy: "partnershipInquiry", rule: RATE_LIMIT_POLICIES.partnershipInquiry };
+  }
+
+  if (pathname === "/api/auth/forgot-password" && upperMethod === "POST") {
+    return { policy: "passwordReset", rule: RATE_LIMIT_POLICIES.passwordReset };
   }
 
   if (pathname === "/api/attendance/scan" && upperMethod === "POST") {
-    return { limit: 40, windowMs: 60_000 };
+    return { policy: "attendanceScan", rule: RATE_LIMIT_POLICIES.attendanceScan };
+  }
+
+  if (
+    (pathname === "/api/attendance/device/register" ||
+      pathname === "/api/attendance/device/transfer") &&
+    upperMethod === "POST"
+  ) {
+    return { policy: "deviceRegister", rule: RATE_LIMIT_POLICIES.deviceRegister };
   }
 
   if (pathname === "/api/student/join" && upperMethod === "POST") {
-    return { limit: 10, windowMs: 15 * 60_000 };
+    return { policy: "studentJoin", rule: RATE_LIMIT_POLICIES.studentJoin };
   }
 
   if (pathname === "/api/payments/checkout" && upperMethod === "POST") {
-    return { limit: 8, windowMs: 15 * 60_000 };
+    return { policy: "paymentCheckout", rule: RATE_LIMIT_POLICIES.paymentCheckout };
   }
 
   if (isPaymentStatusPath(pathname) && upperMethod === "GET") {
-    return { limit: 60, windowMs: 60_000 };
+    return { policy: "paymentStatusPoll", rule: RATE_LIMIT_POLICIES.paymentStatusPoll };
   }
 
   if (isExportPath(pathname) && isMutationMethod(method)) {
-    return { limit: 10, windowMs: 60 * 60_000 };
+    return { policy: "dataExport", rule: RATE_LIMIT_POLICIES.dataExport };
+  }
+
+  if (isBrandingUploadPath(pathname) && isMutationMethod(method)) {
+    return { policy: "brandingUpload", rule: RATE_LIMIT_POLICIES.brandingUpload };
+  }
+
+  if (isGradesPath(pathname) && isMutationMethod(method)) {
+    return { policy: "gradeUpdate", rule: RATE_LIMIT_POLICIES.gradeUpdate };
+  }
+
+  if (isScoresPath(pathname) && isMutationMethod(method)) {
+    return { policy: "scoreUpdate", rule: RATE_LIMIT_POLICIES.scoreUpdate };
+  }
+
+  if (isStudentRowsPath(pathname) && upperMethod === "GET") {
+    return { policy: "studentRows", rule: RATE_LIMIT_POLICIES.studentRows };
+  }
+
+  if (pathname === "/api/student/notifications/counts" && upperMethod === "GET") {
+    return { policy: "notificationPoll", rule: RATE_LIMIT_POLICIES.notificationPoll };
   }
 
   if (pathname.startsWith("/api/admin/") && isMutationMethod(method)) {
-    return { limit: 40, windowMs: 60_000 };
+    return { policy: "adminMutation", rule: RATE_LIMIT_POLICIES.adminMutation };
   }
 
   if (pathname.startsWith("/api/attendance/") && isMutationMethod(method)) {
-    return { limit: 60, windowMs: 60_000 };
+    return { policy: "attendanceMutation", rule: RATE_LIMIT_POLICIES.attendanceMutation };
   }
 
   if (pathname.startsWith("/api/student/assignments/") && upperMethod === "POST") {
-    return { limit: 15, windowMs: 15 * 60_000 };
+    return { policy: "assignmentSubmit", rule: RATE_LIMIT_POLICIES.assignmentSubmit };
   }
 
   if (pathname.startsWith("/api/") && isMutationMethod(method)) {
-    return { limit: 100, windowMs: 60_000 };
+    return { policy: "apiMutation", rule: RATE_LIMIT_POLICIES.apiMutation };
   }
 
   if (pathname.startsWith("/api/") && upperMethod === "GET") {
-    return { limit: 200, windowMs: 60_000 };
+    return { policy: "apiRead", rule: RATE_LIMIT_POLICIES.apiRead };
   }
 
   return null;
-}
-
-function rateLimitScope(pathname: string, method: string): string {
-  if (pathname === "/api/contact") return "contact";
-  if (pathname === "/api/partnerships/inquiry") return "partnership";
-  if (pathname === "/api/attendance/scan") return "attendance-scan";
-  if (pathname === "/api/student/join") return "student-join";
-  if (pathname === "/api/payments/checkout") return "payments-checkout";
-  if (isPaymentStatusPath(pathname)) return "payments-status";
-  if (isExportPath(pathname)) return "export";
-  if (pathname.startsWith("/api/admin/")) return "admin-mutation";
-  if (pathname.startsWith("/api/attendance/")) return "attendance-mutation";
-  if (pathname.startsWith("/api/student/assignments/") && method.toUpperCase() === "POST") {
-    return "assignment-submit";
-  }
-  if (pathname.startsWith("/api/") && isMutationMethod(method)) return "api-mutation";
-  if (pathname.startsWith("/api/")) return "api-read";
-  return "page";
 }
 
 /** Fast reject for oversized request bodies (uses Content-Length when present). */
@@ -115,17 +163,19 @@ export function rejectIfBodyTooLarge(request: NextRequest): NextResponse | null 
   );
 }
 
-/** Returns 429 when the client exceeds configured API rate limits. */
+/** Returns 429 when the client exceeds configured rate limits. */
 export function rejectIfRateLimited(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
-  const rule = resolveRateLimitRule(pathname, request.method);
-  if (!rule) return null;
+  const resolved = resolveRateLimit(pathname, request.method);
+  if (!resolved) return null;
 
   const ip = getClientIp(request);
-  const scope = rateLimitScope(pathname, request.method);
-  const result = checkRateLimit(buildRateLimitKey(ip, scope), rule);
+  const key = buildRateLimitKey(ip, resolved.policy);
+  const result = checkRateLimit(key, resolved.rule);
 
   if (result.allowed) return null;
+
+  logRateLimitViolation(resolved.policy, ip);
 
   const headers: Record<string, string> = {};
   if (result.retryAfterSec) {

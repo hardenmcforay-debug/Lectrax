@@ -218,13 +218,28 @@ export function SessionPageClient({
         ? `/api/lecturer/sessions/${session.id}/student-rows?${params.toString()}`
         : `/api/lecturer/sessions/${session.id}/student-rows`;
       const res = await appFetch(url);
-      const data = (await res.json()) as { rows?: StudentTableRow[] };
+      const data = (await res.json()) as { rows?: StudentTableRow[]; error?: string };
 
       if (res.ok && data.rows) {
         setStudentRows(data.rows);
+        return;
       }
-    } catch {
-      console.error("[SessionPageClient] refreshStudentRows failed");
+
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[SessionPageClient] refreshStudentRows returned no rows",
+          res.status,
+          data.error,
+        );
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.error("[SessionPageClient] refreshStudentRows failed", error);
+      }
     }
   }, [session.id]);
 

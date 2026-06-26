@@ -37,8 +37,8 @@ import {
 } from "@/lib/attendance/constants";
 import {
   addPresentRecord,
+  buildPresentRecordsWithPending,
   isQrLockedAttendance,
-  mergePresentRecords,
   normalizeMarkMethod,
   presentRecordMapFromStudents,
   QR_LOCK_MESSAGE,
@@ -129,6 +129,8 @@ export function AttendanceSessionPanel({
     (attendanceSessionId: string, source: string) => Promise<void>
   >(async () => {});
   const presentLoadedForSessionRef = useRef<string | null>(null);
+  const pendingManualMarksRef = useRef<Set<string>>(new Set());
+  const pendingManualUnmarksRef = useRef<Set<string>>(new Set());
   const skipInitialRefreshRef = useRef(false);
   const realtimeConnectedRef = useRef(false);
 
@@ -164,11 +166,13 @@ export function AttendanceSessionPanel({
       const serverRecords = await fetchPresentRecords(attendanceSessionId);
       if (!serverRecords) return;
 
-      setPresentRecords((prev) => {
-        const merged = prev.size === 0 ? serverRecords : mergePresentRecords(prev, serverRecords);
-        logPresentRecords(source, merged);
-        return merged;
-      });
+      const merged = buildPresentRecordsWithPending(
+        serverRecords,
+        pendingManualMarksRef.current,
+        pendingManualUnmarksRef.current,
+      );
+      logPresentRecords(source, merged);
+      setPresentRecords(merged);
     },
     [fetchPresentRecords]
   );
@@ -339,6 +343,15 @@ export function AttendanceSessionPanel({
       onAttendanceChange?.();
     };
 
+    const applyPresentRemove = (enrollmentId: string) => {
+      setPresentRecords((prev) => {
+        const next = removePresentRecord(prev, enrollmentId);
+        logPresentRecords("realtime:delete", next, { enrollmentId });
+        return next;
+      });
+      onAttendanceChange?.();
+    };
+
     void (async () => {
       const {
         data: { user },
@@ -368,6 +381,27 @@ export function AttendanceSessionPanel({
             if (!enrollmentId) return;
 
             applyPresentInsert(enrollmentId, row.mark_method);
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "attendance_records",
+            filter: `class_session_id=eq.${classSessionId}`,
+          },
+          (payload) => {
+            const row = payload.old as {
+              attendance_session_id?: string;
+              enrollment_id?: string;
+            };
+            if (row.attendance_session_id !== attendanceSessionId) return;
+
+            const enrollmentId = row.enrollment_id;
+            if (!enrollmentId) return;
+
+            applyPresentRemove(enrollmentId);
           }
         )
         .subscribe((status) => {
@@ -443,6 +477,8 @@ export function AttendanceSessionPanel({
       }
 
       presentLoadedForSessionRef.current = null;
+      pendingManualMarksRef.current.clear();
+      pendingManualUnmarksRef.current.clear();
       setPresentRecords(new Map());
       logPresentRecords("startAttendance", new Map());
       skipInitialRefreshRef.current = true;
@@ -479,6 +515,8 @@ export function AttendanceSessionPanel({
     setActiveSessionDurationMinutes(null);
     setPresentRecords(new Map());
     presentLoadedForSessionRef.current = null;
+    pendingManualMarksRef.current.clear();
+    pendingManualUnmarksRef.current.clear();
     onAttendanceChange?.();
 
     try {
@@ -502,6 +540,9 @@ export function AttendanceSessionPanel({
     if (!activeSession) return;
     if (presentRecords.has(enrollmentId)) return;
 
+    pendingManualUnmarksRef.current.delete(enrollmentId);
+    pendingManualMarksRef.current.add(enrollmentId);
+
     setNotice(null);
     setPresentRecords((prev) => {
       const next = addPresentRecord(prev, enrollmentId, "manual");
@@ -524,20 +565,25 @@ export function AttendanceSessionPanel({
       const data = (await res.json().catch(() => ({}))) as { error?: string };
 
       if (res.status === 409) {
+        pendingManualMarksRef.current.delete(enrollmentId);
         await syncPresentRecords(activeSession.id, "manual:duplicate-sync");
         onAttendanceChange?.();
         return;
       }
 
       if (!res.ok) {
+        pendingManualMarksRef.current.delete(enrollmentId);
         setPresentRecords((prev) => removePresentRecord(prev, enrollmentId));
         onAttendanceChange?.();
         setError(data.error ?? "Could not mark student present.");
         return;
       }
 
+      pendingManualMarksRef.current.delete(enrollmentId);
+      await syncPresentRecords(activeSession.id, "manual:confirmed");
       logPresentRecords("manual:confirmed", presentRecords, { enrollmentId });
     } catch {
+      pendingManualMarksRef.current.delete(enrollmentId);
       setPresentRecords((prev) => removePresentRecord(prev, enrollmentId));
       onAttendanceChange?.();
       setError("Network error. Could not mark student present.");
@@ -573,8 +619,13 @@ export function AttendanceSessionPanel({
     setUnmarking(true);
     setUnmarkTarget(null);
 
+    pendingManualMarksRef.current.delete(enrollmentId);
+    pendingManualUnmarksRef.current.add(enrollmentId);
+
     setPresentRecords((prev) => removePresentRecord(prev, enrollmentId));
     onAttendanceChange?.();
+
+    let succeeded = false;
 
     try {
       const res = await appFetch("/api/attendance/manual", {
@@ -600,12 +651,19 @@ export function AttendanceSessionPanel({
         setPresentRecords((prev) => addPresentRecord(prev, enrollmentId, "manual"));
         onAttendanceChange?.();
         setError(data.error ?? "Could not remove attendance.");
+        return;
       }
+
+      succeeded = true;
     } catch {
       setPresentRecords((prev) => addPresentRecord(prev, enrollmentId, "manual"));
       onAttendanceChange?.();
       setError("Network error. Could not remove attendance.");
     } finally {
+      pendingManualUnmarksRef.current.delete(enrollmentId);
+      if (succeeded) {
+        await syncPresentRecords(activeSession.id, "manual:unmark-confirmed");
+      }
       setUnmarking(false);
     }
   }

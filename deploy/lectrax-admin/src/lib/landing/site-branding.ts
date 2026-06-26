@@ -1,28 +1,23 @@
 import { createPublicReadClient } from "@/lib/supabase/server";
+import { LANDING_FEATURE_CARDS } from "@/lib/landing/feature-cards";
+import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
 
-export const LANDING_ASSETS_BUCKET = "landing-assets";
+export {
+  BRANDING_IMAGE_MAX_BYTES,
+  isAllowedBrandingImage,
+  validateBrandingImageFile,
+} from "@/lib/landing/branding-image-validation";
+
+export { LANDING_ASSETS_BUCKET, buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
+export const BRANDING_ASSET_CACHE_CONTROL = "max-age=0, must-revalidate";
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
 export const SITE_LOGO_SETTING_KEY = "site_logo";
-export const BRANDING_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/svg+xml",
-]);
+export const LANDING_FEATURE_CARDS_SETTING_KEY = "landing_feature_cards";
 
 export type BrandingImageSetting = {
   storage_path: string;
   updated_at?: string;
 };
-
-export function buildLandingAssetPublicUrl(storagePath: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!base) return "";
-  return `${base}/storage/v1/object/public/${LANDING_ASSETS_BUCKET}/${storagePath}`;
-}
 
 export function extensionForImageMime(mime: string): string | null {
   switch (mime) {
@@ -41,21 +36,25 @@ export function extensionForImageMime(mime: string): string | null {
   }
 }
 
-export function isAllowedBrandingImage(file: { type: string; size: number }): boolean {
-  return (
-    ALLOWED_IMAGE_TYPES.has(file.type) &&
-    file.size > 0 &&
-    file.size <= BRANDING_IMAGE_MAX_BYTES
-  );
+export function buildHeroImageStoragePath(ext: string, version: string | number = Date.now()): string {
+  return `hero/${version}.${ext}`;
 }
 
-export function buildHeroImageStoragePath(ext: string): string {
-  return `hero/landing.${ext}`;
+export function buildSiteLogoStoragePath(ext: string, version: string | number = Date.now()): string {
+  return `brand/${version}.${ext}`;
 }
 
-export function buildSiteLogoStoragePath(ext: string): string {
-  return `brand/logo.${ext}`;
+export function buildFeatureCardStoragePath(
+  cardId: string,
+  ext: string,
+  version: string | number = Date.now()
+): string {
+  return `features/${cardId}/${version}.${ext}`;
 }
+
+export type LandingFeatureCardsSetting = {
+  cards: Record<string, BrandingImageSetting>;
+};
 
 async function getBrandingSetting(key: string): Promise<BrandingImageSetting | null> {
   const supabase = await createPublicReadClient();
@@ -72,14 +71,14 @@ async function getBrandingSetting(key: string): Promise<BrandingImageSetting | n
 
   return {
     storage_path: value.storage_path,
-    updated_at: data.updated_at as string | undefined,
+    updated_at: value.updated_at ?? (data.updated_at as string | undefined),
   };
 }
 
 export async function getLandingHeroImageUrl(): Promise<string | null> {
   const setting = await getBrandingSetting(HERO_IMAGE_SETTING_KEY);
   if (!setting?.storage_path) return null;
-  return buildLandingAssetPublicUrl(setting.storage_path);
+  return buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at);
 }
 
 export async function getLandingHeroImageSetting(): Promise<BrandingImageSetting | null> {
@@ -89,11 +88,39 @@ export async function getLandingHeroImageSetting(): Promise<BrandingImageSetting
 export async function getSiteLogoUrl(): Promise<string | null> {
   const setting = await getBrandingSetting(SITE_LOGO_SETTING_KEY);
   if (!setting?.storage_path) return null;
-  return buildLandingAssetPublicUrl(setting.storage_path);
+  return buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at);
 }
 
 export async function getSiteLogoSetting(): Promise<BrandingImageSetting | null> {
   return getBrandingSetting(SITE_LOGO_SETTING_KEY);
+}
+
+export async function getLandingFeatureCardsSetting(): Promise<Record<string, BrandingImageSetting>> {
+  const supabase = await createPublicReadClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", LANDING_FEATURE_CARDS_SETTING_KEY)
+    .maybeSingle();
+
+  if (error || !data?.value) return {};
+
+  const value = data.value as LandingFeatureCardsSetting;
+  return value.cards ?? {};
+}
+
+export async function getLandingFeatureCardImageUrls(): Promise<Record<string, string>> {
+  const cards = await getLandingFeatureCardsSetting();
+  const imageUrls: Record<string, string> = {};
+
+  for (const feature of LANDING_FEATURE_CARDS) {
+    const setting = cards[feature.id];
+    imageUrls[feature.id] = setting?.storage_path
+      ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
+      : feature.defaultImage;
+  }
+
+  return imageUrls;
 }
 
 export async function getSiteBranding() {

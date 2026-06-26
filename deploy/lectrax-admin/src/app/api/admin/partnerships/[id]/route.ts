@@ -1,39 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { PARTNERSHIP_INQUIRY_STATUSES } from "@/lib/partnerships/constants";
+import { logServerError } from "@/lib/errors/logger";
 
 const updateSchema = z.object({
   status: z.enum(PARTNERSHIP_INQUIRY_STATUSES),
 });
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const service = await createServiceClient();
-  const { data: profile } = await service
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.role !== "platform_admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { service, user };
-}
-
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
@@ -61,7 +41,7 @@ export async function PATCH(
   }
 
   await auth.service.from("audit_logs").insert({
-    actor_id: auth.user.id,
+    actor_id: auth.userId,
     action: "partnership_inquiry_status_updated",
     entity_type: "university_partnership_inquiry",
     entity_id: id,
@@ -75,8 +55,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ("error" in auth && auth.error) return auth.error;
+  const auth = await requirePlatformAdmin();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
@@ -97,7 +77,7 @@ export async function DELETE(
     .eq("reference_id", id);
 
   if (notificationError) {
-    console.error("Partnership notification delete failed:", notificationError);
+    logServerError("partnerships.notification.delete", notificationError);
   }
 
   const { error } = await auth.service
@@ -110,7 +90,7 @@ export async function DELETE(
   }
 
   await auth.service.from("audit_logs").insert({
-    actor_id: auth.user.id,
+    actor_id: auth.userId,
     action: "partnership_inquiry_deleted",
     entity_type: "university_partnership_inquiry",
     entity_id: id,

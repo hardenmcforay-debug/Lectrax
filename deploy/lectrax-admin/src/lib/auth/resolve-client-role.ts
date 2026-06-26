@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { platformFetch } from "@/lib/api/fetch";
-import { getRoleFromUser, isUserRole, resolveUserRoleOrNull } from "@/lib/auth/roles";
+import { isUserRole, resolveUserRoleOrNull } from "@/lib/auth/roles";
 import { isNetworkAuthError } from "@/lib/errors/map-auth-error";
 import type { UserRole } from "@/types/database";
 
@@ -27,9 +27,6 @@ async function readRoleFromClient(
 
   if (!user) return { role: null, networkFailure: false };
 
-  const metadataRole = getRoleFromUser(user);
-  if (metadataRole) return { role: metadataRole, networkFailure: false };
-
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
@@ -41,7 +38,7 @@ async function readRoleFromClient(
   }
 
   return {
-    role: resolveUserRoleOrNull(profile?.role, user),
+    role: resolveUserRoleOrNull(profile?.role),
     networkFailure: false,
   };
 }

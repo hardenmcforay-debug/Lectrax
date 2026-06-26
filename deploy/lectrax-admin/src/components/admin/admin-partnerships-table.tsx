@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/api/client-fetch";
+
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,6 +23,7 @@ import {
 } from "@/lib/partnerships/constants";
 import type { PartnershipInquiryStatus, UniversityPartnershipInquiry } from "@/types/database";
 import { formatDate } from "@/lib/utils";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminPartnershipsTable({
   inquiries: initialInquiries,
@@ -51,7 +54,7 @@ export function AdminPartnershipsTable({
   async function updateStatus(id: string, status: PartnershipInquiryStatus) {
     setUpdatingId(id);
     try {
-      const response = await fetch(`/api/admin/partnerships/${id}`, {
+      const response = await appFetch(`/api/admin/partnerships/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -78,7 +81,7 @@ export function AdminPartnershipsTable({
 
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/admin/partnerships/${id}`, {
+      const response = await appFetch(`/api/admin/partnerships/${id}`, {
         method: "DELETE",
       });
 
@@ -113,7 +116,7 @@ export function AdminPartnershipsTable({
         <Input
           type="search"
           value={emailQuery}
-          onChange={(event) => setEmailQuery(event.target.value)}
+          onChange={(event) => setEmailQuery(sanitizeSearchQuery(event.target.value))}
           placeholder="Search by university, contact, or email"
           className="pl-9"
           aria-label="Search partnership inquiries"

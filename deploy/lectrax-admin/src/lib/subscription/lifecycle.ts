@@ -15,6 +15,10 @@ import {
 import type { SubscriptionStatus } from "@/types/database";
 import type { LecturerSubscription, SubscriptionDisplay } from "@/lib/subscription/types";
 import { logAudit } from "@/lib/audit";
+import {
+  claimPaymentForActivation,
+  releasePaymentActivationClaim,
+} from "@/lib/concurrency/payment-activation";
 
 type ProfileSubscriptionRow = {
   id: string;
@@ -393,6 +397,13 @@ export async function processExpiryReminders(
   return sent;
 }
 
+export class PaymentActivationInProgressError extends Error {
+  constructor() {
+    super("Payment activation already in progress");
+    this.name = "PaymentActivationInProgressError";
+  }
+}
+
 export async function activatePremiumSubscription(params: {
   lecturerId: string;
   billingPlan: BillingPlan;
@@ -402,6 +413,42 @@ export async function activatePremiumSubscription(params: {
   service?: Awaited<ReturnType<typeof createServiceClient>>;
 }): Promise<LecturerSubscription> {
   const supabase = params.service ?? (await createServiceClient());
+  const claim = await claimPaymentForActivation(params.paymentId, supabase);
+
+  if (claim.kind === "already_completed") {
+    const updated = await getLecturerSubscription(params.lecturerId, supabase);
+    if (!updated) {
+      throw new Error("Failed to load subscription after activation");
+    }
+    return updated;
+  }
+
+  if (claim.kind === "in_progress") {
+    throw new PaymentActivationInProgressError();
+  }
+
+  if (claim.kind !== "claimed") {
+    throw new Error("Payment cannot be activated");
+  }
+
+  try {
+    return await activatePremiumSubscriptionClaimed(params, supabase);
+  } catch (error) {
+    await releasePaymentActivationClaim(params.paymentId, supabase);
+    throw error;
+  }
+}
+
+async function activatePremiumSubscriptionClaimed(
+  params: {
+    lecturerId: string;
+    billingPlan: BillingPlan;
+    paymentId: string;
+    transactionReference?: string | null;
+    grantedBy?: string | null;
+  },
+  supabase: ServiceClient
+): Promise<LecturerSubscription> {
   const existing = await getLecturerSubscription(params.lecturerId, supabase);
   const refreshed = await refreshSubscriptionLifecycle(params.lecturerId, supabase);
 

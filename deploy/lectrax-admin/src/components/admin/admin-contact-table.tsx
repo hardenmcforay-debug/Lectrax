@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/api/client-fetch";
+
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +22,7 @@ import {
 } from "@/lib/contact/constants";
 import type { ContactInquiry, ContactInquiryStatus } from "@/types/database";
 import { formatDate } from "@/lib/utils";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: ContactInquiry[] }) {
   const [inquiries, setInquiries] = useState(initialInquiries);
@@ -46,7 +49,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
   async function updateStatus(id: string, status: ContactInquiryStatus) {
     setUpdatingId(id);
     try {
-      const response = await fetch(`/api/admin/contact/${id}`, {
+      const response = await appFetch(`/api/admin/contact/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -69,7 +72,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
 
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/admin/contact/${id}`, {
+      const response = await appFetch(`/api/admin/contact/${id}`, {
         method: "DELETE",
       });
 
@@ -91,7 +94,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
         <Input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => setQuery(sanitizeSearchQuery(event.target.value))}
           placeholder="Search by name, email, or subject"
           className="pl-9"
           aria-label="Search contact inquiries"
