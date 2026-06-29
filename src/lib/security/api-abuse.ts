@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isCsrfExemptPath, isMutationMethod } from "@/lib/security/csrf";
+import { isMutationMethod } from "@/lib/security/csrf";
 import { isBodyTooLarge } from "@/lib/security/request-limits";
 import {
   buildRateLimitKey,

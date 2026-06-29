@@ -191,8 +191,6 @@ export async function PATCH(request: Request) {
     payload.college_id = collegeId ?? null;
   }
 
-  let savedProfile;
-
   const { data, error } = await service
     .from("profiles")
     .update(payload)
@@ -214,7 +212,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  savedProfile = data;
+  const savedProfile = data;
 
   const { error: authError } = await supabase.auth.updateUser({
     data: { full_name: trimmedName },
