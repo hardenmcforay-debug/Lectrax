@@ -116,6 +116,20 @@ export function isTransientDbError(error: unknown): boolean {
   return isTransientError(error);
 }
 
+/** True when a fetch or task was intentionally cancelled (timeout, navigation, unmount). */
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+  if (error instanceof Error && error.name === "AbortError") {
+    return true;
+  }
+  if (error && typeof error === "object" && "name" in error) {
+    return String((error as { name: unknown }).name) === "AbortError";
+  }
+  return false;
+}
+
 export function hasSupabaseAuthCookies(
   cookies: Array<{ name: string; value: string }>
 ): boolean {

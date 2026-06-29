@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { isAbortError } from "@/lib/errors/classify";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -151,14 +152,19 @@ export function AttendanceSessionPanel({
   }, [activeSession, activeSessionDurationMinutes]);
 
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
-    const res = await appFetch(
-      `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present`
-    );
-    const data = (await res.json()) as {
-      students?: { enrollmentId: string; markMethod: string }[];
-    };
-    if (!res.ok || !data.students) return null;
-    return presentRecordMapFromStudents(data.students);
+    try {
+      const res = await appFetch(
+        `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present`
+      );
+      const data = (await res.json()) as {
+        students?: { enrollmentId: string; markMethod: string }[];
+      };
+      if (!res.ok || !data.students) return null;
+      return presentRecordMapFromStudents(data.students);
+    } catch (error) {
+      if (isAbortError(error)) return null;
+      throw error;
+    }
   }, [session.id]);
 
   const syncPresentRecords = useCallback(

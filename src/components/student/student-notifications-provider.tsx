@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { isAbortError } from "@/lib/errors/classify";
 import { deferNonCriticalTask } from "@/lib/low-data/defer-non-critical";
 import {
   createContext,
@@ -82,8 +83,13 @@ export function StudentNotificationsProvider({ children }: { children: ReactNode
   const permissionRequested = useRef(false);
 
   const refreshCounts = useCallback(async () => {
-    const nextCounts = await fetchNotificationCounts();
-    setCounts(nextCounts);
+    try {
+      const nextCounts = await fetchNotificationCounts();
+      setCounts(nextCounts);
+    } catch (error) {
+      if (isAbortError(error)) return;
+      throw error;
+    }
   }, []);
 
   useEffect(() => {

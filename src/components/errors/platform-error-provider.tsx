@@ -15,7 +15,7 @@ import { ConnectionNoticeToast } from "@/components/errors/connection-banner";
 import { ErrorFallback } from "@/components/errors/error-fallback";
 import type { ErrorCategory } from "@/lib/errors/types";
 import { logPlatformError } from "@/lib/errors/logger";
-import { createPlatformError } from "@/lib/errors/classify";
+import { createPlatformError, isAbortError } from "@/lib/errors/classify";
 import {
   subscribeToConnectionQuality,
   type ConnectionQuality,
@@ -138,6 +138,11 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (isAbortError(event.reason)) {
+        event.preventDefault();
+        return;
+      }
+
       logPlatformError(
         "unhandledrejection",
         createPlatformError("unknown", "UNKNOWN", event.reason)
