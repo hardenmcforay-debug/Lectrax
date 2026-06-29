@@ -3,6 +3,7 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { adminActivatePremium } from "@/lib/subscription/lifecycle";
 import { adminGrantFreeSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
 
 /** Legacy route — delegates to profile-based premium activation */
 export async function POST(request: Request) {
@@ -35,6 +36,14 @@ export async function POST(request: Request) {
       lecturerId,
       billingPlan,
       actorId: auth.userId,
+    });
+
+    await logPlatformAdminAudit({
+      actorId: auth.userId,
+      action: "admin_grant_premium",
+      entityType: "profile",
+      entityId: lecturerId,
+      metadata: { days, billingPlan },
     });
 
     return NextResponse.json({ success: true, subscription });

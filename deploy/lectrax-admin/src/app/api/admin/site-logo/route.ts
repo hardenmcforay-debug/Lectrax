@@ -10,7 +10,8 @@ import {
   isAllowedBrandingImage,
 } from "@/lib/landing/site-branding";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { brandingExtensionMatchesMime } from "@/lib/security/file-validation";
+import { brandingExtensionMatchesMime, readBrandingFileBytes } from "@/lib/security/file-validation";
+import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
 
 export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
@@ -38,6 +39,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const rawFile = await readBrandingFileBytes(file);
+  if (!rawFile.ok) {
+    return NextResponse.json({ error: rawFile.error }, { status: 400 });
+  }
+
   const ext = extensionForImageMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
@@ -51,7 +57,7 @@ export async function POST(request: Request) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = Buffer.from(rawFile.bytes);
   const { error: uploadError } = await supabase.storage
     .from(LANDING_ASSETS_BUCKET)
     .upload(storagePath, buffer, {
@@ -85,6 +91,14 @@ export async function POST(request: Request) {
     );
   }
 
+  await logPlatformAdminAudit({
+    actorId: userId,
+    action: "site_logo_uploaded",
+    entityType: "site_settings",
+    entityId: SITE_LOGO_SETTING_KEY,
+    metadata: { storage_path: storagePath },
+  });
+
   return NextResponse.json({
     success: true,
     storage_path: storagePath,
@@ -111,6 +125,13 @@ export async function DELETE() {
       { status: 500 }
     );
   }
+
+  await logPlatformAdminAudit({
+    actorId: auth.userId,
+    action: "site_logo_removed",
+    entityType: "site_settings",
+    entityId: SITE_LOGO_SETTING_KEY,
+  });
 
   return NextResponse.json({ success: true });
 }
