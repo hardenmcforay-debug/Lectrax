@@ -125,6 +125,16 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (!existing) {
+    return NextResponse.json(
+      {
+        error:
+          "Profile not found. Please sign out and sign in again, or contact support if this persists.",
+      },
+      { status: 404 }
+    );
+  }
+
   if (trimmedPhone) {
     const { data: phoneConflict, error: phoneConflictError } = await service
       .from("profiles")
@@ -151,7 +161,7 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const role = existing?.role ?? "student";
+  const role = existing.role;
 
   const recoveryEmailEditable = canEditRecoveryEmail({
     authEmail: user.email,
@@ -183,52 +193,28 @@ export async function PATCH(request: Request) {
 
   let savedProfile;
 
-  if (!existing) {
-    const { data, error } = await service
-      .from("profiles")
-      .upsert({
-        id: user.id,
-        email: user.email ?? `${user.id}@users.local`,
-        full_name: trimmedName,
-        phone: trimmedPhone,
-        college_id: role === "student" ? collegeId ?? null : null,
-        role,
-        is_active: true,
-      })
-      .select("id, full_name, phone, college_id, role, email, created_at, updated_at")
-      .single();
+  const { data, error } = await service
+    .from("profiles")
+    .update(payload)
+    .eq("id", user.id)
+    .select("id, full_name, phone, college_id, role, email, created_at, updated_at")
+    .single();
 
-    if (error) {
-      return NextResponse.json(
-        { error: sanitizeErrorMessage(error.message) },
-        { status: 500 }
-      );
-    }
-    savedProfile = data;
-  } else {
-    const { data, error } = await service
-      .from("profiles")
-      .update(payload)
-      .eq("id", user.id)
-      .select("id, full_name, phone, college_id, role, email, created_at, updated_at")
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { error: sanitizeErrorMessage(error.message) },
-        { status: 500 }
-      );
-    }
-
-    if (!data) {
-      return NextResponse.json(
-        { error: "Profile could not be updated. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    savedProfile = data;
+  if (error) {
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(error.message) },
+      { status: 500 }
+    );
   }
+
+  if (!data) {
+    return NextResponse.json(
+      { error: "Profile could not be updated. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  savedProfile = data;
 
   const { error: authError } = await supabase.auth.updateUser({
     data: { full_name: trimmedName },

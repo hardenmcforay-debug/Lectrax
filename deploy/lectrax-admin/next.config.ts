@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { getAdminSecurityHeaderRoutes } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
+  productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [
       {

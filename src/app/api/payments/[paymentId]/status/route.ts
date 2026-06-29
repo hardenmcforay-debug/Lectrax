@@ -1,29 +1,32 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { verifyMonimePayment, verifyMonimePaymentCode } from "@/lib/monime";
-import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
+import {
+  activatePremiumSubscription,
+  canLecturerSelfSubscribe,
+  PaymentActivationInProgressError,
+} from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
+import { handleApiRouteError } from "@/lib/errors/api";
+import { parseRouteUuid } from "@/lib/security/parse-request";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
-  const { paymentId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { paymentId: rawPaymentId } = await params;
+  const paymentIdParsed = parseRouteUuid(rawPaymentId, "payment ID");
+  if (!paymentIdParsed.ok) return paymentIdParsed.response;
+  const paymentId = paymentIdParsed.id;
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireLecturerRole();
+  if (auth.error) return auth.error;
 
-  const service = await createServiceClient();
-  const { data: payment } = await service
+  const { data: payment } = await auth.service
     .from("payments")
     .select("*")
     .eq("id", paymentId)
-    .eq("lecturer_id", user.id)
+    .eq("lecturer_id", auth.userId)
     .maybeSingle();
 
   if (!payment) {
@@ -48,9 +51,9 @@ export async function GET(
         : await verifyMonimePayment(monimeId);
 
     if (verified.completed && payment.billing_plan) {
-      const { allowed } = await canLecturerSelfSubscribe(payment.lecturer_id, service);
+      const { allowed } = await canLecturerSelfSubscribe(payment.lecturer_id, auth.service);
       if (!allowed) {
-        await service.from("payments").update({ status: "failed" }).eq("id", payment.id);
+        await auth.service.from("payments").update({ status: "failed" }).eq("id", payment.id);
         return NextResponse.json(
           {
             status: "failed",
@@ -67,13 +70,13 @@ export async function GET(
           billingPlan: payment.billing_plan as BillingPlan,
           paymentId: payment.id,
           transactionReference: monimeId,
-          service,
+          service: auth.service,
         });
       } catch (err) {
         if (err instanceof PaymentActivationInProgressError) {
           return NextResponse.json({ status: "processing" });
         }
-        throw err;
+        return handleApiRouteError("payments.status", err);
       }
 
       return NextResponse.json({ status: "completed" });

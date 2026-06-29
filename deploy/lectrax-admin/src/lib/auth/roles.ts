@@ -118,7 +118,7 @@ export async function fetchUserRole(
 
   const role = resolveUserRoleOrNull(profile?.role);
   return {
-    role: role ?? "student",
+    role,
     userId: user.id,
   };
 }

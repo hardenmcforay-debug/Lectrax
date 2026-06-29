@@ -140,9 +140,13 @@ export async function updateSession(request: NextRequest) {
         );
       }
 
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "unavailable");
       if (hasAuthCookies) {
-        return supabaseResponse;
+        url.searchParams.set("redirect", pathname);
       }
+      return NextResponse.redirect(url);
     }
   }
 
@@ -185,7 +189,11 @@ export async function updateSession(request: NextRequest) {
           { status: 503 },
         );
       }
-      return supabaseResponse;
+
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "unavailable");
+      return NextResponse.redirect(url);
     }
 
     if (!role) {

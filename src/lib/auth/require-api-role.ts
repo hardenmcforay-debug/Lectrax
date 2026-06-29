@@ -54,3 +54,22 @@ export async function requireStudentRole() {
 export async function requireLecturerRole() {
   return requireApiRole("lecturer");
 }
+
+export async function requireAuthenticatedUser(): Promise<
+  ApiRoleGuardSuccess | ApiRoleGuardFailure
+> {
+  const auth = await getCachedAuthUser();
+
+  if (auth.status === "service_unavailable") {
+    return { error: apiServiceUnavailableResponse() };
+  }
+
+  if (auth.status === "unauthenticated") {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  const service = await createServiceClient();
+  const supabase = await createClient();
+
+  return { user: auth.user, userId: auth.user.id, supabase, service };
+}

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { logServerError } from "@/lib/errors/logger";
 
 export async function logAudit(params: {
   action: string;
@@ -14,7 +15,7 @@ export async function logAudit(params: {
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from("audit_logs").insert({
+  const { error } = await supabase.from("audit_logs").insert({
     actor_id: user.id,
     action: params.action,
     entity_type: params.entityType,
@@ -22,6 +23,14 @@ export async function logAudit(params: {
     class_session_id: params.classSessionId ?? null,
     metadata: params.metadata ?? {},
   });
+
+  if (error) {
+    logServerError("audit_insert_failed", {
+      action: params.action,
+      entityType: params.entityType,
+      message: error.message,
+    });
+  }
 }
 
 /** Machine-auth audit entries (webhooks, cron) via service role. */
@@ -43,6 +52,9 @@ export async function logSystemAudit(params: {
   });
 
   if (error) {
-    console.error("system_audit_insert_failed", params.action, error.message);
+    logServerError("system_audit_insert_failed", {
+      action: params.action,
+      message: error.message,
+    });
   }
 }

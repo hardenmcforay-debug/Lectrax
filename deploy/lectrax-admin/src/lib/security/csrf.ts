@@ -75,6 +75,13 @@ export function isAllowedApiMutation(request: NextRequest): boolean {
   }
 
   if (hostsMatch(request)) {
+    if (process.env.NODE_ENV === "production") {
+      return (
+        request.headers.get(CSRF_HEADER_NAME) === CSRF_HEADER_VALUE ||
+        secFetchSite === "same-origin" ||
+        secFetchSite === "same-site"
+      );
+    }
     return secFetchSite === "same-origin" || secFetchSite === "same-site" || !secFetchSite;
   }
 

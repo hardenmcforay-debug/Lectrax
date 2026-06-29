@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { MAX_JSON_BODY_BYTES, readBodyWithByteLimit } from "@/lib/security/request-limits";
 
 export function parseRouteUuid(
   value: string,
@@ -19,10 +20,19 @@ export function parseRouteUuid(
 }
 
 export async function parseJsonBody(
-  request: Request
+  request: Request,
+  maxBytes = MAX_JSON_BODY_BYTES
 ): Promise<{ ok: true; body: unknown } | { ok: false; response: NextResponse }> {
+  const raw = await readBodyWithByteLimit(request, maxBytes);
+  if (!raw.ok) return raw;
+
+  if (raw.bytes.byteLength === 0) {
+    return { ok: true, body: {} };
+  }
+
   try {
-    return { ok: true, body: await request.json() };
+    const text = new TextDecoder().decode(raw.bytes);
+    return { ok: true, body: JSON.parse(text) };
   } catch {
     return {
       ok: false,

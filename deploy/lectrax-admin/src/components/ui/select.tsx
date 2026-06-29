@@ -36,13 +36,20 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-background shadow-md",
+        "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-background shadow-md",
         className
       )}
       position={position}
+      sideOffset={4}
+      collisionPadding={8}
       {...props}
     >
-      <SelectPrimitive.Viewport className="max-h-72 overflow-y-auto p-1">
+      <SelectPrimitive.Viewport
+        className={cn(
+          "max-h-[var(--radix-select-content-available-height)] w-full overflow-y-auto overscroll-contain p-1 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch]",
+          position === "popper" && "min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
         {children}
       </SelectPrimitive.Viewport>
     </SelectPrimitive.Content>

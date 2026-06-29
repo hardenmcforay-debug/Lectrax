@@ -39,6 +39,8 @@ export const RATE_LIMIT_POLICIES = {
   // Payments
   paymentCheckout: { limit: 8, windowMs: 15 * 60_000 },
   paymentStatusPoll: { limit: 60, windowMs: 60_000 },
+  subscriptionSync: { limit: 5, windowMs: 60 * 60_000 },
+  webhookIngress: { limit: 120, windowMs: 60_000 },
 
   // Administrative
   adminMutation: { limit: 40, windowMs: 60_000 },

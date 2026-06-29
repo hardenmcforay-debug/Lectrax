@@ -53,6 +53,10 @@ function isBrandingUploadPath(pathname: string): boolean {
   );
 }
 
+function isWebhookPath(pathname: string): boolean {
+  return pathname.startsWith("/api/webhooks/");
+}
+
 type ResolvedLimit = {
   policy: RateLimitPolicyName;
   rule: RateLimitRule;
@@ -66,7 +70,11 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
   }
 
   if (!pathname.startsWith("/api/")) return null;
-  if (isCsrfExemptPath(pathname)) return null;
+  if (pathname.startsWith("/api/cron")) return null;
+
+  if (isWebhookPath(pathname) && upperMethod === "POST") {
+    return { policy: "webhookIngress", rule: RATE_LIMIT_POLICIES.webhookIngress };
+  }
 
   if (pathname === "/api/contact" && upperMethod === "POST") {
     return { policy: "contactForm", rule: RATE_LIMIT_POLICIES.contactForm };
@@ -98,6 +106,10 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
 
   if (pathname === "/api/payments/checkout" && upperMethod === "POST") {
     return { policy: "paymentCheckout", rule: RATE_LIMIT_POLICIES.paymentCheckout };
+  }
+
+  if (pathname === "/api/lecturer/subscription/sync" && upperMethod === "POST") {
+    return { policy: "subscriptionSync", rule: RATE_LIMIT_POLICIES.subscriptionSync };
   }
 
   if (isPaymentStatusPath(pathname) && upperMethod === "GET") {

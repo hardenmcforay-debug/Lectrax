@@ -3,6 +3,7 @@ import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { adminExtendPremium } from "@/lib/subscription/lifecycle";
 import { adminExtendSubscriptionSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
 
 /** Legacy route — extends premium via profile subscription_end_date */
 export async function POST(request: Request) {
@@ -48,6 +49,14 @@ export async function POST(request: Request) {
       lecturerId: targetLecturerId,
       days,
       actorId: auth.userId,
+    });
+
+    await logPlatformAdminAudit({
+      actorId: auth.userId,
+      action: "admin_extend_premium",
+      entityType: "profile",
+      entityId: targetLecturerId,
+      metadata: { days, subscriptionId: subscriptionId ?? null },
     });
 
     return NextResponse.json({ success: true, subscription });

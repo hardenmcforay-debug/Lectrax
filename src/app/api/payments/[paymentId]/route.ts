@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { parseRouteUuid } from "@/lib/security/parse-request";
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
-  const { paymentId } = await params;
+  const { paymentId: rawPaymentId } = await params;
+  const paymentIdParsed = parseRouteUuid(rawPaymentId, "payment ID");
+  if (!paymentIdParsed.ok) return paymentIdParsed.response;
+  const paymentId = paymentIdParsed.id;
 
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
-  const service = await createServiceClient();
-  const { data: payment } = await service
+  const { data: payment } = await auth.service
     .from("payments")
     .select("id, lecturer_id, status")
     .eq("id", paymentId)
@@ -31,7 +33,7 @@ export async function DELETE(
     );
   }
 
-  const { error } = await service.from("payments").delete().eq("id", paymentId);
+  const { error } = await auth.service.from("payments").delete().eq("id", paymentId);
 
   if (error) {
     return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 500 });

@@ -695,7 +695,7 @@ export function AttendanceSessionPanel({
                   <SelectTrigger id="attendance-duration">
                     <SelectValue placeholder="Select duration (5–60 min)" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-72 overflow-y-auto">
+                  <SelectContent>
                     {SESSION_DURATION_OPTIONS.map((minutes) => (
                       <SelectItem key={minutes} value={String(minutes)}>
                         {formatSessionDurationLabel(minutes)}

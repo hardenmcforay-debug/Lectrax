@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "audit:deps": "npm audit --omit=dev",
     "validate:env": "node scripts/validate-env.mjs",
     "predeploy": "npm run typecheck && npm run lint && npm run build",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",

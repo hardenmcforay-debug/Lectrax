@@ -13,7 +13,8 @@ import {
   type BrandingImageSetting,
 } from "@/lib/landing/site-branding";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { brandingExtensionMatchesMime } from "@/lib/security/file-validation";
+import { brandingExtensionMatchesMime, readBrandingFileBytes } from "@/lib/security/file-validation";
+import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
 
 type AdminSupabase = Extract<
   Awaited<ReturnType<typeof requirePlatformAdmin>>,
@@ -72,6 +73,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const rawFile = await readBrandingFileBytes(file);
+  if (!rawFile.ok) {
+    return NextResponse.json({ error: rawFile.error }, { status: 400 });
+  }
+
   const ext = extensionForImageMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
@@ -86,7 +92,7 @@ export async function POST(request: Request) {
     await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = Buffer.from(rawFile.bytes);
   const { error: uploadError } = await supabase.storage
     .from(LANDING_ASSETS_BUCKET)
     .upload(storagePath, buffer, {
@@ -124,6 +130,14 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  await logPlatformAdminAudit({
+    actorId: userId,
+    action: "landing_feature_card_uploaded",
+    entityType: "site_settings",
+    entityId: cardId,
+    metadata: { storage_path: storagePath },
+  });
 
   return NextResponse.json({
     success: true,
