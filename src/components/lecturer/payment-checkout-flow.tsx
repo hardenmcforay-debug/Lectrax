@@ -221,119 +221,138 @@ export function PaymentCheckoutFlow({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-md"
+        className="gap-0 overflow-hidden p-0 md:max-w-[600px]"
         onPointerDownOutside={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
       >
         {step === "method" ? (
           <>
-            <DialogHeader>
-              <DialogTitle>Choose payment method</DialogTitle>
-              <DialogDescription>
-                {checkoutSummary}. Select how you want to pay.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3 py-2">
-              {PAYMENT_METHOD_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setSelectedMethod(option.id)}
-                  className={`group flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-colors sm:gap-5 ${
-                    selectedMethod === option.id
-                      ? "border-accent bg-accent/5 ring-2 ring-accent"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <PaymentMethodIcon
-                    label={option.label}
-                    logoUrl={paymentMethodLogos?.[option.id as PaymentMethodLogoId]}
-                  />
-                  <div className="min-w-0">
-                    <p className="font-medium">{option.label}</p>
-                    <p className="text-sm text-muted-foreground">{option.description}</p>
-                  </div>
-                </button>
-              ))}
+            <div className="shrink-0 border-b bg-background px-6 pb-4 pt-6 pr-12">
+              <DialogHeader className="text-left">
+                <DialogTitle>Choose payment method</DialogTitle>
+                <DialogDescription>
+                  {checkoutSummary}. Select how you want to pay.
+                </DialogDescription>
+              </DialogHeader>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+              <div className="space-y-3">
+                {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedMethod(option.id)}
+                    className={`group flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-colors sm:gap-5 ${
+                      selectedMethod === option.id
+                        ? "border-accent bg-accent/5 ring-2 ring-accent"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <PaymentMethodIcon
+                      label={option.label}
+                      logoUrl={paymentMethodLogos?.[option.id as PaymentMethodLogoId]}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium">{option.label}</p>
+                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                Cancel
-              </Button>
-              <Button
-                variant="accent"
-                disabled={!selectedMethod || loading}
-                onClick={() => void startCheckout()}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to Pay"}
-              </Button>
-            </DialogFooter>
+              {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+            </div>
+
+            <div className="shrink-0 border-t bg-background px-6 py-4">
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="accent"
+                  disabled={!selectedMethod || loading}
+                  onClick={() => void startCheckout()}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to Pay"}
+                </Button>
+              </DialogFooter>
+            </div>
           </>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle>Complete payment on your phone</DialogTitle>
-              <DialogDescription>
-                Dial the USSD code below using{" "}
-                {ussdDetails?.providerLabel ?? "your mobile money"} to pay{" "}
-                {ussdDetails
-                  ? formatSleChargeAmount(plan ?? "monthly", ussdDetails.amountMajor)
-                  : "Monime"}
-                .
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div className="rounded-lg border bg-slate-50 p-4 text-center">
-                <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">USSD Code</p>
-                <p className="font-mono text-xl font-bold tracking-wide text-primary">
-                  {ussdDetails?.ussdCode}
-                </p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => void copyUssd()}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  {copied ? "Copied!" : "Copy code"}
-                </Button>
-              </div>
-
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>
-                  <span className="font-medium text-foreground">Amount due:</span>{" "}
+            <div className="shrink-0 border-b bg-background px-6 pb-4 pt-6 pr-12">
+              <DialogHeader className="text-left">
+                <DialogTitle>Complete payment on your phone</DialogTitle>
+                <DialogDescription>
+                  Dial the USSD code below using{" "}
+                  {ussdDetails?.providerLabel ?? "your mobile money"} to pay{" "}
                   {ussdDetails
                     ? formatSleChargeAmount(plan ?? "monthly", ussdDetails.amountMajor)
-                    : formatSleChargeAmount(plan ?? "monthly", sleAmount)}
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Method:</span>{" "}
-                  {ussdDetails?.providerLabel}
-                </p>
-              </div>
-
-              <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-                <li>Open your phone dialer</li>
-                <li>Dial the USSD code exactly as shown</li>
-                <li>Follow the prompts to confirm payment</li>
-                <li>Your Lectrax Premium plan activates automatically after payment</li>
-              </ol>
-
-              {polling && (
-                <Badge variant="secondary" className="flex w-fit items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Waiting for payment confirmation…
-                </Badge>
-              )}
+                    : "Monime"}
+                  .
+                </DialogDescription>
+              </DialogHeader>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+              <div className="space-y-4">
+                <div className="rounded-lg border bg-slate-50 p-4 text-center">
+                  <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                    USSD Code
+                  </p>
+                  <p className="font-mono text-xl font-bold tracking-wide text-primary">
+                    {ussdDetails?.ussdCode}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => void copyUssd()}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    {copied ? "Copied!" : "Copy code"}
+                  </Button>
+                </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
-              </Button>
-            </DialogFooter>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    <span className="font-medium text-foreground">Amount due:</span>{" "}
+                    {ussdDetails
+                      ? formatSleChargeAmount(plan ?? "monthly", ussdDetails.amountMajor)
+                      : formatSleChargeAmount(plan ?? "monthly", sleAmount)}
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Method:</span>{" "}
+                    {ussdDetails?.providerLabel}
+                  </p>
+                </div>
+
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                  <li>Open your phone dialer</li>
+                  <li>Dial the USSD code exactly as shown</li>
+                  <li>Follow the prompts to confirm payment</li>
+                  <li>Your Lectrax Premium plan activates automatically after payment</li>
+                </ol>
+
+                {polling && (
+                  <Badge variant="secondary" className="flex w-fit items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Waiting for payment confirmation…
+                  </Badge>
+                )}
+              </div>
+
+              {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+            </div>
+
+            <div className="shrink-0 border-t bg-background px-6 py-4">
+              <DialogFooter>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
           </>
         )}
       </DialogContent>
