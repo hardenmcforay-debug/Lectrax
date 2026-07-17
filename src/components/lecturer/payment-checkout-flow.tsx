@@ -3,6 +3,7 @@
 import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Copy, Loader2, Smartphone } from "lucide-react";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import {
   PAYMENT_METHOD_OPTIONS,
   type LectraxPaymentMethod,
 } from "@/lib/monime/payment-methods";
+import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { platformFetch } from "@/lib/api/fetch";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
 
@@ -38,17 +40,44 @@ type CheckoutResponse =
       currency: string;
     };
 
+function PaymentMethodIcon({
+  label,
+  logoUrl,
+}: {
+  label: string;
+  logoUrl: string | null | undefined;
+}) {
+  if (logoUrl) {
+    return (
+      <span className="relative mt-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-md border bg-white">
+        <Image
+          src={logoUrl}
+          alt={`${label} logo`}
+          fill
+          unoptimized
+          className="object-contain p-0.5"
+          sizes="32px"
+        />
+      </span>
+    );
+  }
+
+  return <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden />;
+}
+
 export function PaymentCheckoutFlow({
   open,
   onOpenChange,
   plan,
   onPaymentComplete,
+  paymentMethodLogos,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: BillingPlan | null;
   planLabel: string;
   onPaymentComplete?: () => void;
+  paymentMethodLogos?: Record<PaymentMethodLogoId, string | null>;
 }) {
   const [step, setStep] = useState<"method" | "ussd">("method");
   const [selectedMethod, setSelectedMethod] = useState<LectraxPaymentMethod | null>(null);
@@ -173,7 +202,10 @@ export function PaymentCheckoutFlow({
                       : "hover:bg-muted"
                   }`}
                 >
-                  <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                  <PaymentMethodIcon
+                    label={option.label}
+                    logoUrl={paymentMethodLogos?.[option.id as PaymentMethodLogoId]}
+                  />
                   <div>
                     <p className="font-medium">{option.label}</p>
                     <p className="text-sm text-muted-foreground">{option.description}</p>

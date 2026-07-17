@@ -441,6 +441,7 @@ export function SubscriptionPageContent({
         onOpenChange={setCheckoutOpen}
         plan={checkoutPlan}
         planLabel={checkoutPlanLabel}
+        paymentMethodLogos={initialData.paymentMethodLogos}
         onPaymentComplete={() => void refreshSubscriptionData()}
       />
     </DashboardShell>

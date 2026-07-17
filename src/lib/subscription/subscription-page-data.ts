@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionDisplayForLecturer } from "@/lib/subscription";
 import type { SubscriptionDisplay } from "@/lib/subscription/types";
 import type { Payment } from "@/types/database";
+import {
+  getPaymentMethodLogoUrls,
+} from "@/lib/subscription/payment-method-logos";
+import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 
 export type SubscriptionPageProfile = {
   subscription_plan: string;
@@ -14,13 +18,14 @@ export type SubscriptionPageInitialData = {
   profile: SubscriptionPageProfile | null;
   display: SubscriptionDisplay;
   payments: Payment[];
+  paymentMethodLogos: Record<PaymentMethodLogoId, string | null>;
 };
 
 export async function getSubscriptionPageInitialData(
   lecturerId: string
 ): Promise<SubscriptionPageInitialData> {
   const supabase = await createClient();
-  const [{ subscription, display }, paymentsResult] = await Promise.all([
+  const [{ subscription, display }, paymentsResult, paymentMethodLogos] = await Promise.all([
     getSubscriptionDisplayForLecturer(lecturerId),
     supabase
       .from("payments")
@@ -30,6 +35,7 @@ export async function getSubscriptionPageInitialData(
       .eq("lecturer_id", lecturerId)
       .order("created_at", { ascending: false })
       .limit(10),
+    getPaymentMethodLogoUrls(),
   ]);
 
   const profile = subscription
@@ -45,5 +51,6 @@ export async function getSubscriptionPageInitialData(
     profile,
     display,
     payments: (paymentsResult.data as Payment[]) ?? [],
+    paymentMethodLogos,
   };
 }

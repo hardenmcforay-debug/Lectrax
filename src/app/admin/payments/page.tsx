@@ -2,12 +2,20 @@ import { createClient } from "@/lib/supabase/server";
 import { getDataPageSize } from "@/lib/low-data/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
+import { AdminPaymentMethodLogos } from "@/components/admin/admin-payment-method-logos";
 import { StatCard } from "@/components/shared/stat-card";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 import { formatChargeAmount } from "@/lib/subscription/payment-currency";
+import {
+  PAYMENT_METHOD_LOGO_OPTIONS,
+  type PaymentMethodLogoId,
+} from "@/lib/subscription/payment-method-logo-ids";
+import { getPaymentMethodLogosSetting } from "@/lib/subscription/payment-method-logos";
+import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
 import { DollarSign, Clock, CheckCircle2 } from "lucide-react";
 
 export default async function AdminPaymentsPage({
@@ -23,27 +31,46 @@ export default async function AdminPaymentsPage({
 
   const supabase = await createClient();
 
-  const [{ data: payments, count }, { data: revenueRows }, { count: pendingCount }] =
-    await Promise.all([
-      supabase
-        .from("payments")
-        .select(
-          "id, amount, status, plan, billing_plan, payment_provider, transaction_reference, paid_at, created_at, profiles(full_name, email)",
-          { count: "exact" }
-        )
-        .order("created_at", { ascending: false })
-        .range(from, to),
-      supabase.from("payments").select("amount").eq("status", "completed"),
-      supabase
-        .from("payments")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending"),
-    ]);
+  const [
+    { data: payments, count },
+    { data: revenueRows },
+    { count: pendingCount },
+    logoSettings,
+  ] = await Promise.all([
+    supabase
+      .from("payments")
+      .select(
+        "id, amount, status, plan, billing_plan, payment_provider, transaction_reference, paid_at, created_at, profiles(full_name, email)",
+        { count: "exact" }
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to),
+    supabase.from("payments").select("amount").eq("status", "completed"),
+    supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    getPaymentMethodLogosSetting(),
+  ]);
 
   const all = payments ?? [];
   const revenue = (revenueRows ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const completedCount = revenueRows?.length ?? 0;
   const total = count ?? 0;
+
+  const initialLogos = PAYMENT_METHOD_LOGO_OPTIONS.reduce(
+    (acc, option) => {
+      const setting = logoSettings[option.id];
+      acc[option.id] = {
+        imageUrl: setting?.storage_path
+          ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
+          : null,
+        updatedAt: setting?.updated_at ?? null,
+      };
+      return acc;
+    },
+    {} as Record<PaymentMethodLogoId, { imageUrl: string | null; updatedAt: string | null }>
+  );
 
   return (
     <DashboardShell
@@ -56,6 +83,19 @@ export default async function AdminPaymentsPage({
         <StatCard title="Completed" value={completedCount} icon={CheckCircle2} />
         <StatCard title="Pending" value={pendingCount ?? 0} icon={Clock} />
       </div>
+
+      <Card className="mb-6" id="payment-method-logos">
+        <CardHeader>
+          <CardTitle>Payment method logos</CardTitle>
+          <CardDescription>
+            Company logos shown in the lecturer &quot;Choose payment method&quot; dialog when upgrading
+            a plan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AdminPaymentMethodLogos initialLogos={initialLogos} />
+        </CardContent>
+      </Card>
 
       <div className="mb-4">
         <TablePagination basePath="/admin/payments" page={page} pageSize={pageSize} total={total} />
