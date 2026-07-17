@@ -44,9 +44,12 @@ export async function getPaymentMethodLogoUrls(): Promise<
 
   for (const option of PAYMENT_METHOD_LOGO_OPTIONS) {
     const setting = logos[option.id];
-    urls[option.id] = setting?.storage_path
-      ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
-      : null;
+    if (!setting?.storage_path) {
+      urls[option.id] = null;
+      continue;
+    }
+    const url = buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at);
+    urls[option.id] = url || null;
   }
 
   return urls;

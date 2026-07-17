@@ -61,10 +61,11 @@ export default async function AdminPaymentsPage({
   const initialLogos = PAYMENT_METHOD_LOGO_OPTIONS.reduce(
     (acc, option) => {
       const setting = logoSettings[option.id];
+      const imageUrl = setting?.storage_path
+        ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
+        : "";
       acc[option.id] = {
-        imageUrl: setting?.storage_path
-          ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
-          : null,
+        imageUrl: imageUrl || null,
         updatedAt: setting?.updated_at ?? null,
       };
       return acc;

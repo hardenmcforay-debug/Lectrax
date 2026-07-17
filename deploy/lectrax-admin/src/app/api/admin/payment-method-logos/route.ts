@@ -90,10 +90,6 @@ export async function POST(request: Request) {
   const existingLogos = await getPaymentMethodLogosSetting();
   const previous = existingLogos[methodId];
 
-  if (previous?.storage_path) {
-    await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
-  }
-
   const buffer = Buffer.from(rawFile.bytes);
   const { error: uploadError } = await supabase.storage
     .from(LANDING_ASSETS_BUCKET)
@@ -108,6 +104,10 @@ export async function POST(request: Request) {
       { error: sanitizeErrorMessage(uploadError.message ?? "Could not upload logo.") },
       { status: 500 }
     );
+  }
+
+  if (previous?.storage_path) {
+    await supabase.storage.from(LANDING_ASSETS_BUCKET).remove([previous.storage_path]);
   }
 
   const logoUpdatedAt = new Date().toISOString();
