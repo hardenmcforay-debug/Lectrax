@@ -10,6 +10,8 @@ export {
 
 export { LANDING_ASSETS_BUCKET, buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
 export const BRANDING_ASSET_CACHE_CONTROL = "max-age=0, must-revalidate";
+/** Versioned storage paths (timestamp in filename) — safe for long-lived browser/CDN cache. */
+export const VERSIONED_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
 export const SITE_LOGO_SETTING_KEY = "site_logo";
 export const LANDING_FEATURE_CARDS_SETTING_KEY = "landing_feature_cards";

@@ -41,5 +41,5 @@ export function formatSleChargeAmount(plan: BillingPlan, amountMajor?: number): 
 
 /** Shown in checkout when UI is USD but Monime collects SLE. */
 export function formatCheckoutChargeSummary(plan: BillingPlan, amountMajor?: number): string {
-  return `${formatUsdPrice(plan)} (${formatSleChargeAmount(plan, amountMajor)} via Monime)`;
+  return `${formatUsdPrice(plan)} (${formatSleChargeAmount(plan, amountMajor)}) via Monime`;
 }

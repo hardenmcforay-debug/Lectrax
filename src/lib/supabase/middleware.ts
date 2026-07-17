@@ -22,9 +22,21 @@ import {
   hasSupabaseAuthCookies,
   isDefinitiveAuthError,
   isTransientDbError,
+  isTransientError,
 } from "@/lib/errors/classify";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { withSecureCookieOptions } from "@/lib/security/cookies";
+
+/** Preserve Set-Cookie headers from the Supabase response onto a redirect/JSON response. */
+function withSessionCookies(
+  source: NextResponse,
+  target: NextResponse
+): NextResponse {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie.name, cookie.value);
+  });
+  return target;
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -83,9 +95,9 @@ export async function updateSession(request: NextRequest) {
     (pathname === "/login" || pathname === "/") &&
     (recoveryType === "recovery" || request.nextUrl.searchParams.has("token_hash"))
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/reset-password";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/reset-password";
+    return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
   if (
@@ -93,16 +105,19 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.searchParams.has("code") &&
     request.nextUrl.searchParams.get("next") === "/reset-password"
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/reset-password";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/reset-password";
+    return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
   if (isAdminHostedSeparately() && !isAdminDeployment()) {
     if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
       const adminUrl = getAdminAppUrl();
       if (adminUrl) {
-        return NextResponse.redirect(`${adminUrl}${pathname}${request.nextUrl.search}`);
+        return withSessionCookies(
+          supabaseResponse,
+          NextResponse.redirect(`${adminUrl}${pathname}${request.nextUrl.search}`)
+        );
       }
     }
   }
@@ -124,14 +139,16 @@ export async function updateSession(request: NextRequest) {
   if (authError) {
     if (isDefinitiveAuthError(authError)) {
       if (!isPublic) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        url.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(url);
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = "/login";
+        redirectUrl.searchParams.set("redirect", pathname);
+        return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
       }
       return supabaseResponse;
     }
 
+    // Transient auth/network failures must not look like a logout.
+    // Keep the user on the page (or return 503 for APIs) so they can retry.
     if (!isPublic) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
@@ -140,21 +157,22 @@ export async function updateSession(request: NextRequest) {
         );
       }
 
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("error", "unavailable");
-      if (hasAuthCookies) {
-        url.searchParams.set("redirect", pathname);
+      if (hasAuthCookies || isTransientError(authError)) {
+        return supabaseResponse;
       }
-      return NextResponse.redirect(url);
+
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
+      redirectUrl.searchParams.set("error", "unavailable");
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
     }
   }
 
   if (!user && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("redirect", pathname);
+    return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
   if (user) {
@@ -190,19 +208,17 @@ export async function updateSession(request: NextRequest) {
         );
       }
 
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("error", "unavailable");
-      return NextResponse.redirect(url);
+      // Do not force login on transient role lookup failures — preserve the session.
+      return supabaseResponse;
     }
 
     if (!role) {
       if (!isPublic && pathname !== "/") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        url.searchParams.set("error", "auth");
-        url.searchParams.delete("login_failed");
-        return NextResponse.redirect(url);
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = "/login";
+        redirectUrl.searchParams.set("error", "auth");
+        redirectUrl.searchParams.delete("login_failed");
+        return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
       }
       return supabaseResponse;
     }
@@ -211,30 +227,33 @@ export async function updateSession(request: NextRequest) {
 
     if (isMainAppDeployment() && role === "platform_admin") {
       await supabase.auth.signOut();
-      return NextResponse.redirect(getPlatformAdminLoginRedirectUrl(request.nextUrl.origin));
+      return withSessionCookies(
+        supabaseResponse,
+        NextResponse.redirect(getPlatformAdminLoginRedirectUrl(request.nextUrl.origin))
+      );
     }
 
     if (isAdminDeployment() && role !== "platform_admin") {
-      return NextResponse.redirect(roleHome);
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
     }
 
     if (pathname === "/") {
-      const url = request.nextUrl.clone();
+      const redirectUrl = request.nextUrl.clone();
       if (isAbsoluteUrl(roleHome)) {
-        return NextResponse.redirect(roleHome);
+        return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
       }
-      url.pathname = roleHome;
-      url.search = "";
-      return NextResponse.redirect(url);
+      redirectUrl.pathname = roleHome;
+      redirectUrl.search = "";
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
     }
 
     if (AUTH_ROUTES.includes(pathname)) {
       if (isAbsoluteUrl(roleHome)) {
-        return NextResponse.redirect(roleHome);
+        return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
       }
-      const url = request.nextUrl.clone();
-      url.pathname = roleHome;
-      return NextResponse.redirect(url);
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = roleHome;
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
     }
 
     const requiredApiRole = getRequiredApiRole(pathname);
@@ -247,7 +266,7 @@ export async function updateSession(request: NextRequest) {
       const destination = isAbsoluteUrl(roleHome)
         ? roleHome
         : new URL(roleHome, request.url).toString();
-      return NextResponse.redirect(destination);
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(destination));
     }
   }
 

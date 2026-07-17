@@ -207,7 +207,7 @@ export function SubscriptionPageContent({
       )}
       {isAllowedPaymentCallbackFlag(searchParams.get("cancelled")) && (
         <Badge variant="secondary" className="mb-4">
-          Payment cancelled.
+          Payment was cancelled.
         </Badge>
       )}
 

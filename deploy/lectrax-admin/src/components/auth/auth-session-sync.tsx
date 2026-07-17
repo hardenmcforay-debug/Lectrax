@@ -21,10 +21,19 @@ export function AuthSessionSync() {
       }
 
       if (event === "SIGNED_OUT") {
-        clearClientStorageAfterAuthReset();
-        if (isProtectedPortalPath(window.location.pathname)) {
-          window.location.replace("/login");
-        }
+        // Confirm the session is actually gone — spurious SIGNED_OUT can fire after
+        // cross-site returns (e.g. payment gateway) when a transient auth fetch fails.
+        void (async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session) return;
+
+          clearClientStorageAfterAuthReset();
+          if (isProtectedPortalPath(window.location.pathname)) {
+            window.location.replace("/login");
+          }
+        })();
       }
     });
 

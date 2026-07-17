@@ -3,11 +3,15 @@
 import { useEffect } from "react";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 import { isProtectedPortalPath } from "@/lib/auth/route-protection";
+import { isDefinitiveAuthError, isTransientError } from "@/lib/errors/classify";
 import { createClient } from "@/lib/supabase/client";
 
 /**
  * Client-side session re-validation for portal pages.
  * Prevents stale bfcache / PWA snapshots from showing protected content after logout or expiry.
+ *
+ * Transient auth/network failures must never force a logout — e.g. returning from a payment
+ * gateway when Supabase Auth briefly fails to fetch.
  */
 export function ProtectedSessionGuard({ loginPath = "/login" }: { loginPath?: string }) {
   useEffect(() => {
@@ -16,12 +20,31 @@ export function ProtectedSessionGuard({ loginPath = "/login" }: { loginPath?: st
     async function assertSession() {
       if (!isProtectedPortalPath(window.location.pathname)) return;
 
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
-      if (error || !user) {
+        if (error) {
+          if (isTransientError(error) || !isDefinitiveAuthError(error)) {
+            return;
+          }
+          clearClientStorageAfterAuthReset();
+          window.location.replace(loginPath);
+          return;
+        }
+
+        if (!user) {
+          clearClientStorageAfterAuthReset();
+          window.location.replace(loginPath);
+        }
+      } catch (error) {
+        // Network outages throw (e.g. TypeError: Failed to fetch) instead of returning
+        // an AuthError — never treat that as a logout.
+        if (isTransientError(error) || !isDefinitiveAuthError(error)) {
+          return;
+        }
         clearClientStorageAfterAuthReset();
         window.location.replace(loginPath);
       }

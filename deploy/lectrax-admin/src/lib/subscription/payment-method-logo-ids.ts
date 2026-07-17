@@ -8,7 +8,7 @@ export const PAYMENT_METHOD_LOGO_OPTIONS: ReadonlyArray<{
 }> = [
   { id: "orange_money", label: "Orange Money" },
   { id: "afrimoney", label: "Afrimoney" },
-  { id: "visa_card", label: "Visa / Card" },
+  { id: "visa_card", label: "Card Payment" },
 ];
 
 export function isPaymentMethodLogoId(value: string): value is PaymentMethodLogoId {

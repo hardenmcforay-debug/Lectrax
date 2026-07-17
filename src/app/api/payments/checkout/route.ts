@@ -95,8 +95,8 @@ export async function POST(request: Request) {
       paymentId: payment.id,
       paymentMethod,
       customerName: profile.full_name,
-      successUrl: `${appUrl}/lecturer/subscription?success=1`,
-      cancelUrl: `${appUrl}/lecturer/subscription?cancelled=1`,
+      successUrl: `${appUrl}/payments/return?outcome=success`,
+      cancelUrl: `${appUrl}/payments/return?outcome=cancelled`,
     });
 
     await service

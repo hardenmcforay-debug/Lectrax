@@ -27,7 +27,7 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   },
   {
     id: "visa_card",
-    label: "Visa / Card",
+    label: "Card Payment",
     description: "Pay securely with debit or credit card",
     channel: "card",
   },
@@ -40,5 +40,5 @@ export function getPaymentMethodOption(id: LectraxPaymentMethod): PaymentMethodO
 export const PAYMENT_METHOD_LABELS: Record<LectraxPaymentMethod, string> = {
   orange_money: "Orange Money",
   afrimoney: "Afrimoney",
-  visa_card: "Visa / Card",
+  visa_card: "Card Payment",
 };

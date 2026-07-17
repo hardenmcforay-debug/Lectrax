@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import {
   LANDING_ASSETS_BUCKET,
-  BRANDING_ASSET_CACHE_CONTROL,
+  VERSIONED_ASSET_CACHE_CONTROL,
   extensionForImageMime,
   isAllowedBrandingImage,
   type BrandingImageSetting,
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     .upload(storagePath, buffer, {
       contentType: file.type,
       upsert: false,
-      cacheControl: BRANDING_ASSET_CACHE_CONTROL,
+      cacheControl: VERSIONED_ASSET_CACHE_CONTROL,
     });
 
   if (uploadError) {

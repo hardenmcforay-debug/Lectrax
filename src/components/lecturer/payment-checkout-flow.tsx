@@ -40,6 +40,9 @@ type CheckoutResponse =
       currency: string;
     };
 
+const PAYMENT_LOGO_CARD_CLASS =
+  "relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-md sm:h-24 sm:w-24 sm:p-3.5";
+
 function PaymentMethodIcon({
   label,
   logoUrl,
@@ -49,20 +52,54 @@ function PaymentMethodIcon({
 }) {
   if (logoUrl) {
     return (
-      <span className="relative mt-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-md border bg-white">
-        <Image
-          src={logoUrl}
-          alt={`${label} logo`}
-          fill
-          unoptimized
-          className="object-contain p-0.5"
-          sizes="32px"
-        />
+      <span className={PAYMENT_LOGO_CARD_CLASS}>
+        <span className="relative h-full w-full">
+          <Image
+            src={logoUrl}
+            alt={`${label} logo`}
+            fill
+            unoptimized
+            priority
+            fetchPriority="high"
+            decoding="async"
+            className="object-contain"
+            sizes="(max-width: 640px) 80px, 96px"
+          />
+        </span>
       </span>
     );
   }
 
-  return <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden />;
+  return (
+    <span className={PAYMENT_LOGO_CARD_CLASS}>
+      <Smartphone className="h-9 w-9 text-accent sm:h-10 sm:w-10" aria-hidden />
+    </span>
+  );
+}
+
+const preloadedPaymentLogoUrls = new Set<string>();
+
+/** Warm browser cache as soon as the subscription page mounts (before dialog opens). */
+function preloadPaymentMethodLogos(
+  logos: Record<PaymentMethodLogoId, string | null> | undefined
+): void {
+  if (typeof document === "undefined" || !logos) return;
+
+  for (const href of Object.values(logos)) {
+    if (!href || preloadedPaymentLogoUrls.has(href)) continue;
+    preloadedPaymentLogoUrls.add(href);
+
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = href;
+    document.head.appendChild(link);
+
+    const img = new window.Image();
+    img.decoding = "async";
+    img.fetchPriority = "high";
+    img.src = href;
+  }
 }
 
 export function PaymentCheckoutFlow({
@@ -99,6 +136,10 @@ export function PaymentCheckoutFlow({
       setPolling(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    preloadPaymentMethodLogos(paymentMethodLogos);
+  }, [paymentMethodLogos]);
 
   useEffect(() => {
     if (!ussdDetails || !polling) return;
@@ -185,18 +226,17 @@ export function PaymentCheckoutFlow({
             <DialogHeader>
               <DialogTitle>Choose payment method</DialogTitle>
               <DialogDescription>
-                {checkoutSummary}. Select how you want to pay — Monime will charge{" "}
-                {plan ? formatSleChargeAmount(plan) : "in leones"}.
+                {checkoutSummary}. Select how you want to pay.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-2 py-2">
+            <div className="space-y-3 py-2">
               {PAYMENT_METHOD_OPTIONS.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => setSelectedMethod(option.id)}
-                  className={`flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
+                  className={`group flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-colors sm:gap-5 ${
                     selectedMethod === option.id
                       ? "border-accent bg-accent/5 ring-2 ring-accent"
                       : "hover:bg-muted"
@@ -206,7 +246,7 @@ export function PaymentCheckoutFlow({
                     label={option.label}
                     logoUrl={paymentMethodLogos?.[option.id as PaymentMethodLogoId]}
                   />
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{option.label}</p>
                     <p className="text-sm text-muted-foreground">{option.description}</p>
                   </div>

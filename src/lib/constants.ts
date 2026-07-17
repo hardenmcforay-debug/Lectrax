@@ -29,6 +29,8 @@ export const PUBLIC_ROUTES = [
   "/privacy",
   "/terms",
   "/auth/callback",
+  /** Payment gateway return bounce (may arrive cross-site without cookies). */
+  "/payments/return",
   "/offline",
 ];
 

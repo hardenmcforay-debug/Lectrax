@@ -56,6 +56,14 @@ function getErrorStatus(error: unknown): number | undefined {
 export function isTransientError(error: unknown): boolean {
   if (!error) return false;
 
+  if (error && typeof error === "object" && "name" in error) {
+    const name = String((error as { name: unknown }).name);
+    // Network blips talking to Supabase Auth — never treat as a real logout.
+    if (name === "AuthRetryableFetchError") {
+      return true;
+    }
+  }
+
   const status = getErrorStatus(error);
   if (status === 408 || status === 429 || (status !== undefined && status >= 500)) {
     return true;
@@ -75,6 +83,11 @@ export function isTransientError(error: unknown): boolean {
 
 export function isDefinitiveAuthError(error: unknown): boolean {
   if (!error) return false;
+
+  // Retryable / network auth failures are outages, not expired sessions.
+  if (isTransientError(error)) {
+    return false;
+  }
 
   const code = getErrorCode(error);
   if (code && DEFINITIVE_AUTH_CODES.has(code)) {
@@ -102,9 +115,6 @@ export function isDefinitiveAuthError(error: unknown): boolean {
   if (error && typeof error === "object" && "name" in error) {
     const name = String((error as { name: unknown }).name);
     if (name === "AuthSessionMissingError") {
-      return true;
-    }
-    if (name === "AuthRetryableFetchError") {
       return true;
     }
   }
