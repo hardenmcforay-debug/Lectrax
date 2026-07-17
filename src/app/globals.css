@@ -79,6 +79,35 @@ body {
   animation-delay: 0.2s;
 }
 
+/* Fullscreen dialogs must sit above portal chrome (header/bottom nav = z-40). */
+@keyframes lectrax-dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lectrax-dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.lectrax-dialog-overlay {
+  animation: lectrax-dialog-overlay-in 0.25s ease-out both;
+}
+
+.lectrax-dialog-content {
+  animation: lectrax-dialog-content-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .auth-primary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }

@@ -49,7 +49,7 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
   }
 
   return (
-    <header className="admin-mobile-header portal-mobile-header portal-mobile-only z-[60]">
+    <header className="admin-mobile-header portal-mobile-header portal-mobile-only z-40">
       <div className="portal-mobile-header-bar flex w-full items-center justify-between border-b border-slate-200/80 bg-white/95 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <h1 className="min-w-0 truncate pr-3 text-lg font-bold text-primary">{pageTitle}</h1>
 

@@ -20,14 +20,14 @@
 .portal-shell-root .portal-mobile-header {
   grid-row: 1;
   position: relative;
-  z-index: 60;
+  z-index: 40;
   touch-action: none;
 }
 
 .portal-shell-root .portal-mobile-bottom-nav {
   grid-row: 3;
   position: relative;
-  z-index: 60;
+  z-index: 40;
   box-sizing: content-box;
 }
 
@@ -114,14 +114,14 @@ html[data-portal-mobile="true"]:has(.portal-shell-root) body {
   .portal-mobile-header {
     grid-row: 1;
     position: relative;
-    z-index: 60;
+    z-index: 40;
     touch-action: none;
   }
 
   .portal-mobile-bottom-nav {
     grid-row: 3;
     position: relative;
-    z-index: 60;
+    z-index: 40;
     box-sizing: content-box;
   }
 
