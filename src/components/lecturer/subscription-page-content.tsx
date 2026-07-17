@@ -30,7 +30,7 @@ import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/paymen
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
 import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
 import { PaymentCheckoutFlow } from "@/components/lecturer/payment-checkout-flow";
-import { Check, Trash2 } from "lucide-react";
+import { AlertCircle, Check, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+const PAYMENT_CANCELLED_NOTICE_MS = 10000;
 
 const plans: { id: BillingPlan; label: string; description: string }[] = [
   { id: "monthly", label: BILLING_PLANS.monthly.label, description: BILLING_PLANS.monthly.description },
@@ -82,6 +84,9 @@ export function SubscriptionPageContent({
   const [deletingPayment, setDeletingPayment] = useState(false);
   const [deletingAllPayments, setDeletingAllPayments] = useState(false);
   const [deletePaymentError, setDeletePaymentError] = useState<string | null>(null);
+  const [showCancelledNotice, setShowCancelledNotice] = useState(() =>
+    isAllowedPaymentCallbackFlag(searchParams.get("cancelled"))
+  );
 
   useEffect(() => {
     deferNonCriticalTask(() => {
@@ -89,6 +94,18 @@ export function SubscriptionPageContent({
     });
     stripSensitiveUrlParams();
   }, []);
+
+  useEffect(() => {
+    if (!showCancelledNotice) return;
+
+    stripSensitiveUrlParams(["cancelled"]);
+
+    const timeout = window.setTimeout(() => {
+      setShowCancelledNotice(false);
+    }, PAYMENT_CANCELLED_NOTICE_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [showCancelledNotice]);
 
   async function refreshSubscriptionData() {
     const supabase = createClient();
@@ -205,10 +222,21 @@ export function SubscriptionPageContent({
           Payment successful! Your Lectrax Premium plan is activating…
         </Badge>
       )}
-      {isAllowedPaymentCallbackFlag(searchParams.get("cancelled")) && (
-        <Badge variant="secondary" className="mb-4">
-          Payment was cancelled.
-        </Badge>
+      {showCancelledNotice && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-4 text-red-700 shadow-md sm:px-5 sm:py-5"
+        >
+          <AlertCircle className="mt-0.5 h-7 w-7 shrink-0 text-red-600 sm:h-8 sm:w-8" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-lg font-bold leading-tight tracking-tight text-red-700 sm:text-xl">
+              Payment was cancelled.
+            </p>
+            <p className="mt-1 text-sm font-medium text-red-600/90 sm:text-base">
+              No charge was made. You can try again whenever you are ready.
+            </p>
+          </div>
+        </div>
       )}
 
       {activeSubscriptionPeriod && (
