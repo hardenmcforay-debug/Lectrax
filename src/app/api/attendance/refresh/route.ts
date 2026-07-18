@@ -3,7 +3,8 @@ import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
-import { buildRotatedQRToken, buildScanUrl, invalidSessionTokenHash } from "@/lib/attendance/qr-rotation";
+import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
+import { buildRotatedQRToken, buildScanUrl } from "@/lib/attendance/qr-rotation";
 import {
   getAttendanceSessionForLecturer,
 } from "@/lib/attendance/sessions";
@@ -55,21 +56,7 @@ export async function POST(request: Request) {
 
   if (!isAttendanceSessionOpen(attendanceSession)) {
     const service = await createServiceClient();
-    if (
-      !attendanceSession.ended_at &&
-      new Date(attendanceSession.session_expires_at) <= new Date()
-    ) {
-      await service
-        .from("attendance_sessions")
-        .update({
-          is_active: false,
-          ended_at: attendanceSession.session_expires_at,
-          qr_token_hash: invalidSessionTokenHash(attendanceSession.id),
-          qr_expires_at: attendanceSession.session_expires_at,
-        })
-        .eq("id", attendanceSession.id);
-    }
-
+    await closeAttendanceSessionIfAbandoned(service, attendanceSession);
     return NextResponse.json({ error: "Attendance session is closed" }, { status: 410 });
   }
 

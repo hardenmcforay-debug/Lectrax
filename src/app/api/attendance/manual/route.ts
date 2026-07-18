@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
+import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
 import { getAttendanceSessionForLecturer } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
@@ -31,7 +32,10 @@ async function validateManualAttendanceRequest(
     return { error: NextResponse.json({ error: "Attendance session not found" }, { status: 404 }) };
   }
 
+  const service = await createServiceClient();
+
   if (!isAttendanceSessionOpen(attendanceSession)) {
+    await closeAttendanceSessionIfAbandoned(service, attendanceSession);
     return {
       error: NextResponse.json(
         { error: "Attendance collection has ended for this session." },
@@ -40,7 +44,15 @@ async function validateManualAttendanceRequest(
     };
   }
 
-  const service = await createServiceClient();
+  if (await closeAttendanceSessionIfAbandoned(service, attendanceSession)) {
+    return {
+      error: NextResponse.json(
+        { error: "Attendance collection has ended for this session." },
+        { status: 410 }
+      ),
+    };
+  }
+
   const { data: enrollment } = await service
     .from("enrollments")
     .select("id")

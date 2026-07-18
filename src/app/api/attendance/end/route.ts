@@ -2,12 +2,33 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { invalidSessionTokenHash } from "@/lib/attendance/qr-rotation";
+import { persistAttendanceSessionClosed } from "@/lib/attendance/close-session";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 const endSchema = z.object({
   attendanceSessionId: z.string().uuid(),
 });
+
+async function parseEndBody(request: Request): Promise<unknown> {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      return await request.json();
+    } catch {
+      return null;
+    }
+  }
+
+  // sendBeacon may omit content-type or send text/plain
+  try {
+    const text = await request.text();
+    if (!text) return null;
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -19,10 +40,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const body = await parseEndBody(request);
+  if (body == null) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
@@ -60,32 +79,23 @@ export async function POST(request: Request) {
     });
   }
 
-  const endedAt = new Date().toISOString();
+  try {
+    const endedAt = await persistAttendanceSessionClosed(service, attendanceSession);
 
-  const { error: updateError } = await service
-    .from("attendance_sessions")
-    .update({
-      is_active: false,
-      ended_at: endedAt,
-      qr_token_hash: invalidSessionTokenHash(attendanceSession.id),
-      qr_expires_at: endedAt,
-    })
-    .eq("id", attendanceSession.id);
+    void logAudit({
+      action: "attendance_session_ended",
+      entityType: "attendance_session",
+      entityId: attendanceSession.id,
+      classSessionId: attendanceSession.class_session_id,
+      metadata: { ended_at: endedAt, reason: "lecturer_end" },
+    });
 
-  if (updateError) {
-    return NextResponse.json({ error: sanitizeErrorMessage(updateError.message) }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      endedAt,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not end attendance session";
+    return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
-
-  void logAudit({
-    action: "attendance_session_ended",
-    entityType: "attendance_session",
-    entityId: attendanceSession.id,
-    classSessionId: attendanceSession.class_session_id,
-    metadata: { ended_at: endedAt },
-  });
-
-  return NextResponse.json({
-    success: true,
-    endedAt,
-  });
 }

@@ -36,6 +36,7 @@ import {
   QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
+import { endAttendanceSessionOnUnload } from "@/lib/attendance/end-on-unload";
 import {
   addPresentRecord,
   buildPresentRecordsWithPending,
@@ -136,10 +137,37 @@ export function AttendanceSessionPanel({
   const realtimeConnectedRef = useRef(false);
 
   const activeSessionId = activeSession?.id ?? null;
+  const endingOnUnloadRef = useRef(false);
 
   const presentCount = presentRecords.size;
   const totalStudents = rows.length;
   const notMarkedCount = Math.max(0, totalStudents - presentCount);
+
+  useEffect(() => {
+    if (!activeSessionId) return;
+
+    endingOnUnloadRef.current = false;
+
+    const endBecauseAppClosed = () => {
+      if (endingOnUnloadRef.current) return;
+      endingOnUnloadRef.current = true;
+      endAttendanceSessionOnUnload(activeSessionId);
+    };
+
+    const handlePageHide = (event: PageTransitionEvent) => {
+      // bfcache freeze — page can be restored; do not end.
+      if (event.persisted) return;
+      endBecauseAppClosed();
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", endBecauseAppClosed);
+
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", endBecauseAppClosed);
+    };
+  }, [activeSessionId]);
 
   useEffect(() => {
     if (!activeSession || activeSessionDurationMinutes) return;

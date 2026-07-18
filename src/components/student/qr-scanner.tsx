@@ -146,6 +146,10 @@ function ScanResultNotice({ status }: { status: ScanStatus }) {
   );
 }
 
+type Html5QrcodeInstance = InstanceType<
+  Awaited<typeof import("html5-qrcode")>["Html5Qrcode"]
+>;
+
 export function QRScanner() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<ScanStatus>(READY_STATUS);
@@ -155,102 +159,225 @@ export function QRScanner() {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [showTransferConfirm, setShowTransferConfirm] = useState(false);
   const [transferring, setTransferring] = useState(false);
-  const scannerRef = useRef<InstanceType<
-    Awaited<typeof import("html5-qrcode")>["Html5Qrcode"]
-  > | null>(null);
-  const processedRef = useRef(false);
 
-  const submitToken = useCallback(async (token: string, options?: { afterTransfer?: boolean }) => {
-    if (!options?.afterTransfer && processedRef.current) return;
-    if (!options?.afterTransfer) {
-      processedRef.current = true;
+  const scannerRef = useRef<Html5QrcodeInstance | null>(null);
+  const startingScannerRef = useRef(false);
+  const scanGenerationRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const inFlightTokenRef = useRef<string | null>(null);
+  /** After a successful mark, block further camera submits until the user opens the scanner again. */
+  const attendanceLockedRef = useRef(false);
+  const urlTokenHandledRef = useRef<string | null>(null);
+
+  const stopScannerInstance = useCallback(async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) {
+      setScanning(false);
+      return;
     }
-    setSubmitting(true);
-    setStatus({ title: "Verifying attendance...", variant: "loading" });
 
     try {
-      const identity = getAttendanceDeviceIdentity();
-      const res = await appFetch("/api/attendance/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: extractToken(token),
-          ...identity,
-          latitude: null,
-          longitude: null,
-        }),
-      });
-      const data = (await res.json()) as ScanResponse;
+      const state = scanner.getState?.();
+      // 2 = SCANNING in html5-qrcode Html5QrcodeScannerState
+      if (state === 2 || state === undefined) {
+        await scanner.stop().catch(() => {});
+      }
+      await scanner.clear().catch(() => {});
+    } catch {
+      // Best-effort cleanup
+    } finally {
+      scannerRef.current = null;
+      setScanning(false);
+    }
+  }, []);
 
-      if (res.ok) {
-        setStatus({
-          title: data.message ?? ATTENDANCE_RECORDED_TITLE,
-          description: data.description ?? ATTENDANCE_RECORDED_MESSAGE,
-          recordedAt: data.recordedAt ?? null,
-          variant: "success",
+  const startScanner = useCallback(async () => {
+    if (startingScannerRef.current) return;
+    startingScannerRef.current = true;
+
+    try {
+      await stopScannerInstance();
+
+      // New scan attempt — clear sticky expired/error UI and unlock retries.
+      attendanceLockedRef.current = false;
+      inFlightTokenRef.current = null;
+      setStatus(READY_STATUS);
+
+      const { Html5Qrcode } = await import("html5-qrcode");
+      const scanner = new Html5Qrcode("qr-reader");
+      scannerRef.current = scanner;
+      setScanning(true);
+
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decoded) => {
+          void (async () => {
+            await stopScannerInstance();
+            // submitToken is defined below; call through ref to avoid circular deps.
+            await submitTokenRef.current?.(decoded);
+          })();
+        },
+        () => {}
+      );
+    } catch {
+      setScanning(false);
+      setStatus({
+        title: "Could not open camera",
+        description: "Check camera permission and try again.",
+        variant: "error",
+      });
+    } finally {
+      startingScannerRef.current = false;
+    }
+  }, [stopScannerInstance]);
+
+  const submitTokenRef = useRef<
+    ((token: string, options?: { afterTransfer?: boolean }) => Promise<void>) | null
+  >(null);
+
+  const submitToken = useCallback(
+    async (token: string, options?: { afterTransfer?: boolean }) => {
+      const normalized = extractToken(token);
+      if (!normalized) return;
+
+      if (!options?.afterTransfer && attendanceLockedRef.current) {
+        return;
+      }
+
+      // Ignore duplicate submits of the same token while a request is in flight.
+      if (
+        !options?.afterTransfer &&
+        inFlightTokenRef.current === normalized &&
+        abortRef.current
+      ) {
+        return;
+      }
+
+      // A newer / different QR always wins — cancel the previous request so an
+      // expired response cannot overwrite a later valid scan.
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const generation = ++scanGenerationRef.current;
+      inFlightTokenRef.current = normalized;
+
+      setSubmitting(true);
+      setStatus({ title: "Verifying attendance...", variant: "loading" });
+
+      try {
+        const identity = getAttendanceDeviceIdentity();
+        const res = await appFetch("/api/attendance/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: normalized,
+            ...identity,
+            latitude: null,
+            longitude: null,
+          }),
+          signal: controller.signal,
         });
-        setPendingToken(null);
-        setShowVerificationDialog(false);
-        setShowTransferConfirm(false);
-      } else if (res.status === 409 || data.code === "ATTENDANCE_ALREADY_RECORDED") {
-        setStatus({
-          title: data.error ?? ATTENDANCE_ALREADY_RECORDED_TITLE,
-          description: data.message ?? ATTENDANCE_ALREADY_RECORDED_MESSAGE,
-          recordedAt: data.recordedAt ?? null,
-          variant: "duplicate",
-        });
-      } else if (data.code === "QR_EXPIRED") {
-        setStatus({
-          title: data.error ?? EXPIRED_QR_TITLE,
-          description: data.message ?? EXPIRED_QR_MESSAGE,
-          variant: "error",
-        });
-        processedRef.current = false;
-      } else if (data.code === DEVICE_VERIFICATION_CODES.DEVICE_BOUND_TO_OTHER_ACCOUNT) {
-        setStatus({
-          title: DEVICE_MESSAGES.deviceBoundToOtherAccount.title,
-          description: data.detail ?? data.message ?? DEVICE_MESSAGES.deviceBoundToOtherAccount.detail,
-          variant: "error",
-        });
-        setPendingToken(null);
-        setShowVerificationDialog(false);
-        setShowTransferConfirm(false);
-        processedRef.current = false;
-      } else if (data.code === DEVICE_VERIFICATION_CODES.VERIFICATION_REQUIRED) {
-        setPendingToken(extractToken(token));
-        setShowVerificationDialog(true);
-        setStatus({
-          title: "Attendance device verification required",
-          variant: "idle",
-        });
-        processedRef.current = false;
-      } else if (data.code === DEVICE_VERIFICATION_CODES.ACCESS_REVOKED) {
-        setStatus({
-          title: DEVICE_MESSAGES.accessRevoked.title,
-          description: data.detail ?? data.message ?? DEVICE_MESSAGES.accessRevoked.detail,
-          variant: "error",
-        });
-        processedRef.current = false;
-      } else {
+
+        if (generation !== scanGenerationRef.current) return;
+
+        const data = (await res.json()) as ScanResponse;
+        if (generation !== scanGenerationRef.current) return;
+
+        if (res.ok) {
+          attendanceLockedRef.current = true;
+          setStatus({
+            title: data.message ?? ATTENDANCE_RECORDED_TITLE,
+            description: data.description ?? ATTENDANCE_RECORDED_MESSAGE,
+            recordedAt: data.recordedAt ?? null,
+            variant: "success",
+          });
+          setPendingToken(null);
+          setShowVerificationDialog(false);
+          setShowTransferConfirm(false);
+          return;
+        }
+
+        if (res.status === 409 || data.code === "ATTENDANCE_ALREADY_RECORDED") {
+          attendanceLockedRef.current = true;
+          setStatus({
+            title: data.error ?? ATTENDANCE_ALREADY_RECORDED_TITLE,
+            description: data.message ?? ATTENDANCE_ALREADY_RECORDED_MESSAGE,
+            recordedAt: data.recordedAt ?? null,
+            variant: "duplicate",
+          });
+          return;
+        }
+
+        if (data.code === "QR_EXPIRED") {
+          setStatus({
+            title: data.error ?? EXPIRED_QR_TITLE,
+            description:
+              (data.message ?? EXPIRED_QR_MESSAGE) +
+              " Open the scanner again to scan the latest QR code.",
+            variant: "error",
+          });
+          return;
+        }
+
+        if (data.code === DEVICE_VERIFICATION_CODES.DEVICE_BOUND_TO_OTHER_ACCOUNT) {
+          setStatus({
+            title: DEVICE_MESSAGES.deviceBoundToOtherAccount.title,
+            description:
+              data.detail ?? data.message ?? DEVICE_MESSAGES.deviceBoundToOtherAccount.detail,
+            variant: "error",
+          });
+          setPendingToken(null);
+          setShowVerificationDialog(false);
+          setShowTransferConfirm(false);
+          return;
+        }
+
+        if (data.code === DEVICE_VERIFICATION_CODES.VERIFICATION_REQUIRED) {
+          setPendingToken(normalized);
+          setShowVerificationDialog(true);
+          setStatus({
+            title: "Attendance device verification required",
+            variant: "idle",
+          });
+          return;
+        }
+
+        if (data.code === DEVICE_VERIFICATION_CODES.ACCESS_REVOKED) {
+          setStatus({
+            title: DEVICE_MESSAGES.accessRevoked.title,
+            description: data.detail ?? data.message ?? DEVICE_MESSAGES.accessRevoked.detail,
+            variant: "error",
+          });
+          return;
+        }
+
         setStatus({
           title: data.error ?? data.message ?? "Scan failed",
           description:
             data.message && data.error && data.message !== data.error ? data.message : undefined,
           variant: "error",
         });
-        processedRef.current = false;
+      } catch (error) {
+        if (generation !== scanGenerationRef.current) return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setStatus({
+          title: "Network error",
+          description: "Please check your connection and try again.",
+          variant: "error",
+        });
+      } finally {
+        if (generation === scanGenerationRef.current) {
+          inFlightTokenRef.current = null;
+          setSubmitting(false);
+        }
       }
-    } catch {
-      setStatus({
-        title: "Network error",
-        description: "Please check your connection and try again.",
-        variant: "error",
-      });
-      processedRef.current = false;
-    } finally {
-      setSubmitting(false);
-    }
-  }, []);
+    },
+    []
+  );
+
+  submitTokenRef.current = submitToken;
 
   async function handleTransferDevice() {
     setTransferring(true);
@@ -290,7 +417,7 @@ export function QRScanner() {
       });
 
       if (pendingToken) {
-        processedRef.current = false;
+        attendanceLockedRef.current = false;
         await submitToken(pendingToken, { afterTransfer: true });
       }
     } catch {
@@ -306,35 +433,19 @@ export function QRScanner() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (token) {
-      void submitToken(token);
-      stripSensitiveUrlParams();
-    }
+    if (!token) return;
+    if (urlTokenHandledRef.current === token) return;
+    urlTokenHandledRef.current = token;
+    void submitToken(token);
+    stripSensitiveUrlParams();
   }, [searchParams, submitToken]);
 
-  async function startScanner() {
-    setScanning(true);
-    const { Html5Qrcode } = await import("html5-qrcode");
-    const scanner = new Html5Qrcode("qr-reader");
-    scannerRef.current = scanner;
-    await scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decoded) => {
-        scanner.stop().catch(() => {});
-        setScanning(false);
-        void submitToken(decoded);
-      },
-      () => {}
-    );
-  }
-
-  async function stopScanner() {
-    if (scannerRef.current) {
-      await scannerRef.current.stop().catch(() => {});
-      setScanning(false);
-    }
-  }
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      void stopScannerInstance();
+    };
+  }, [stopScannerInstance]);
 
   return (
     <>
@@ -350,7 +461,7 @@ export function QRScanner() {
               Open Camera Scanner
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => void stopScanner()}>
+            <Button variant="outline" onClick={() => void stopScannerInstance()}>
               Stop Scanner
             </Button>
           )}
@@ -369,7 +480,7 @@ export function QRScanner() {
               onClick={() => {
                 setShowVerificationDialog(false);
                 setPendingToken(null);
-                processedRef.current = false;
+                attendanceLockedRef.current = false;
                 setStatus(READY_STATUS);
               }}
             >

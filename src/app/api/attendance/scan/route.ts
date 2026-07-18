@@ -14,6 +14,8 @@ import {
   EXPIRED_QR_TITLE,
   isAttendanceSessionOpen,
 } from "@/lib/attendance/constants";
+import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
+import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEVICE_MESSAGES,
   DEVICE_VERIFICATION_CODES,
@@ -138,7 +140,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Attendance session not found" }, { status: 400 });
   }
 
-  if (!isAttendanceSessionOpen(attSession)) {
+  if (
+    !isAttendanceSessionOpen(attSession) ||
+    (await closeAttendanceSessionIfAbandoned(await createServiceClient(), attSession))
+  ) {
     return NextResponse.json(
       { error: "Attendance collection has ended for this session." },
       { status: 410 }

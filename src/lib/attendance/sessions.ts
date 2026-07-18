@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
+import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
 import type { AttendanceSession } from "@/types/database";
 
 export async function getAttendanceSessionForLecturer(
@@ -35,7 +36,11 @@ export async function getActiveAttendanceSession(
     .maybeSingle();
 
   const session = (data as AttendanceSession | null) ?? null;
-  if (!session || !isAttendanceSessionOpen(session)) return null;
+  if (!session) return null;
+
+  const closed = await closeAttendanceSessionIfAbandoned(supabase, session);
+  if (closed || !isAttendanceSessionOpen(session)) return null;
+
   return session;
 }
 

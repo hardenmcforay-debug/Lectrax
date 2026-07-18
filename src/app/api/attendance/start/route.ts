@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { buildRotatedQRToken, buildScanUrl } from "@/lib/attendance/qr-rotation";
+import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
 import { getAttendanceSessionNumber } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import {
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       .maybeSingle(),
     service
       .from("attendance_sessions")
-      .select("id")
+      .select("id, class_session_id, is_active, ended_at, session_expires_at, qr_expires_at")
       .eq("class_session_id", classSessionId)
       .eq("lecturer_id", user.id)
       .eq("is_active", true)
@@ -76,10 +77,13 @@ export async function POST(request: Request) {
   }
 
   if (existingActive) {
-    return NextResponse.json(
-      { error: "An attendance session is already active. End it before starting a new one." },
-      { status: 409 }
-    );
+    const abandoned = await closeAttendanceSessionIfAbandoned(service, existingActive);
+    if (!abandoned) {
+      return NextResponse.json(
+        { error: "An attendance session is already active. End it before starting a new one." },
+        { status: 409 }
+      );
+    }
   }
 
   const sessionExpiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
