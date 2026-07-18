@@ -11,6 +11,7 @@ import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-rec
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
+import { pwaIconUrl } from "@/lib/pwa/config";
 
 const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
 
@@ -29,14 +30,18 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
-  manifest: "/manifest.json",
+  manifest: pwaIconUrl("/manifest.json"),
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: pwaIconUrl("/favicon-32x32.png"), sizes: "32x32", type: "image/png" },
+      { url: pwaIconUrl("/favicon-16x16.png"), sizes: "16x16", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-48x48.png"), sizes: "48x48", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-192x192.png"), sizes: "192x192", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-512x512.png"), sizes: "512x512", type: "image/png" },
+      { url: pwaIconUrl("/favicon.ico"), sizes: "any" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: pwaIconUrl("/icons/apple-touch-icon.png"), sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: pwaIconUrl("/favicon-32x32.png"), type: "image/png" }],
   },
   appleWebApp: {
     capable: true,

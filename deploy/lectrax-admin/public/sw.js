@@ -1,15 +1,18 @@
-const CACHE_VERSION = "lectrax-admin-v3";
+const CACHE_VERSION = "lectrax-v8";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const STATIC_ASSETS = [
   "/offline",
   "/manifest.json",
-  "/icons/icon.svg",
+  "/brand/official-logo.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/apple-touch-icon.png",
   "/favicon.ico",
+  "/favicon-16x16.png",
+  "/favicon-32x32.png",
+  "/favicon.png",
 ];
 
 const CACHEABLE_EXTENSIONS = /\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico)$/i;
@@ -20,14 +23,22 @@ const NEVER_CACHE_PATTERNS = [
   /supabase\.co/,
   /\/auth\//,
   /\/login/,
+  /\/signup/,
   /\/forgot-password/,
   /\/reset-password/,
   /\/auth\/callback/,
+  /^\/student/,
+  /^\/lecturer/,
   /^\/admin/,
 ];
 
 function isProtectedRoute(pathname) {
-  return pathname.startsWith("/admin") || pathname.startsWith("/api/");
+  return (
+    pathname.startsWith("/lecturer") ||
+    pathname.startsWith("/student") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api/")
+  );
 }
 
 function shouldNeverCache(url) {
@@ -59,7 +70,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.startsWith("lectrax-admin-") && key !== STATIC_CACHE && key !== SHELL_CACHE)
+            .filter((key) => key.startsWith("lectrax-") && key !== STATIC_CACHE && key !== SHELL_CACHE)
             .map((key) => caches.delete(key))
         )
       )

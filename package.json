@@ -14,6 +14,7 @@
     "validate:env": "node scripts/validate-env.mjs",
     "predeploy": "npm run typecheck && npm run lint && npm run build",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "sync-icons-from-site-logo": "node scripts/sync-icons-from-site-logo.mjs",
     "export:admin": "node scripts/export-admin-app.mjs"
   },
   "dependencies": {

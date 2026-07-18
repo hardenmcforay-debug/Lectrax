@@ -1,4 +1,5 @@
 import { PWA_THEME_COLOR } from "@/lib/pwa/detect";
+import { pwaIconUrl } from "@/lib/pwa/config";
 
 const APPLE_SPLASH_SCREENS = [
   { href: "/splash/apple-splash-2048x2732.png", media: "(device-width: 1024px) and (device-height: 1366px)" },
@@ -16,10 +17,14 @@ export function PwaHeadLinks() {
   return (
     <>
       {APPLE_SPLASH_SCREENS.map(({ href, media }) => (
-        <link key={href} rel="apple-touch-startup-image" href={href} media={media} />
+        <link key={href} rel="apple-touch-startup-image" href={pwaIconUrl(href)} media={media} />
       ))}
       <meta name="msapplication-TileColor" content={PWA_THEME_COLOR} />
-      <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+      <meta name="msapplication-TileImage" content={pwaIconUrl("/icons/icon-144x144.png")} />
+      <link rel="icon" type="image/png" sizes="32x32" href={pwaIconUrl("/favicon-32x32.png")} />
+      <link rel="icon" type="image/png" sizes="16x16" href={pwaIconUrl("/favicon-16x16.png")} />
+      <link rel="shortcut icon" href={pwaIconUrl("/favicon-32x32.png")} type="image/png" />
+      <link rel="apple-touch-icon" sizes="180x180" href={pwaIconUrl("/icons/apple-touch-icon.png")} />
     </>
   );
 }

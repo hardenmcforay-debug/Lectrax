@@ -16,6 +16,7 @@ import {
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isStandaloneMode } from "@/lib/pwa/detect";
+import { pwaIconUrl } from "@/lib/pwa/config";
 import {
   EMPTY_STUDENT_NOTIFICATION_COUNTS,
   NOTIFICATION_DESTINATION,
@@ -44,8 +45,8 @@ function showBrowserNotification(title: string, body: string, type: StudentNotif
   const destination = NOTIFICATION_DESTINATION[type];
   const notification = new Notification(title, {
     body,
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
+    icon: pwaIconUrl("/icons/icon-192x192.png"),
+    badge: pwaIconUrl("/icons/icon-192x192.png"),
     tag: `lectrax-${type}`,
   });
 

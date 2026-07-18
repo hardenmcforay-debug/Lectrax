@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { GraduationCap } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useSiteLogo } from "@/components/layout/site-branding-provider";
+import { pwaIconUrl } from "@/lib/pwa/config";
+
+/** Official Lectrax mark used when no custom site logo is uploaded. */
+const DEFAULT_LECTRAX_LOGO_SRC = pwaIconUrl("/brand/official-logo.png");
 
 export function Logo({
   className,
@@ -27,8 +30,9 @@ export function Logo({
   markClassName?: string;
 }) {
   const logoUrlFromContext = useSiteLogo();
-  const logoUrl = logoUrlProp ?? logoUrlFromContext;
+  const logoUrl = logoUrlProp ?? logoUrlFromContext ?? DEFAULT_LECTRAX_LOGO_SRC;
   const isLight = variant === "light";
+  const isDefaultMark = logoUrl === DEFAULT_LECTRAX_LOGO_SRC;
 
   const iconSizeClass = cn(
     iconWithBackground
@@ -39,8 +43,14 @@ export function Logo({
     markClassName
   );
 
-  const mark = logoUrl ? (
-    <div className={cn("relative shrink-0 overflow-hidden bg-transparent", iconSizeClass)}>
+  const mark = (
+    <div
+      className={cn(
+        "relative shrink-0 overflow-hidden",
+        isDefaultMark || iconWithBackground ? "rounded-lg" : "bg-transparent",
+        iconSizeClass
+      )}
+    >
       <Image
         src={logoUrl}
         alt={`${APP_NAME} logo`}
@@ -48,19 +58,9 @@ export function Logo({
         className="object-contain object-center"
         sizes={markClassName?.includes("h-10") ? "40px" : "36px"}
         unoptimized={/\.svg(\?|$)/i.test(logoUrl)}
+        priority={isDefaultMark}
       />
     </div>
-  ) : (
-    <GraduationCap
-      className={cn(
-        iconWithBackground
-          ? isLight
-            ? "h-5 w-5 text-emerald-300"
-            : "h-5 w-5 text-slate-300"
-          : "h-8 w-8 shrink-0 text-accent",
-        iconClassName
-      )}
-    />
   );
 
   return (
@@ -72,18 +72,7 @@ export function Logo({
         className
       )}
     >
-      {iconWithBackground && !logoUrl ? (
-        <div
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-            isLight ? "bg-white/15 backdrop-blur-sm" : "bg-primary"
-          )}
-        >
-          {mark}
-        </div>
-      ) : (
-        mark
-      )}
+      {mark}
       <span className={cn("text-xl", labelClassName)}>{APP_NAME}</span>
     </Link>
   );

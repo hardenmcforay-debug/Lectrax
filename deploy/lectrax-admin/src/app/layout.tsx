@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { APP_DESCRIPTION, BRAND } from "@/lib/constants";
-import { getPwaAppName } from "@/lib/pwa/config";
+import { getPwaAppName, pwaIconUrl } from "@/lib/pwa/config";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
@@ -33,15 +33,19 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   applicationName: pwaAppName,
-  manifest: "/manifest.json",
+  manifest: pwaIconUrl("/manifest.json"),
   robots: { index: false, follow: false },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: pwaIconUrl("/favicon.ico"), sizes: "any" },
+      { url: pwaIconUrl("/favicon-16x16.png"), sizes: "16x16", type: "image/png" },
+      { url: pwaIconUrl("/favicon-32x32.png"), sizes: "32x32", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-48x48.png"), sizes: "48x48", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-192x192.png"), sizes: "192x192", type: "image/png" },
+      { url: pwaIconUrl("/icons/icon-512x512.png"), sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: pwaIconUrl("/icons/apple-touch-icon.png"), sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: pwaIconUrl("/favicon.ico") }],
   },
   appleWebApp: {
     capable: true,

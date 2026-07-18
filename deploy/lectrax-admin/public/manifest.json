@@ -1,66 +1,81 @@
 {
-  "name": "Lectrax Admin",
-  "short_name": "Lectrax Admin",
-  "description": "Lectrax platform administration",
-  "start_url": "/admin",
+  "name": "Lectrax",
+  "short_name": "Lectrax",
+  "description": "A Modern Academic Management Platform",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#0B3D91",
   "lang": "en",
-  "orientation": "any",
-  "categories": ["business", "productivity"],
+  "orientation": "portrait-primary",
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
+      "src": "/icons/icon-72x72.png?v=20260718w",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-96x96.png",
+      "src": "/icons/icon-96x96.png?v=20260718w",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-128x128.png",
+      "src": "/icons/icon-128x128.png?v=20260718w",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-144x144.png",
+      "src": "/icons/icon-144x144.png?v=20260718w",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-152x152.png",
+      "src": "/icons/icon-152x152.png?v=20260718w",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/icon-180x180.png?v=20260718w",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png?v=20260718w",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-384x384.png",
+      "src": "/icons/icon-256x256.png?v=20260718w",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384x384.png?v=20260718w",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/icon-512x512.png?v=20260718w",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-512x512.png",
+      "src": "/icons/icon-maskable-512x512.png?v=20260718w",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -68,18 +83,30 @@
   ],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Open the admin dashboard",
-      "url": "/admin",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "name": "Get Started",
+      "short_name": "Sign Up",
+      "description": "Create your Lectrax account",
+      "url": "/signup",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png?v=20260718w",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Sign In",
       "short_name": "Login",
-      "description": "Sign in to platform admin",
+      "description": "Sign in to your account",
       "url": "/login",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png?v=20260718w",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

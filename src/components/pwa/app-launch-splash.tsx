@@ -1,5 +1,6 @@
+import Image from "next/image";
 import { APP_NAME } from "@/lib/constants";
-import { Logo } from "@/components/layout/logo";
+import { pwaIconUrl } from "@/lib/pwa/config";
 
 export function AppLaunchSplash() {
   return (
@@ -13,8 +14,18 @@ export function AppLaunchSplash() {
       aria-live="polite"
       aria-busy="true"
     >
-      <Logo className="justify-center" labelClassName="text-xl font-bold" />
-      <p className="mt-6 text-sm font-medium text-primary">Loading your workspace...</p>
+      <div className="relative h-24 w-24 overflow-hidden rounded-[1.35rem] shadow-md sm:h-28 sm:w-28">
+        <Image
+          src={pwaIconUrl("/icons/icon-512x512.png")}
+          alt={`${APP_NAME} logo`}
+          fill
+          priority
+          className="object-contain"
+          sizes="112px"
+        />
+      </div>
+      <p className="mt-5 text-2xl font-bold text-primary">{APP_NAME}</p>
+      <p className="mt-3 text-sm font-medium text-primary">Loading your workspace...</p>
       <p className="mt-2 text-xs text-muted-foreground">Restoring your {APP_NAME} session</p>
     </div>
   );

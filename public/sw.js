@@ -1,15 +1,18 @@
-const CACHE_VERSION = "lectrax-v6";
+const CACHE_VERSION = "lectrax-v8";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const STATIC_ASSETS = [
   "/offline",
   "/manifest.json",
-  "/icons/icon.svg",
+  "/brand/official-logo.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/apple-touch-icon.png",
   "/favicon.ico",
+  "/favicon-16x16.png",
+  "/favicon-32x32.png",
+  "/favicon.png",
 ];
 
 const CACHEABLE_EXTENSIONS = /\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico)$/i;
