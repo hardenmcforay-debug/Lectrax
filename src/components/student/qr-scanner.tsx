@@ -182,7 +182,8 @@ export function QRScanner() {
       if (state === 2 || state === undefined) {
         await scanner.stop().catch(() => {});
       }
-      await scanner.clear().catch(() => {});
+      // clear() is synchronous in html5-qrcode
+      scanner.clear();
     } catch {
       // Best-effort cleanup
     } finally {
