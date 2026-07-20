@@ -14,7 +14,6 @@ import {
 import {
   emailField,
   FIELD_LIMITS,
-  normalizedRequiredPhoneField,
   optionalEmailField,
   optionalPhoneField,
   optionalSanitizedString,

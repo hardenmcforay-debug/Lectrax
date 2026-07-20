@@ -89,6 +89,8 @@ const ADMIN_PRUNE_PATHS = [
   "src/lib/attendance/qr-rotation.ts",
   "src/lib/attendance/present-records.ts",
   "src/lib/attendance/sessions.ts",
+  "src/lib/attendance/close-session.ts",
+  "src/lib/attendance/end-on-unload.ts",
 ];
 
 const ADMIN_TEMPLATES = {
