@@ -331,6 +331,7 @@ export async function refreshSubscriptionLifecycle(
     sub.gracePeriodEndDate &&
     new Date(sub.gracePeriodEndDate) <= now
   ) {
+    // Grace finished without renewal → premium + expired (still on Expired Plans card).
     updates.subscription_status = "expired";
 
     void logAudit({
@@ -582,6 +583,8 @@ export async function adminActivatePremium(params: {
   lecturerId: string;
   billingPlan: BillingPlan;
   actorId: string;
+  /** When set, overrides BILLING_PLANS[billingPlan].days (e.g. admin grant duration). */
+  durationDays?: number;
   service?: Awaited<ReturnType<typeof createServiceClient>>;
 }): Promise<LecturerSubscription> {
   const supabase = params.service ?? (await createServiceClient());
@@ -592,7 +595,8 @@ export async function adminActivatePremium(params: {
   }
 
   const now = new Date();
-  const endDate = getBillingExpiryDate(params.billingPlan, now);
+  const durationDays = params.durationDays ?? BILLING_PLANS[params.billingPlan].days;
+  const endDate = addDays(now, durationDays);
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
@@ -704,6 +708,109 @@ export async function adminExtendPremium(params: {
  * Repairs lecturers who have premium on their profile but no matching `subscriptions` row
  * (e.g. from earlier activations that updated the profile before history insert failed).
  */
+async function backfillSubscriptionForLecturer(
+  lecturer: {
+    id: string;
+    subscription_plan: SubscriptionTier;
+    subscription_status: SubscriptionLifecycleStatus;
+    subscription_start_date: string | null;
+    subscription_end_date: string | null;
+  },
+  supabase: ServiceClient
+): Promise<boolean> {
+  if (!lecturer.subscription_end_date) return false;
+
+  const { data: existingHistory } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("lecturer_id", lecturer.id)
+    .eq("expires_at", lecturer.subscription_end_date)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingHistory) return false;
+
+  const { data: payment } = await supabase
+    .from("payments")
+    .select("id, billing_plan, subscription_start_date, subscription_end_date, paid_at, subscription_id")
+    .eq("lecturer_id", lecturer.id)
+    .eq("status", "completed")
+    .order("paid_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const billingPlan = (payment?.billing_plan ?? "annual") as BillingPlan;
+  const historyPlan = payment ? billingPlanToSubscriptionPlan(billingPlan) : "free";
+  const startsAt =
+    lecturer.subscription_start_date ??
+    payment?.subscription_start_date ??
+    payment?.paid_at ??
+    new Date().toISOString();
+
+  const { data: inserted, error } = await supabase
+    .from("subscriptions")
+    .insert({
+      lecturer_id: lecturer.id,
+      plan: historyPlan,
+      status: mapLifecycleStatusToHistoryStatus(
+        lecturer.subscription_status as SubscriptionLifecycleStatus
+      ),
+      starts_at: startsAt,
+      expires_at: lecturer.subscription_end_date,
+      is_free_override: !payment,
+      granted_by: null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    console.error("subscription_backfill_insert_failed", lecturer.id, error?.message);
+    return false;
+  }
+
+  if (payment && !payment.subscription_id) {
+    await supabase
+      .from("payments")
+      .update({ subscription_id: inserted.id })
+      .eq("id", payment.id);
+  }
+
+  await recordSubscriptionNotification({
+    lecturerId: lecturer.id,
+    subscriptionEndDate: lecturer.subscription_end_date,
+    daysBeforeExpiry: 0,
+    message: payment
+      ? `Your Lectrax Premium subscription record was restored. Access continues through ${new Date(lecturer.subscription_end_date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}.`
+      : `Your Lectrax Premium subscription record was restored.`,
+    service: supabase,
+  });
+
+  return true;
+}
+
+/** Repairs missing subscription history for a single lecturer (self-service scope). */
+export async function backfillMissingSubscriptionRecordsForLecturer(
+  lecturerId: string,
+  service?: ServiceClient
+): Promise<number> {
+  const supabase = service ?? (await createServiceClient());
+
+  const { data: lecturer } = await supabase
+    .from("profiles")
+    .select(
+      "id, subscription_plan, subscription_status, subscription_start_date, subscription_end_date"
+    )
+    .eq("id", lecturerId)
+    .eq("role", "lecturer")
+    .eq("subscription_plan", "premium")
+    .maybeSingle();
+
+  if (!lecturer) return 0;
+
+  const created = await backfillSubscriptionForLecturer(lecturer, supabase);
+  return created ? 1 : 0;
+}
+
 export async function backfillMissingSubscriptionRecords(
   service?: ServiceClient
 ): Promise<number> {
@@ -720,74 +827,8 @@ export async function backfillMissingSubscriptionRecords(
   let created = 0;
 
   for (const lecturer of lecturers ?? []) {
-    if (!lecturer.subscription_end_date) continue;
-
-    const { data: existingHistory } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("lecturer_id", lecturer.id)
-      .eq("expires_at", lecturer.subscription_end_date)
-      .limit(1)
-      .maybeSingle();
-
-    if (existingHistory) continue;
-
-    const { data: payment } = await supabase
-      .from("payments")
-      .select("id, billing_plan, subscription_start_date, subscription_end_date, paid_at, subscription_id")
-      .eq("lecturer_id", lecturer.id)
-      .eq("status", "completed")
-      .order("paid_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const billingPlan = (payment?.billing_plan ?? "annual") as BillingPlan;
-    const historyPlan = payment ? billingPlanToSubscriptionPlan(billingPlan) : "free";
-    const startsAt =
-      lecturer.subscription_start_date ??
-      payment?.subscription_start_date ??
-      payment?.paid_at ??
-      new Date().toISOString();
-
-    const { data: inserted, error } = await supabase
-      .from("subscriptions")
-      .insert({
-        lecturer_id: lecturer.id,
-        plan: historyPlan,
-        status: mapLifecycleStatusToHistoryStatus(
-          lecturer.subscription_status as SubscriptionLifecycleStatus
-        ),
-        starts_at: startsAt,
-        expires_at: lecturer.subscription_end_date,
-        is_free_override: !payment,
-        granted_by: null,
-      })
-      .select("id")
-      .single();
-
-    if (error || !inserted) {
-      console.error("subscription_backfill_insert_failed", lecturer.id, error?.message);
-      continue;
-    }
-
-    if (payment && !payment.subscription_id) {
-      await supabase
-        .from("payments")
-        .update({ subscription_id: inserted.id })
-        .eq("id", payment.id);
-    }
-
-    await recordSubscriptionNotification({
-      lecturerId: lecturer.id,
-      subscriptionEndDate: lecturer.subscription_end_date,
-      daysBeforeExpiry: 0,
-      message: payment
-        ? `Your Lectrax Premium subscription record was restored. Access continues through ${new Date(lecturer.subscription_end_date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}.`
-        : `Your Lectrax Premium subscription record was restored.`,
-      service: supabase,
-    });
-
-    created += 1;
+    const didCreate = await backfillSubscriptionForLecturer(lecturer, supabase);
+    if (didCreate) created += 1;
   }
 
   return created;

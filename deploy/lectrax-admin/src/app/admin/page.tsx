@@ -65,8 +65,8 @@ export default async function AdminDashboard() {
 
       <div className="admin-stat-grid admin-stat-grid--cols-3 mt-4">
         <StatCard title="Class Sessions" value={stats.totalSessions} icon={BookOpen} subtitle="Platform-wide" />
-        <StatCard title="Free Plans" value={stats.freeSubscriptions} icon={CreditCard} subtitle="Manual overrides" />
-        <StatCard title="Expired Plans" value={stats.expiredSubscriptions} icon={Activity} subtitle="Needs renewal" />
+        <StatCard title="Free Plans" value={stats.freeSubscriptions} icon={CreditCard} subtitle="Lecturers on free tier" />
+        <StatCard title="Expired Plans" value={stats.expiredSubscriptions} icon={Activity} subtitle="Grace or expired only" />
       </div>
 
       <div className="portal-section grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">

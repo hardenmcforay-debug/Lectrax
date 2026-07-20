@@ -5,6 +5,7 @@ import { Crown, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionDisplay } from "@/lib/subscription/types";
+import { BILLING_PLANS } from "@/lib/subscription/constants";
 import { formatDate, cn } from "@/lib/utils";
 
 /** Uses only display fields so server HTML matches client hydration (no Date.now()). */
@@ -21,7 +22,10 @@ function getProgressPercent(display: SubscriptionDisplay): number {
     }
   }
   if (daysRemaining !== null) {
-    const percent = Math.min(100, Math.max(8, (daysRemaining / 365) * 100));
+    const percent = Math.min(
+      100,
+      Math.max(8, (daysRemaining / BILLING_PLANS.annual.days) * 100)
+    );
     return Math.round(percent * 10) / 10;
   }
   return 65;

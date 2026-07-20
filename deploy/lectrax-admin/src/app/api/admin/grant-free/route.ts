@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       lecturerId,
       billingPlan,
       actorId: auth.userId,
+      durationDays: days,
     });
 
     await logPlatformAdminAudit({

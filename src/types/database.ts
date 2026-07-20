@@ -2,7 +2,7 @@ export type UserRole = "platform_admin" | "lecturer" | "student";
 export type SemesterType = "first_semester" | "second_semester" | "full_year";
 export type SubscriptionStatus = "active" | "expired" | "cancelled" | "free" | "grace_period";
 export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
-export type SubscriptionPlan = "1_month" | "3_months" | "6_months" | "12_months" | "free";
+export type SubscriptionPlan = "1_month" | "3_months" | "6_months" | "8_months" | "free";
 export type BillingPlan = "monthly" | "semester" | "annual";
 export type SubscriptionTier = "free" | "premium";
 export type SubscriptionLifecycleStatus = "active" | "grace_period" | "expired";
@@ -337,13 +337,13 @@ export interface StudentTableRow {
 export const BILLING_PLAN_PRICES: Record<BillingPlan, number> = {
   monthly: 5,
   semester: 20,
-  annual: 50,
+  annual: 35,
 };
 
 export const BILLING_PLAN_DURATION_DAYS: Record<BillingPlan, number> = {
   monthly: 30,
   semester: 120,
-  annual: 365,
+  annual: 240,
 };
 
 /** @deprecated Use BILLING_PLAN_PRICES */
@@ -351,7 +351,7 @@ export const PLAN_PRICES: Record<Exclude<SubscriptionPlan, "free">, number> = {
   "1_month": 5,
   "3_months": 15,
   "6_months": 30,
-  "12_months": 60,
+  "8_months": 60,
 };
 
 /** @deprecated Use BILLING_PLAN_DURATION_DAYS */
@@ -359,7 +359,7 @@ export const PLAN_DURATION_DAYS: Record<Exclude<SubscriptionPlan, "free">, numbe
   "1_month": 30,
   "3_months": 90,
   "6_months": 180,
-  "12_months": 365,
+  "8_months": 240,
 };
 
 export const SEMESTER_LABELS: Record<SemesterType, string> = {

@@ -1,19 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
-import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
+import { createClient } from "@/lib/supabase/client";
 import { ADMIN_NAV_ITEMS, getActiveAdminNavHref } from "@/lib/admin/navigation";
 
 export function DashboardSidebar({ className }: { role?: string; className?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const activeHref = getActiveAdminNavHref(pathname);
 
   async function handleLogout() {
-    await signOutAndClearClientStorage();
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   }
 
   return (

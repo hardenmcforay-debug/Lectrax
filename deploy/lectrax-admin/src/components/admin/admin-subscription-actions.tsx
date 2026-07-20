@@ -93,7 +93,7 @@ export function AdminSubscriptionActions({
         <SelectContent>
           <SelectItem value="monthly">Monthly</SelectItem>
           <SelectItem value="semester">Semester</SelectItem>
-          <SelectItem value="annual">Annual</SelectItem>
+          <SelectItem value="annual">8 Months</SelectItem>
         </SelectContent>
       </Select>
       <Button
@@ -117,7 +117,7 @@ export function AdminSubscriptionActions({
           <SelectItem value="30">+30d</SelectItem>
           <SelectItem value="90">+90d</SelectItem>
           <SelectItem value="120">+120d</SelectItem>
-          <SelectItem value="365">+365d</SelectItem>
+          <SelectItem value="240">+240d</SelectItem>
         </SelectContent>
       </Select>
       <Button size="sm" variant="outline" disabled={loading !== null} onClick={() => void extend()}>

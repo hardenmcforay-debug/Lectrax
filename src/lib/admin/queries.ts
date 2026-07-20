@@ -1,6 +1,52 @@
 import { createClient } from "@/lib/supabase/server";
 import { PLATFORM_TRANSACTION_AUDIT_ACTIONS } from "@/lib/admin/platform-transaction-audit";
 
+type LecturerPlanRow = {
+  subscription_plan: string | null;
+  subscription_status: string | null;
+  subscription_end_date: string | null;
+};
+
+/** Classify a lecturer for admin dashboard cards. Mutually exclusive buckets. */
+export function classifyLecturerSubscription(
+  lecturer: LecturerPlanRow,
+  now = new Date()
+): "free" | "active" | "expired" {
+  if (lecturer.subscription_plan === "free") return "free";
+  if (lecturer.subscription_plan !== "premium") return "free";
+
+  const status = lecturer.subscription_status;
+  const endDate = lecturer.subscription_end_date
+    ? new Date(lecturer.subscription_end_date)
+    : null;
+  const periodStillActive = !endDate || endDate > now;
+
+  // Active premium with a current (or open-ended) period — never Expired Plans.
+  if (status === "active" && periodStillActive) return "active";
+
+  // Paid period ended: grace, fully expired, or stale active past end date.
+  if (status === "grace_period" || status === "expired" || status === "active") {
+    return "expired";
+  }
+
+  return "free";
+}
+
+function countLecturerPlans(lecturers: LecturerPlanRow[]) {
+  let activeSubscriptions = 0;
+  let freeSubscriptions = 0;
+  let expiredSubscriptions = 0;
+
+  for (const lecturer of lecturers) {
+    const bucket = classifyLecturerSubscription(lecturer);
+    if (bucket === "active") activeSubscriptions += 1;
+    else if (bucket === "expired") expiredSubscriptions += 1;
+    else freeSubscriptions += 1;
+  }
+
+  return { activeSubscriptions, freeSubscriptions, expiredSubscriptions };
+}
+
 export async function getAdminOverview() {
   const supabase = await createClient();
 
@@ -9,9 +55,7 @@ export async function getAdminOverview() {
     studentsRes,
     sessionsRes,
     paymentsRes,
-    activeSubsRes,
-    freeSubsRes,
-    expiredSubsRes,
+    lecturerPlansRes,
     recentLogsRes,
     recentPaymentsRes,
   ] = await Promise.all([
@@ -23,12 +67,9 @@ export async function getAdminOverview() {
       .select("amount, status")
       .in("status", ["completed", "pending"]),
     supabase
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["active", "free"])
-      .gt("expires_at", new Date().toISOString()),
-    supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("is_free_override", true),
-    supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "expired"),
+      .from("profiles")
+      .select("subscription_plan, subscription_status, subscription_end_date")
+      .eq("role", "lecturer"),
     supabase
       .from("audit_logs")
       .select("id, action, created_at, entity_type, profiles(full_name)")
@@ -50,15 +91,17 @@ export async function getAdminOverview() {
     .filter((p) => p.status === "pending")
     .reduce((s, p) => s + Number(p.amount), 0);
 
+  const planCounts = countLecturerPlans((lecturerPlansRes.data ?? []) as LecturerPlanRow[]);
+
   return {
     totalLecturers: lecturersRes.count ?? 0,
     totalStudents: studentsRes.count ?? 0,
     totalSessions: sessionsRes.count ?? 0,
     revenue,
     pendingRevenue,
-    activeSubscriptions: activeSubsRes.count ?? 0,
-    freeSubscriptions: freeSubsRes.count ?? 0,
-    expiredSubscriptions: expiredSubsRes.count ?? 0,
+    activeSubscriptions: planCounts.activeSubscriptions,
+    freeSubscriptions: planCounts.freeSubscriptions,
+    expiredSubscriptions: planCounts.expiredSubscriptions,
     recentLogs: recentLogsRes.data ?? [],
     recentPayments: recentPaymentsRes.data ?? [],
   };
@@ -78,15 +121,16 @@ export type AdminAnalyticsData = {
 export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
   const supabase = await createClient();
 
-  const [lecturers, students, sessions, paymentTotals, active, expired, free, pending] =
+  const [lecturers, students, sessions, paymentTotals, lecturerPlansRes, pending] =
     await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "lecturer"),
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student"),
       supabase.from("class_sessions").select("id", { count: "exact", head: true }),
       supabase.rpc("admin_completed_payment_totals"),
-      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "expired"),
-      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "free"),
+      supabase
+        .from("profiles")
+        .select("subscription_plan, subscription_status, subscription_end_date")
+        .eq("role", "lecturer"),
       supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
     ]);
 
@@ -101,6 +145,8 @@ export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
     revenue: Number(rev),
   }));
 
+  const planCounts = countLecturerPlans((lecturerPlansRes.data ?? []) as LecturerPlanRow[]);
+
   return {
     totals: {
       lecturers: lecturers.count ?? 0,
@@ -109,9 +155,9 @@ export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
       sessions: sessions.count ?? 0,
     },
     subscriptionData: [
-      { name: "Active", value: active.count ?? 0 },
-      { name: "Free", value: free.count ?? 0 },
-      { name: "Expired", value: expired.count ?? 0 },
+      { name: "Active", value: planCounts.activeSubscriptions },
+      { name: "Free", value: planCounts.freeSubscriptions },
+      { name: "Expired", value: planCounts.expiredSubscriptions },
       { name: "Pending pay", value: pending.count ?? 0 },
     ],
     revenueByPlan,

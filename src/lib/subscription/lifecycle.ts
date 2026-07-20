@@ -331,6 +331,7 @@ export async function refreshSubscriptionLifecycle(
     sub.gracePeriodEndDate &&
     new Date(sub.gracePeriodEndDate) <= now
   ) {
+    // Grace finished without renewal → premium + expired (still on Expired Plans card).
     updates.subscription_status = "expired";
 
     void logAudit({
@@ -582,6 +583,8 @@ export async function adminActivatePremium(params: {
   lecturerId: string;
   billingPlan: BillingPlan;
   actorId: string;
+  /** When set, overrides BILLING_PLANS[billingPlan].days (e.g. admin grant duration). */
+  durationDays?: number;
   service?: Awaited<ReturnType<typeof createServiceClient>>;
 }): Promise<LecturerSubscription> {
   const supabase = params.service ?? (await createServiceClient());
@@ -592,7 +595,8 @@ export async function adminActivatePremium(params: {
   }
 
   const now = new Date();
-  const endDate = getBillingExpiryDate(params.billingPlan, now);
+  const durationDays = params.durationDays ?? BILLING_PLANS[params.billingPlan].days;
+  const endDate = addDays(now, durationDays);
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")

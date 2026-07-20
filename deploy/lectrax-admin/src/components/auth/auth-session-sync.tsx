@@ -24,10 +24,15 @@ export function AuthSessionSync() {
         // Confirm the session is actually gone — spurious SIGNED_OUT can fire after
         // cross-site returns (e.g. payment gateway) when a transient auth fetch fails.
         void (async () => {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session) return;
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session) return;
+          } catch {
+            // Network failure while confirming — do not force logout.
+            return;
+          }
 
           clearClientStorageAfterAuthReset();
           if (isProtectedPortalPath(window.location.pathname)) {

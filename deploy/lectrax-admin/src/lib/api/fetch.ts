@@ -2,6 +2,7 @@ import {
   classifyApiResponse,
   classifyFetchFailure,
   createPlatformError,
+  isAbortError,
   sanitizeErrorMessage,
 } from "@/lib/errors/classify";
 import { logPlatformError } from "@/lib/errors/logger";
@@ -36,7 +37,11 @@ async function fetchWithTimeout(
   timeoutMs: number
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   const method = (init.method ?? "GET").toUpperCase();
   const url =
@@ -64,6 +69,11 @@ async function fetchWithTimeout(
       headers,
       signal: controller.signal,
     });
+  } catch (error) {
+    if (isAbortError(error) && timedOut) {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw error;
   } finally {
     window.clearTimeout(timeoutId);
   }

@@ -7,7 +7,7 @@ export type PaymentCurrency = "SLE" | "USD";
 export const DEFAULT_SLE_CHARGE_AMOUNTS: Record<BillingPlan, number> = {
   monthly: 120,
   semester: 480,
-  annual: 1200,
+  annual: 853,
 };
 
 /** Monime expects minor units (e.g. cents: 120 SLE → 12000). */

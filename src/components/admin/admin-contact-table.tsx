@@ -42,7 +42,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
       (inquiry) =>
         inquiry.email.toLowerCase().includes(search) ||
         inquiry.full_name.toLowerCase().includes(search) ||
-        inquiry.subject.toLowerCase().includes(search)
+        inquiry.message.toLowerCase().includes(search)
     );
   }, [query, inquiries]);
 
@@ -95,7 +95,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
           type="search"
           value={query}
           onChange={(event) => setQuery(sanitizeSearchQuery(event.target.value))}
-          placeholder="Search by name, email, or subject"
+          placeholder="Search by name, email, or message"
           className="pl-9"
           aria-label="Search contact inquiries"
         />
@@ -106,7 +106,6 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
           <TableHeader>
             <TableRow>
               <TableHead>From</TableHead>
-              <TableHead>Subject</TableHead>
               <TableHead>Message</TableHead>
               <TableHead>Submitted</TableHead>
               <TableHead>Status</TableHead>
@@ -116,7 +115,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
           <TableBody>
             {filteredInquiries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   No contact messages found.
                 </TableCell>
               </TableRow>
@@ -129,8 +128,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
                       <p className="text-xs text-muted-foreground">{inquiry.email}</p>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-[180px] truncate">{inquiry.subject}</TableCell>
-                  <TableCell className="max-w-[240px] truncate text-muted-foreground">
+                  <TableCell className="max-w-[320px] whitespace-pre-wrap text-sm text-slate-700">
                     {inquiry.message}
                   </TableCell>
                   <TableCell>{formatDate(inquiry.created_at)}</TableCell>

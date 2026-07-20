@@ -107,20 +107,20 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
               {FEATURE_HIGHLIGHTS.map((item) => {
                 const Icon = item.icon;
                 return (
-                <motion.div
-                  key={item.title}
-                  className="hero-feature-card group min-w-0 rounded-lg p-2.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
-                  whileHover={reducedMotion ? undefined : { y: -4 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
-                    <Icon className="h-3.5 w-3.5 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                  </div>
-                  <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
-                    {item.title}
-                  </p>
-                </motion.div>
-              );
+                  <motion.div
+                    key={item.title}
+                    className="hero-feature-card group min-w-0 rounded-lg p-2.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
+                    whileHover={reducedMotion ? undefined : { y: -4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
+                      <Icon className="h-3.5 w-3.5 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
+                    </div>
+                    <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
+                      {item.title}
+                    </p>
+                  </motion.div>
+                );
               })}
             </motion.div>
 

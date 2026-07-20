@@ -1,99 +1,53 @@
 import Link from "next/link";
 
-import { Check } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-
 import { Badge } from "@/components/ui/badge";
-
 import {
-
   LandingReveal,
-
   LandingStagger,
-
   LandingStaggerItem,
-
 } from "@/components/landing/landing-motion";
-
+import { PricingCheckLogo } from "@/components/landing/landing-pricing-logos";
 import { BILLING_PLANS } from "@/lib/subscription/constants";
-
 import { cn } from "@/lib/utils";
 
-
-
 const freeFeatures = [
-
   "2 Active Class Sessions",
-
   "50 Students Per Session",
-
   "Attendance Tracking",
-
   "Manual Assignment Grading",
-
   "Test Records",
-
   "CA Calculation",
-
   "Export Features",
-
 ];
-
-
 
 const standardFeatures = [
-
   "Unlimited Students",
-
   "Unlimited Sessions",
-
+  "Two tests & assignments",
   "Assignment Submissions",
-
   "Analytics Dashboard",
-
   "Audit Logs",
-
   "Premium Features",
-
 ];
-
-
 
 const billingOptions: Array<{
-
   id: keyof typeof BILLING_PLANS;
-
   price: number;
-
   days: number;
-
   label: string;
-
   description: string;
-
   recommended?: boolean;
-
 }> = [
-
   { id: "monthly", ...BILLING_PLANS.monthly },
-
   { id: "semester", ...BILLING_PLANS.semester, recommended: true },
-
   { id: "annual", ...BILLING_PLANS.annual },
-
 ];
 
-
-
 export function LandingPricing() {
-
   return (
-
     <section id="pricing" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
           <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
             Simple and Transparent Pricing
@@ -102,8 +56,6 @@ export function LandingPricing() {
             Start free. Upgrade when your institution needs more capacity and premium capabilities.
           </p>
         </LandingReveal>
-
-
 
         <LandingStagger className="mt-10 grid gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           <LandingStaggerItem>
@@ -116,9 +68,7 @@ export function LandingPricing() {
               <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
-                    <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-accent/10 sm:h-5 sm:w-5">
-                      <Check className="h-2.5 w-2.5 text-accent sm:h-3 sm:w-3" aria-hidden />
-                    </div>
+                    <PricingCheckLogo className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
                     <span className="text-pretty leading-snug">{f}</span>
                   </li>
                 ))}
@@ -141,9 +91,7 @@ export function LandingPricing() {
               <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {standardFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
-                    <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-accent/10 sm:h-5 sm:w-5">
-                      <Check className="h-2.5 w-2.5 text-accent sm:h-3 sm:w-3" aria-hidden />
-                    </div>
+                    <PricingCheckLogo className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
                     <span className="text-pretty leading-snug">{f}</span>
                   </li>
                 ))}
@@ -185,11 +133,6 @@ export function LandingPricing() {
           ))}
         </LandingStagger>
       </div>
-
     </section>
-
   );
-
 }
-
-

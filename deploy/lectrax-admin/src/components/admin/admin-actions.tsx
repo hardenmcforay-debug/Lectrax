@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 
 export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
-  const [days, setDays] = useState("365");
+  const [days, setDays] = useState("240");
   const [loading, setLoading] = useState(false);
 
   async function grantFree() {
@@ -36,9 +36,9 @@ export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="30">30 days</SelectItem>
-          <SelectItem value="90">90 days</SelectItem>
+          <SelectItem value="120">4 months</SelectItem>
           <SelectItem value="180">6 months</SelectItem>
-          <SelectItem value="365">1 year</SelectItem>
+          <SelectItem value="240">8 months</SelectItem>
         </SelectContent>
       </Select>
       <Button size="sm" variant="accent" disabled={loading} onClick={grantFree}>
@@ -107,7 +107,7 @@ export function AdminExtendSubscriptionButton({ subscriptionId }: { subscription
           <SelectItem value="30">+30d</SelectItem>
           <SelectItem value="90">+90d</SelectItem>
           <SelectItem value="180">+180d</SelectItem>
-          <SelectItem value="365">+365d</SelectItem>
+          <SelectItem value="240">+240d</SelectItem>
         </SelectContent>
       </Select>
       <Button size="sm" variant="outline" disabled={loading} onClick={extend}>

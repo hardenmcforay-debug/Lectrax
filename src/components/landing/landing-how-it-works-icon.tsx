@@ -1,26 +1,16 @@
 "use client";
 
 import { motion, useReducedMotion, type Transition } from "framer-motion";
-import { BarChart3, BookOpen, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  howItWorksLogos,
+  type HowItWorksIconName,
+  HOW_IT_WORKS_ICON_NAMES,
+} from "@/components/landing/landing-how-it-works-logos";
+
+export { HOW_IT_WORKS_ICON_NAMES, type HowItWorksIconName };
 
 const ease = [0.45, 0, 0.55, 1] as const;
-
-export const HOW_IT_WORKS_ICON_NAMES = [
-  "user-plus",
-  "book-open",
-  "users",
-  "bar-chart-3",
-] as const;
-
-export type HowItWorksIconName = (typeof HOW_IT_WORKS_ICON_NAMES)[number];
-
-const icons: Record<HowItWorksIconName, LucideIcon> = {
-  "user-plus": UserPlus,
-  "book-open": BookOpen,
-  users: Users,
-  "bar-chart-3": BarChart3,
-};
 
 const iconAnimations: Record<
   string,
@@ -63,22 +53,19 @@ export function LandingHowItWorksIcon({
   const reducedMotion = useReducedMotion();
   const motionConfig = iconAnimations[step] ?? iconAnimations["01"];
   const isSmall = size === "sm";
-  const Icon = icons[iconName];
+  const Logo = howItWorksLogos[iconName];
 
   return (
     <motion.div
       className={cn(
-        "landing-how-icon-shell flex shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm",
-        isSmall ? "h-10 w-10 sm:h-11 sm:w-11" : "h-16 w-16 rounded-2xl shadow-md",
+        "landing-how-icon-shell flex shrink-0 items-center justify-center rounded-full",
+        isSmall ? "h-8 w-8 sm:h-9 sm:w-9" : "h-12 w-12 sm:h-14 sm:w-14",
         className
       )}
       animate={reducedMotion ? undefined : motionConfig.animate}
       transition={reducedMotion ? undefined : motionConfig.transition}
     >
-      <Icon
-        className={cn("text-white", isSmall ? "h-5 w-5" : "h-7 w-7")}
-        aria-hidden
-      />
+      <Logo className={cn("h-full w-full", isSmall ? "drop-shadow-sm" : "drop-shadow-md")} />
     </motion.div>
   );
 }

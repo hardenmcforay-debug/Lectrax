@@ -5,7 +5,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, FileText } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { partnershipInquirySchema, type PartnershipInquiryInput } from "@/lib/validations";
 import { PARTNERSHIP_PACKAGES, PARTNERSHIP_SUCCESS_MESSAGE } from "@/lib/partnerships/constants";
-import { cn } from "@/lib/utils";
+import { UniversityPartnershipsLogo } from "@/components/contact/university-partnerships-logo";
 
 const formInputClass =
   "h-11 rounded-xl border-slate-200 bg-white px-4 text-sm transition-all placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
@@ -102,8 +102,8 @@ export function PartnershipInquiryForm({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="mb-6 flex items-center gap-2">
-        <FileText className="h-5 w-5 text-primary" aria-hidden />
+      <div className="mb-6 flex items-center gap-3">
+        <UniversityPartnershipsLogo className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
         <h2 className="text-lg font-semibold text-slate-900">University Inquiry Form</h2>
       </div>
 
@@ -235,19 +235,6 @@ export function PartnershipInquiryForm({
             {errors.selectedPackage && (
               <p className="text-sm text-destructive">{errors.selectedPackage.message}</p>
             )}
-          </div>
-
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="additionalNotes" className={formLabelClass}>
-              Additional Notes
-            </Label>
-            <textarea
-              id="additionalNotes"
-              rows={4}
-              placeholder="Tell us about your department, timeline, or onboarding needs..."
-              className={cn(formInputClass, "min-h-[110px] resize-y py-3 leading-relaxed")}
-              {...register("additionalNotes")}
-            />
           </div>
         </div>
 

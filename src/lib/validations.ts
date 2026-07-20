@@ -256,15 +256,10 @@ export const contactInquirySchema = z.object({
     minMessage: "Name is required",
   }),
   email: emailField,
-  subject: sanitizedRequiredString({
-    min: 3,
-    max: FIELD_LIMITS.SUBJECT,
-    minMessage: "Subject is required",
-  }),
   message: sanitizedRequiredString({
-    min: 10,
+    min: 3,
     max: FIELD_LIMITS.MESSAGE,
-    minMessage: "Message must be at least 10 characters",
+    minMessage: "Message is required",
   }),
 });
 
@@ -307,7 +302,7 @@ export const adminToggleLecturerSchema = z.object({
 
 export const adminGrantFreeSchema = z.object({
   lecturerId: z.string().uuid("Invalid lecturer ID"),
-  days: z.coerce.number().int().min(1).max(3650).default(365),
+  days: z.coerce.number().int().min(1).max(3650).default(240),
 });
 
 export const adminExtendSubscriptionSchema = z

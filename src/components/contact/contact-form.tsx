@@ -5,16 +5,17 @@ import { appFetch } from "@/lib/api/client-fetch";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, MessageSquare } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MessageLogo } from "@/components/contact/message-logo";
 import { contactInquirySchema, type ContactInquiryInput } from "@/lib/validations";
 import { CONTACT_SUCCESS_MESSAGE } from "@/lib/contact/constants";
 import { cn } from "@/lib/utils";
 
 const formInputClass =
-  "h-11 rounded-xl border-slate-200 bg-white px-4 text-sm transition-all placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm transition-all placeholder:text-slate-400 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
 
 const formLabelClass = "text-sm font-medium text-slate-700";
 
@@ -62,8 +63,8 @@ export function ContactForm() {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="mb-6 flex items-center gap-2">
-        <MessageSquare className="h-5 w-5 text-accent" aria-hidden />
+      <div className="mb-6 flex items-center gap-3">
+        <MessageLogo className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
         <h2 className="text-lg font-semibold text-slate-900">Send us a message</h2>
       </div>
 
@@ -101,27 +102,15 @@ export function ContactForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="subject" className={formLabelClass}>
-            Subject
-          </Label>
-          <Input
-            id="subject"
-            placeholder="How can we help?"
-            className={formInputClass}
-            {...register("subject")}
-          />
-          {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="message" className={formLabelClass}>
-            Message
-          </Label>
           <textarea
             id="message"
             rows={5}
-            placeholder="Tell us more about your question or request..."
-            className={cn(formInputClass, "min-h-[140px] resize-y py-3 leading-relaxed")}
+            placeholder="Message"
+            aria-label="Message"
+            className={cn(
+              formInputClass,
+              "h-auto min-h-[140px] resize-none py-3 leading-relaxed"
+            )}
             {...register("message")}
           />
           {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}

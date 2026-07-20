@@ -20,6 +20,8 @@ export async function POST(request: Request) {
   }
 
   const data = parsed.data;
+  const message = data.message.trim();
+  const subject = message.length > 120 ? `${message.slice(0, 117)}...` : message;
   const service = await createServiceClient();
 
   const { data: inquiry, error } = await service
@@ -27,11 +29,11 @@ export async function POST(request: Request) {
     .insert({
       full_name: data.fullName,
       email: data.email,
-      subject: data.subject,
-      message: data.message,
+      subject,
+      message,
       status: "new",
     })
-    .select("id, full_name, email, subject")
+    .select("id, full_name, email, subject, message")
     .single();
 
   if (error || !inquiry) {
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
     type: "contact_inquiry",
     reference_id: inquiry.id,
     title: "New contact message",
-    message: `${inquiry.full_name} — ${inquiry.subject}`,
+    message: `${inquiry.full_name} — ${inquiry.message}`,
   });
 
   if (notificationError) {
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
     entity_id: inquiry.id,
     metadata: {
       email: inquiry.email,
-      subject: inquiry.subject,
+      message: inquiry.message,
     },
   });
 
