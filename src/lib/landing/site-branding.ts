@@ -1,5 +1,6 @@
 import { createPublicReadClient } from "@/lib/supabase/server";
 import { LANDING_FEATURE_CARDS } from "@/lib/landing/feature-cards";
+import { PRODUCTS, type ProductSlug } from "@/lib/landing/products";
 import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
 
 export {
@@ -15,6 +16,7 @@ export const VERSIONED_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutabl
 export const HERO_IMAGE_SETTING_KEY = "hero_image";
 export const SITE_LOGO_SETTING_KEY = "site_logo";
 export const LANDING_FEATURE_CARDS_SETTING_KEY = "landing_feature_cards";
+export const LANDING_PRODUCT_IMAGES_SETTING_KEY = "landing_product_images";
 
 export type BrandingImageSetting = {
   storage_path: string;
@@ -54,8 +56,20 @@ export function buildFeatureCardStoragePath(
   return `features/${cardId}/${version}.${ext}`;
 }
 
+export function buildProductImageStoragePath(
+  productSlug: string,
+  ext: string,
+  version: string | number = Date.now()
+): string {
+  return `products/${productSlug}/${version}.${ext}`;
+}
+
 export type LandingFeatureCardsSetting = {
   cards: Record<string, BrandingImageSetting>;
+};
+
+export type LandingProductImagesSetting = {
+  products: Record<string, BrandingImageSetting>;
 };
 
 async function getBrandingSetting(key: string): Promise<BrandingImageSetting | null> {
@@ -120,6 +134,36 @@ export async function getLandingFeatureCardImageUrls(): Promise<Record<string, s
     imageUrls[feature.id] = setting?.storage_path
       ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
       : feature.defaultImage;
+  }
+
+  return imageUrls;
+}
+
+export async function getLandingProductImagesSetting(): Promise<
+  Record<string, BrandingImageSetting>
+> {
+  const supabase = await createPublicReadClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", LANDING_PRODUCT_IMAGES_SETTING_KEY)
+    .maybeSingle();
+
+  if (error || !data?.value) return {};
+
+  const value = data.value as LandingProductImagesSetting;
+  return value.products ?? {};
+}
+
+export async function getProductImageUrls(): Promise<Record<ProductSlug, string>> {
+  const products = await getLandingProductImagesSetting();
+  const imageUrls = {} as Record<ProductSlug, string>;
+
+  for (const product of PRODUCTS) {
+    const setting = products[product.slug];
+    imageUrls[product.slug] = setting?.storage_path
+      ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
+      : product.image;
   }
 
   return imageUrls;

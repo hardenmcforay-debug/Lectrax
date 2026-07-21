@@ -49,7 +49,8 @@ function isBrandingUploadPath(pathname: string): boolean {
   return (
     pathname === "/api/admin/site-logo" ||
     pathname === "/api/admin/landing-hero" ||
-    pathname === "/api/admin/landing-feature-cards"
+    pathname === "/api/admin/landing-feature-cards" ||
+    pathname === "/api/admin/landing-product-images"
   );
 }
 

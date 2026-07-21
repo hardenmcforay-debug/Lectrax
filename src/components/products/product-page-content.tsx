@@ -7,9 +7,11 @@ import { PRODUCTS } from "@/lib/landing/products";
 
 type ProductPageContentProps = {
   product: ProductDetail;
+  imageUrl?: string;
 };
 
-export function ProductPageContent({ product }: ProductPageContentProps) {
+export function ProductPageContent({ product, imageUrl }: ProductPageContentProps) {
+  const heroImage = imageUrl ?? product.image;
   const otherProducts = PRODUCTS.filter((item) => item.slug !== product.slug);
 
   return (
@@ -45,7 +47,7 @@ export function ProductPageContent({ product }: ProductPageContentProps) {
 
           <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
             <Image
-              src={product.image}
+              src={heroImage}
               alt=""
               fill
               unoptimized

@@ -2,20 +2,24 @@ import {
   buildLandingAssetPublicUrl,
   getLandingFeatureCardsSetting,
   getLandingHeroImageSetting,
+  getLandingProductImagesSetting,
   getSiteLogoSetting,
 } from "@/lib/landing/site-branding";
 import { LANDING_FEATURE_CARDS, type FeatureCardId } from "@/lib/landing/feature-cards";
+import { PRODUCTS, type ProductSlug } from "@/lib/landing/products";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AdminLandingHeroUpload } from "@/components/admin/admin-landing-hero-upload";
 import { AdminLandingFeatureCards } from "@/components/admin/admin-landing-feature-cards";
+import { AdminLandingProductImages } from "@/components/admin/admin-landing-product-images";
 import { AdminSiteLogoUpload } from "@/components/admin/admin-site-logo-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminLandingPage() {
-  const [heroSetting, logoSetting, featureCardSettings] = await Promise.all([
+  const [heroSetting, logoSetting, featureCardSettings, productImageSettings] = await Promise.all([
     getLandingHeroImageSetting(),
     getSiteLogoSetting(),
     getLandingFeatureCardsSetting(),
+    getLandingProductImagesSetting(),
   ]);
 
   const heroImageUrl = heroSetting?.storage_path
@@ -44,11 +48,29 @@ export default async function AdminLandingPage() {
     >
   );
 
+  const productImages = PRODUCTS.reduce(
+    (acc, product) => {
+      const setting = productImageSettings[product.slug];
+      acc[product.slug] = {
+        imageUrl: setting?.storage_path
+          ? buildLandingAssetPublicUrl(setting.storage_path, setting.updated_at)
+          : product.image,
+        isCustom: Boolean(setting?.storage_path),
+        updatedAt: setting?.updated_at ?? null,
+      };
+      return acc;
+    },
+    {} as Record<
+      ProductSlug,
+      { imageUrl: string; isCustom: boolean; updatedAt: string | null }
+    >
+  );
+
   return (
     <DashboardShell
       role="platform_admin"
       title="Landing Page"
-      description="Manage the site logo, hero image, and feature card covers on the public homepage"
+      description="Manage the site logo, hero image, feature card covers, and product page images"
     >
       <div className="space-y-6">
         <nav
@@ -56,7 +78,7 @@ export default async function AdminLandingPage() {
           className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-slate-700"
         >
           <p className="font-medium text-slate-900">
-            This page has three upload areas (logo, hero, and six feature cards):
+            This page has four upload areas (logo, hero, feature cards, and product pages):
           </p>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
             <li>
@@ -77,6 +99,15 @@ export default async function AdminLandingPage() {
                 Feature card images
               </a>{" "}
               — covers for &quot;Everything You Need to Manage Academic Activities&quot; (6 cards)
+            </li>
+            <li>
+              <a
+                href="#product-page-images"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Product page images
+              </a>{" "}
+              — hero images for Products nav links (6 pages)
             </li>
           </ol>
         </nav>
@@ -125,6 +156,20 @@ export default async function AdminLandingPage() {
           </CardHeader>
           <CardContent>
             <AdminLandingFeatureCards initialImages={featureImages} />
+          </CardContent>
+        </Card>
+
+        <Card id="product-page-images" className="scroll-mt-6 border-primary/30 ring-1 ring-primary/10">
+          <CardHeader>
+            <CardTitle>Product page images — Products nav links</CardTitle>
+            <CardDescription>
+              Upload hero images for each product page linked from the landing navbar Products
+              dropdown (QR Attendance, Assignment Management, Continuous Assessment, Performance
+              Analytics, Class Session Management, Secure Academic Records).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminLandingProductImages initialImages={productImages} />
           </CardContent>
         </Card>
       </div>

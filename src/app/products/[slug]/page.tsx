@@ -8,6 +8,7 @@ import {
   isProductSlug,
   PRODUCT_SLUGS,
 } from "@/lib/landing/products";
+import { getProductImageUrls } from "@/lib/landing/site-branding";
 import "../../landing.css";
 
 type ProductPageProps = {
@@ -44,11 +45,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const productImageUrls = await getProductImageUrls();
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <LandingNav />
       <main>
-        <ProductPageContent product={product} />
+        <ProductPageContent product={product} imageUrl={productImageUrls[product.slug]} />
       </main>
       <LandingFooter />
     </div>

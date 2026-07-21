@@ -17,6 +17,7 @@ const BRANDING_UPLOAD_PATHS = new Set([
   "/api/admin/site-logo",
   "/api/admin/landing-hero",
   "/api/admin/landing-feature-cards",
+  "/api/admin/landing-product-images",
 ]);
 
 function isAssignmentSubmitPath(pathname: string): boolean {
