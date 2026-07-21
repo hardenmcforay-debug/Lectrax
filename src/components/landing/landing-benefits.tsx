@@ -1,12 +1,11 @@
-import type { ComponentType } from "react";
-
+import type { LucideIcon } from "lucide-react";
 import {
-  AccuracyLogo,
-  AdminWorkLogo,
-  AssessmentLogo,
-  EngagementLogo,
-  SavesTimeLogo,
-} from "@/components/landing/landing-benefit-logos";
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import {
   LandingReveal,
   LandingStagger,
@@ -14,32 +13,32 @@ import {
 } from "@/components/landing/landing-motion";
 
 const benefits: Array<{
-  Logo: ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   title: string;
   stat: string;
   statLabel: string;
 }> = [
-  { Logo: SavesTimeLogo, title: "Saves Time", stat: "40%", statLabel: "less admin overhead" },
+  { icon: Clock, title: "Saves Time", stat: "40%", statLabel: "less admin overhead" },
   {
-    Logo: AdminWorkLogo,
+    icon: ShieldCheck,
     title: "Reduces Administrative Work",
     stat: "3×",
     statLabel: "faster record keeping",
   },
   {
-    Logo: AccuracyLogo,
+    icon: CheckCircle2,
     title: "Improves Record Accuracy",
     stat: "99%",
     statLabel: "attendance traceability",
   },
   {
-    Logo: AssessmentLogo,
+    icon: ClipboardCheck,
     title: "Simplifies Assessment Tracking",
     stat: "1",
     statLabel: "unified CA dashboard",
   },
   {
-    Logo: EngagementLogo,
+    icon: Users,
     title: "Enhances Student Engagement",
     stat: "24/7",
     statLabel: "cloud access for students",
@@ -61,10 +60,15 @@ export function LandingBenefits() {
             </p>
 
             <LandingStagger className="mt-10 space-y-4">
-              {benefits.map(({ Logo, title }) => (
+              {benefits.map(({ icon: Icon, title }) => (
                 <LandingStaggerItem key={title}>
-                  <div className="flex items-center gap-3">
-                    <Logo className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+                  <div className="group flex items-center gap-3">
+                    <Icon
+                      aria-hidden
+                      strokeWidth={2}
+                      absoluteStrokeWidth
+                      className="h-6 w-6 shrink-0 text-[#60A5FA] transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-[#3B82F6] sm:h-7 sm:w-7"
+                    />
                     <span className="font-medium text-slate-800">{title}</span>
                   </div>
                 </LandingStaggerItem>

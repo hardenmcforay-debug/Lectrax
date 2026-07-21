@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,6 @@ import {
   LandingStagger,
   LandingStaggerItem,
 } from "@/components/landing/landing-motion";
-import { PricingCheckLogo } from "@/components/landing/landing-pricing-logos";
 import { BILLING_PLANS } from "@/lib/subscription/constants";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +68,12 @@ export function LandingPricing() {
               <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
-                    <PricingCheckLogo className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                    <Check
+                      aria-hidden
+                      strokeWidth={2}
+                      absoluteStrokeWidth
+                      className="mt-0.5 h-4 w-4 shrink-0 text-[#60A5FA] sm:h-5 sm:w-5"
+                    />
                     <span className="text-pretty leading-snug">{f}</span>
                   </li>
                 ))}
@@ -91,7 +96,12 @@ export function LandingPricing() {
               <ul className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5 lg:mt-8 lg:space-y-3">
                 {standardFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-600 sm:gap-3 sm:text-sm">
-                    <PricingCheckLogo className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                    <Check
+                      aria-hidden
+                      strokeWidth={2}
+                      absoluteStrokeWidth
+                      className="mt-0.5 h-4 w-4 shrink-0 text-[#60A5FA] sm:h-5 sm:w-5"
+                    />
                     <span className="text-pretty leading-snug">{f}</span>
                   </li>
                 ))}

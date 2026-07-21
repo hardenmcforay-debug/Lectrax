@@ -1,19 +1,20 @@
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
-  CheckCircle2,
-  ClipboardList,
-  Clock,
+  ClipboardCheck,
   LineChart,
-  QrCode,
+  ScanQrCode,
   ShieldCheck,
   Target,
-  Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 
-const values = [
+const values: Array<{
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}> = [
   {
     icon: Target,
     title: "Built for educators",
@@ -34,10 +35,18 @@ const values = [
   },
 ];
 
-const capabilities = [
-  { icon: QrCode, title: "QR Attendance", description: "Fast, secure check-ins for every session." },
+const capabilities: Array<{
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}> = [
   {
-    icon: ClipboardList,
+    icon: ScanQrCode,
+    title: "QR Attendance",
+    description: "Fast, secure check-ins for every session.",
+  },
+  {
+    icon: ClipboardCheck,
     title: "Continuous Assessment",
     description: "Record and monitor CA scores in a unified workflow.",
   },
@@ -49,10 +58,10 @@ const capabilities = [
 ];
 
 const stats = [
-  { icon: Clock, title: "Saves Time", stat: "40%", statLabel: "less admin overhead" },
-  { icon: ShieldCheck, title: "Reduces Administrative Work", stat: "3×", statLabel: "faster record keeping" },
-  { icon: CheckCircle2, title: "Improves Record Accuracy", stat: "99%", statLabel: "attendance traceability" },
-  { icon: Users, title: "Enhances Student Engagement", stat: "24/7", statLabel: "cloud access for students" },
+  { title: "Saves Time", stat: "40%", statLabel: "less admin overhead" },
+  { title: "Reduces Administrative Work", stat: "3×", statLabel: "faster record keeping" },
+  { title: "Improves Record Accuracy", stat: "99%", statLabel: "attendance traceability" },
+  { title: "Enhances Student Engagement", stat: "24/7", statLabel: "cloud access for students" },
 ];
 
 export function AboutPageContent() {
@@ -118,11 +127,14 @@ export function AboutPageContent() {
             {capabilities.map(({ icon: Icon, title, description }) => (
               <div
                 key={title}
-                className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6"
+                className="group rounded-2xl border border-slate-200 bg-slate-50/50 p-6"
               >
-                <div className="landing-icon-bg flex h-11 w-11 items-center justify-center rounded-xl">
-                  <Icon className="h-5 w-5 text-slate-300" />
-                </div>
+                <Icon
+                  aria-hidden
+                  strokeWidth={2}
+                  absoluteStrokeWidth
+                  className="h-8 w-8 text-[#60A5FA] transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-[#3B82F6]"
+                />
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
               </div>
@@ -145,10 +157,16 @@ export function AboutPageContent() {
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {values.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
+              <div
+                key={title}
+                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+              >
+                <Icon
+                  aria-hidden
+                  strokeWidth={2}
+                  absoluteStrokeWidth
+                  className="h-8 w-8 text-[#60A5FA] transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-[#3B82F6]"
+                />
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
               </div>
@@ -157,22 +175,50 @@ export function AboutPageContent() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200/80 bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Ready to get started?
-          </h2>
-          <p className="mt-4 text-lg text-slate-600">
-            Create your account today or reach out if you&apos;d like to learn more about{" "}
-            {APP_NAME} for your institution.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Button size="lg" variant="accent" className="rounded-xl px-8" asChild>
-              <Link href="/signup">Get Started</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="rounded-xl px-8" asChild>
-              <Link href="/contact">Contact Us</Link>
-            </Button>
+      <section className="bg-white py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div
+            className="relative overflow-hidden rounded-2xl px-8 py-8 shadow-[0_16px_36px_-10px_rgba(11,61,145,0.32)] sm:rounded-[24px] sm:px-10 sm:py-10 lg:px-12 lg:py-11"
+            style={{
+              background:
+                "linear-gradient(135deg, #0B3D91 0%, #1455C4 48%, #1E6DFF 100%)",
+            }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0"
+              aria-hidden
+              style={{
+                background:
+                  "radial-gradient(ellipse 70% 80% at 85% 20%, rgba(255,255,255,0.18) 0%, transparent 55%)",
+              }}
+            />
+
+            <div className="relative flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+              <div className="max-w-xl text-center lg:text-left">
+                <h2 className="text-balance text-2xl font-bold leading-snug tracking-tight text-white sm:text-3xl sm:leading-tight lg:text-[34px]">
+                  Ready to get started?
+                </h2>
+                <p className="mt-3 text-pretty text-base leading-relaxed text-white/85 sm:mt-3.5 sm:text-lg">
+                  Create your account today or reach out if you&apos;d like to learn more about{" "}
+                  {APP_NAME}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/signup"
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-7 text-sm font-semibold text-[#0B3D91] shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1455C4] sm:h-12 sm:px-8 sm:text-base"
+                >
+                  Get Started
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-white/50 bg-white/10 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-white/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1455C4] sm:h-12 sm:px-8 sm:text-base"
+                >
+                  Contact Us
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

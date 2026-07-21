@@ -4,9 +4,9 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   BarChart3,
-  ClipboardList,
-  FileText,
-  QrCode,
+  ClipboardCheck,
+  FilePen,
+  ScanQrCode,
 } from "lucide-react";
 import { APP_TAGLINE } from "@/lib/constants";
 import { HeroVisual } from "@/components/landing/hero-visual";
@@ -14,15 +14,15 @@ import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 const FEATURE_HIGHLIGHTS = [
   {
-    icon: QrCode,
+    icon: ScanQrCode,
     title: "QR Attendance",
   },
   {
-    icon: ClipboardList,
+    icon: ClipboardCheck,
     title: "Continuous Assessment",
   },
   {
-    icon: FileText,
+    icon: FilePen,
     title: "Assignment Management",
   },
   {
@@ -113,9 +113,12 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
                     whileHover={reducedMotion ? undefined : { y: -4 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/20 sm:mb-1.5 sm:h-8 sm:w-8 sm:rounded-lg md:mb-2 md:h-9 md:w-9">
-                      <Icon className="h-3.5 w-3.5 text-emerald-300 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                    </div>
+                    <Icon
+                      aria-hidden
+                      strokeWidth={2}
+                      absoluteStrokeWidth
+                      className="mx-auto mb-1.5 h-6 w-6 text-emerald-400 transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-emerald-300 sm:mb-1.5 sm:h-7 sm:w-7 md:mb-2 md:h-8 md:w-8"
+                    />
                     <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
                       {item.title}
                     </p>

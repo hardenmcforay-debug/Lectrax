@@ -1,18 +1,15 @@
-const CACHE_VERSION = "lectrax-v8";
+const CACHE_VERSION = "lectrax-admin-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const STATIC_ASSETS = [
   "/offline",
   "/manifest.json",
-  "/brand/official-logo.png",
+  "/icons/icon.svg",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/apple-touch-icon.png",
   "/favicon.ico",
-  "/favicon-16x16.png",
-  "/favicon-32x32.png",
-  "/favicon.png",
 ];
 
 const CACHEABLE_EXTENSIONS = /\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico)$/i;
@@ -23,22 +20,11 @@ const NEVER_CACHE_PATTERNS = [
   /supabase\.co/,
   /\/auth\//,
   /\/login/,
-  /\/signup/,
-  /\/forgot-password/,
-  /\/reset-password/,
   /\/auth\/callback/,
-  /^\/student/,
-  /^\/lecturer/,
-  /^\/admin/,
 ];
 
 function isProtectedRoute(pathname) {
-  return (
-    pathname.startsWith("/lecturer") ||
-    pathname.startsWith("/student") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/api/")
-  );
+  return pathname.startsWith("/admin") || pathname.startsWith("/api/");
 }
 
 function shouldNeverCache(url) {
@@ -70,7 +56,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.startsWith("lectrax-") && key !== STATIC_CACHE && key !== SHELL_CACHE)
+            .filter((key) => key.startsWith("lectrax-admin-") && key !== STATIC_CACHE && key !== SHELL_CACHE)
             .map((key) => caches.delete(key))
         )
       )
@@ -179,12 +165,6 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch {
-    if (isProtectedRoute(url.pathname)) {
-      const offlinePage = await caches.match("/offline");
-      if (offlinePage) return offlinePage;
-      return new Response("Authentication required", { status: 401 });
-    }
-
     const cached = await caches.match(request);
     if (cached) return cached;
 
@@ -192,7 +172,7 @@ async function networkFirstNavigation(request) {
     if (offlinePage) return offlinePage;
 
     return new Response(
-      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline — Lectrax</title><style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;color:#0B3D91;text-align:center;padding:2rem}h1{font-size:1.5rem;margin-bottom:.5rem}p{color:#64748b;max-width:24rem;line-height:1.6}</style></head><body><div><h1>You're currently offline</h1><p>Some features may be unavailable until your connection is restored.</p></div></body></html>`,
+      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline — Lectrax Admin</title><style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff;color:#0B3D91;text-align:center;padding:2rem}h1{font-size:1.5rem;margin-bottom:.5rem}p{color:#64748b;max-width:24rem;line-height:1.6}</style></head><body><div><h1>You're currently offline</h1><p>Reconnect to manage Lectrax from this device.</p></div></body></html>`,
       { headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }
