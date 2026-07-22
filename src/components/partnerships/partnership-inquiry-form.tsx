@@ -245,8 +245,7 @@ export function PartnershipInquiryForm({
         <Button
           type="submit"
           disabled={isSubmitting}
-          variant="accent"
-          className="h-11 w-full rounded-xl text-sm font-semibold md:text-base"
+          className="h-11 w-full rounded-xl bg-[#1455C4] text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(20,85,196,0.45)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#0B3D91] hover:shadow-[0_14px_28px_-8px_rgba(11,61,145,0.5)] focus-visible:ring-[#1455C4] md:text-base"
         >
           {isSubmitting ? "Submitting..." : "Request Partnership"}
         </Button>

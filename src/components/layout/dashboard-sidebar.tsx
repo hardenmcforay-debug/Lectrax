@@ -21,6 +21,7 @@ import { ADMIN_NAV_ITEMS, getActiveAdminNavHref } from "@/lib/admin/navigation";
 import type { UserRole } from "@/types/database";
 import { SidebarNotificationBadge } from "@/components/student/nav-notification-badge";
 import { useStudentNotifications } from "@/components/student/student-notifications-provider";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 
 const NAV_BY_ROLE: Record<UserRole, typeof LECTURER_NAV_ITEMS> = {
   lecturer: LECTURER_NAV_ITEMS,
@@ -125,7 +126,13 @@ export function DashboardSidebar({
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <Icon className={isLecturer ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4"} />
+              <Icon
+                {...(isLecturer || isStudent ? HERO_LUCIDE_ICON_PROPS : {})}
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  (isLecturer || isStudent) && !active && "text-emerald-500"
+                )}
+              />
               <span className={cn("truncate", isLecturer && "leading-none")}>{item.label}</span>
               {isStudent ? <SidebarNotificationBadge count={notificationCount} /> : null}
             </Link>
@@ -150,7 +157,13 @@ export function DashboardSidebar({
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Settings className="h-3.5 w-3.5 shrink-0" />
+            <Settings
+              {...HERO_LUCIDE_ICON_PROPS}
+              className={cn(
+                "h-4 w-4 shrink-0",
+                activeHref !== LECTURER_SETTINGS_HREF && "text-emerald-500"
+              )}
+            />
             <span className="truncate leading-none">Settings</span>
           </Link>
         )}
@@ -166,7 +179,13 @@ export function DashboardSidebar({
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Settings className="h-4 w-4 shrink-0" />
+            <Settings
+              {...HERO_LUCIDE_ICON_PROPS}
+              className={cn(
+                "h-4 w-4 shrink-0",
+                activeHref !== STUDENT_SETTINGS_HREF && "text-emerald-500"
+              )}
+            />
             Settings
           </Link>
         )}
@@ -178,7 +197,12 @@ export function DashboardSidebar({
             isLecturer ? "gap-2 px-2.5 py-1.5 text-sm leading-none" : "gap-3 px-3 py-2 text-sm"
           )}
         >
-          <LogOut className={isLecturer ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <LogOut
+            {...(isLecturer || isStudent ? HERO_LUCIDE_ICON_PROPS : {})}
+            className={cn(
+              isLecturer || isStudent ? "h-4 w-4 text-emerald-500" : "h-4 w-4"
+            )}
+          />
           Log out
         </button>
       </div>

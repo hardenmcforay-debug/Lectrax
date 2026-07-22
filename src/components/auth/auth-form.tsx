@@ -583,7 +583,6 @@ export function SignupForm() {
           {errors.identifier && (
             <p className="text-sm text-destructive">{errors.identifier.message}</p>
           )}
-          <p className="text-xs text-slate-500">Use one — your phone number or email address.</p>
         </div>
 
         {role === "student" && (

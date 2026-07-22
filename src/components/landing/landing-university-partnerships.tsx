@@ -27,8 +27,7 @@ export function LandingUniversityPartnerships() {
         </p>
 
         <Button
-          variant="accent"
-          className="mt-6 h-10 w-full rounded-xl px-6 text-sm font-semibold sm:mt-8 sm:h-11 sm:w-auto sm:px-8 md:text-base"
+          className="mt-6 h-10 w-full rounded-xl bg-[#1455C4] px-6 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(20,85,196,0.45)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#0B3D91] hover:shadow-[0_14px_28px_-8px_rgba(11,61,145,0.5)] focus-visible:ring-[#1455C4] sm:mt-8 sm:h-11 sm:w-auto sm:px-8 md:text-base"
           asChild
         >
           <Link href="/partnerships">Request Partnership</Link>

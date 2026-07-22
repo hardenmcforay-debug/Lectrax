@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BookOpen, User } from "lucide-react";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -98,7 +99,11 @@ export function AcademicOverviewView({ data }: { data: StudentAcademicOverview }
     return (
       <Card className={`border-dashed ${studentDashboardCardClass}`}>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <BookOpen className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <BookOpen
+            {...HERO_LUCIDE_ICON_PROPS}
+            className="mb-4 h-12 w-12 text-emerald-500/70"
+            aria-hidden
+          />
           <h3 className="text-lg font-semibold">No enrolled courses yet</h3>
           <p className="mt-2 max-w-md text-sm text-muted-foreground">
             Join a class with your lecturer&apos;s session code to see attendance and continuous
@@ -121,7 +126,11 @@ export function AcademicOverviewView({ data }: { data: StudentAcademicOverview }
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-5 w-5 text-primary" />
+              <User
+                {...HERO_LUCIDE_ICON_PROPS}
+                className="h-5 w-5 text-emerald-500"
+                aria-hidden
+              />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Student Name</p>

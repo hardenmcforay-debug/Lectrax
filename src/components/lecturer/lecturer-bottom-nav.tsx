@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getActiveLecturerNavHref, LECTURER_NAV_ITEMS } from "@/lib/lecturer/navigation";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 
 export function LecturerBottomNav() {
   const pathname = usePathname();
@@ -45,7 +46,11 @@ export function LecturerBottomNav() {
                   active ? "bg-emerald-500/20 text-emerald-300" : "text-inherit"
                 )}
               >
-                <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+                <Icon
+                  {...HERO_LUCIDE_ICON_PROPS}
+                  className="h-5 w-5"
+                  aria-hidden
+                />
               </span>
               <span className="max-w-full truncate leading-none">{item.shortLabel ?? item.label}</span>
             </Link>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { getActiveStudentNavHref, STUDENT_NAV_ITEMS } from "@/lib/student/navigation";
 import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
 import { useStudentNotifications } from "@/components/student/student-notifications-provider";
@@ -51,7 +52,7 @@ export function StudentBottomNav() {
                   active ? "bg-emerald-500/20 text-emerald-300" : "text-inherit"
                 )}
               >
-                <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+                <Icon {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5" aria-hidden />
                 <NavNotificationBadge count={badgeCount} />
               </span>
               <span className="max-w-full truncate leading-none">{item.shortLabel ?? item.label}</span>

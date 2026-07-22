@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Crown, Shield } from "lucide-react";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionDisplay } from "@/lib/subscription/types";
@@ -116,11 +117,19 @@ export function SubscriptionDashboardCard({
               Pro
             </span>
           )}
-          <div className="flex h-4 w-4 items-center justify-center">
+          <div className="flex h-5 w-5 items-center justify-center">
             {display.isPremium ? (
-              <Crown className="h-4 w-4 text-[#10b981]" />
+              <Crown
+                {...HERO_LUCIDE_ICON_PROPS}
+                className="h-5 w-5 text-emerald-400"
+                aria-hidden
+              />
             ) : (
-              <Shield className="h-4 w-4 text-white/80" />
+              <Shield
+                {...HERO_LUCIDE_ICON_PROPS}
+                className="h-5 w-5 text-emerald-300/90"
+                aria-hidden
+              />
             )}
           </div>
         </div>

@@ -78,17 +78,17 @@ function MobileStepCard({
   description: string;
 }) {
   return (
-    <article className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-4 lg:hidden">
-      <div className="flex items-start gap-3">
-        <LandingHowItWorksIcon step={step} iconName={iconName} size="sm" />
+    <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-5 lg:hidden">
+      <div className="flex items-start gap-4">
+        <LandingHowItWorksIcon step={step} iconName={iconName} size="lg" />
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-accent sm:text-xs">
+          <span className="text-xs font-bold uppercase tracking-widest text-accent sm:text-xs">
             Step {step}
           </span>
-          <h3 className="mt-1 text-balance text-sm font-semibold leading-snug text-slate-900 sm:text-base">
+          <h3 className="mt-1.5 text-balance text-base font-semibold leading-snug text-slate-900 sm:text-lg">
             {title}
           </h3>
-          <p className="mt-1.5 text-pretty text-xs leading-relaxed text-slate-600 sm:text-sm">
+          <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 sm:text-base">
             {description}
           </p>
         </div>
@@ -102,21 +102,21 @@ export function LandingHowItWorks() {
     <section id="how-it-works" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
-          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
+          <h2 className="text-balance text-2xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-3xl sm:text-3xl sm:leading-tight lg:text-4xl">
             How Lectrax Works
           </h2>
-          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
+          <p className="mt-3.5 text-pretty text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
             From setup to insights, a streamlined workflow built for modern academic teams.
           </p>
         </LandingReveal>
 
-        <div className="relative mt-10 sm:mt-14 lg:mt-16">
+        <div className="relative mt-12 sm:mt-14 lg:mt-16">
           <div
             className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/30 via-accent/30 to-primary/10 lg:block"
             aria-hidden
           />
 
-          <LandingStaggerList className="flex flex-col gap-3 sm:gap-4 lg:gap-0">
+          <LandingStaggerList className="flex flex-col gap-4 sm:gap-4 lg:gap-0">
             {steps.map((item, index) => {
               const isRight = index % 2 === 1;
 

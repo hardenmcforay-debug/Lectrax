@@ -59,7 +59,7 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
                   id={`feature-${feature.id}`}
                   className="landing-feature-card group flex h-full scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
                 >
-                  <div className="landing-feature-card-media relative aspect-[16/10] w-full overflow-hidden">
+                  <div className="landing-feature-card-media relative aspect-square w-full overflow-hidden">
                     <Image
                       key={image}
                       src={image}

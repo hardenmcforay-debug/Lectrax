@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { ChevronDown, ClipboardList } from "lucide-react";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -78,7 +79,11 @@ export const ClassCAPerSessionCard = memo(function ClassCAPerSessionCard({
         <CardTitle className={cn("text-sm text-muted-foreground", studentDashboardCardHeadingClass)}>
           CA Overview
         </CardTitle>
-        <ClipboardList className="h-4 w-4 shrink-0 text-accent" />
+        <ClipboardList
+          {...HERO_LUCIDE_ICON_PROPS}
+          className="h-5 w-5 shrink-0 text-emerald-500"
+          aria-hidden
+        />
       </CardHeader>
       <CardContent className={cn("relative", open && "overflow-visible")}>
         {courses.length === 0 ? (
