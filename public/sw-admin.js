@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-admin-v2";
+const CACHE_VERSION = "lectrax-admin-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
@@ -36,8 +36,26 @@ function isStaticAsset(url) {
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.startsWith("/splash/") ||
+    url.pathname.startsWith("/brand/") ||
+    url.pathname.startsWith("/landing/") ||
     CACHEABLE_EXTENSIONS.test(url.pathname)
   );
+}
+
+function isImageRequest(request, url) {
+  return (
+    request.destination === "image" ||
+    url.pathname.startsWith("/_next/image") ||
+    /\.(?:png|jpe?g|gif|webp|svg|ico|avif)(?:$|\?)/i.test(url.pathname)
+  );
+}
+
+/** Never serve the offline HTML page for non-document requests (breaks <img>). */
+function offlineFallback(request) {
+  if (request.mode === "navigate" || request.destination === "document") {
+    return caches.match("/offline").then((page) => page ?? new Response("Offline", { status: 503 }));
+  }
+  return Promise.resolve(Response.error());
 }
 
 self.addEventListener("install", (event) => {
@@ -72,6 +90,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) return;
+
+  // Let the browser handle the image optimizer and never HTML-fallback it.
+  if (url.pathname.startsWith("/_next/image")) return;
+
   if (shouldNeverCache(url)) return;
 
   if (isStaticAsset(url)) {
@@ -110,23 +132,7 @@ async function staleWhileRevalidate(request, cacheName) {
     return networkResponse;
   }
 
-  return caches.match("/offline") ?? new Response("Offline", { status: 503 });
-}
-
-async function cacheFirst(request, cacheName) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    return caches.match("/offline") ?? new Response("Offline", { status: 503 });
-  }
+  return offlineFallback(request);
 }
 
 async function networkFirst(request) {
@@ -140,6 +146,9 @@ async function networkFirst(request) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
+    if (isImageRequest(request, new URL(request.url))) {
+      return Response.error();
+    }
     throw new Error("Network unavailable");
   }
 }

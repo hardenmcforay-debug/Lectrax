@@ -50,7 +50,8 @@ export function getContentSecurityPolicy(): string {
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co",
+    // Exact project host + wildcard so custom or standard Supabase Storage URLs work in PWA.
+    `img-src 'self' data: blob: https://*.supabase.co ${supabase.https}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase.https} ${supabase.wss}`,
     "media-src 'self' blob:",

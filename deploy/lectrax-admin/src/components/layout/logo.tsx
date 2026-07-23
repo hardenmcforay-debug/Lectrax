@@ -55,9 +55,13 @@ export function Logo({
         src={logoUrl}
         alt={`${APP_NAME} logo`}
         fill
-        className="object-contain object-center"
+        className={cn(
+          "object-contain object-center",
+          isLight && "brightness-0 invert"
+        )}
         sizes={markClassName?.includes("h-10") ? "40px" : "36px"}
-        unoptimized={/\.svg(\?|$)/i.test(logoUrl)}
+        // Bypass /_next/image so PWA + Supabase branding loads reliably after deploy.
+        unoptimized
         priority={isDefaultMark}
       />
     </div>

@@ -20,6 +20,7 @@ export function AppLaunchSplash() {
           alt={`${APP_NAME} logo`}
           fill
           priority
+          unoptimized
           className="object-contain"
           sizes="112px"
         />

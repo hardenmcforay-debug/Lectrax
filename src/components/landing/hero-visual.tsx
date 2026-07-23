@@ -119,6 +119,7 @@ export function HeroVisual({ imageUrl }: HeroVisualProps) {
                     src={imageUrl}
                     alt="Lectrax academic management platform"
                     fill
+                    unoptimized
                     className="object-cover"
                     sizes="(max-width: 1024px) 80vw, 28rem"
                     priority
