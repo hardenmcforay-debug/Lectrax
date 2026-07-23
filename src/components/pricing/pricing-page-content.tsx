@@ -12,6 +12,12 @@ import { cn } from "@/lib/utils";
 const PAYMENT_LOGO_CARD_CLASS =
   "relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-32 sm:w-32 sm:p-1.5";
 
+function shouldOptimizePaymentLogo(src: string): boolean {
+  if (!/^https?:\/\//i.test(src)) return false;
+  if (/\.svg(\?|$)/i.test(src)) return false;
+  return true;
+}
+
 function PaymentMethodLogo({
   label,
   logoUrl,
@@ -20,6 +26,7 @@ function PaymentMethodLogo({
   logoUrl: string | null | undefined;
 }) {
   if (logoUrl) {
+    const optimize = shouldOptimizePaymentLogo(logoUrl);
     return (
       <span className={PAYMENT_LOGO_CARD_CLASS}>
         <span className="relative h-full w-full">
@@ -27,9 +34,12 @@ function PaymentMethodLogo({
             src={logoUrl}
             alt={`${label} logo`}
             fill
-            unoptimized
+            priority
+            fetchPriority="high"
+            decoding="async"
+            unoptimized={!optimize}
             className="object-contain"
-            sizes="(max-width: 640px) 112px, 128px"
+            sizes="128px"
           />
         </span>
       </span>

@@ -43,6 +43,12 @@ type CheckoutResponse =
 const PAYMENT_LOGO_CARD_CLASS =
   "relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-md sm:h-24 sm:w-24 sm:p-3.5";
 
+function shouldOptimizePaymentLogo(src: string): boolean {
+  if (!/^https?:\/\//i.test(src)) return false;
+  if (/\.svg(\?|$)/i.test(src)) return false;
+  return true;
+}
+
 function PaymentMethodIcon({
   label,
   logoUrl,
@@ -51,6 +57,7 @@ function PaymentMethodIcon({
   logoUrl: string | null | undefined;
 }) {
   if (logoUrl) {
+    const optimize = shouldOptimizePaymentLogo(logoUrl);
     return (
       <span className={PAYMENT_LOGO_CARD_CLASS}>
         <span className="relative h-full w-full">
@@ -58,12 +65,12 @@ function PaymentMethodIcon({
             src={logoUrl}
             alt={`${label} logo`}
             fill
-            unoptimized
             priority
             fetchPriority="high"
             decoding="async"
+            unoptimized={!optimize}
             className="object-contain"
-            sizes="(max-width: 640px) 80px, 96px"
+            sizes="96px"
           />
         </span>
       </span>
@@ -79,6 +86,15 @@ function PaymentMethodIcon({
 
 const preloadedPaymentLogoUrls = new Set<string>();
 
+function optimizedPaymentLogoHref(href: string, width = 128): string {
+  const params = new URLSearchParams({
+    url: href,
+    w: String(width),
+    q: "75",
+  });
+  return `/_next/image?${params.toString()}`;
+}
+
 /** Warm browser cache as soon as the subscription page mounts (before dialog opens). */
 function preloadPaymentMethodLogos(
   logos: Record<PaymentMethodLogoId, string | null> | undefined
@@ -89,16 +105,20 @@ function preloadPaymentMethodLogos(
     if (!href || preloadedPaymentLogoUrls.has(href)) continue;
     preloadedPaymentLogoUrls.add(href);
 
+    const preloadHref = shouldOptimizePaymentLogo(href)
+      ? optimizedPaymentLogoHref(href)
+      : href;
+
     const link = document.createElement("link");
     link.rel = "preload";
     link.as = "image";
-    link.href = href;
+    link.href = preloadHref;
     document.head.appendChild(link);
 
     const img = new window.Image();
     img.decoding = "async";
     img.fetchPriority = "high";
-    img.src = href;
+    img.src = preloadHref;
   }
 }
 
