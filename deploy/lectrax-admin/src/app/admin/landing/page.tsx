@@ -6,7 +6,7 @@ import {
   getSiteLogoSetting,
 } from "@/lib/landing/site-branding";
 import { LANDING_FEATURE_CARDS, type FeatureCardId } from "@/lib/landing/feature-cards";
-import { PRODUCTS, type ProductSlug } from "@/lib/landing/products";
+import { getProductsWithImageUpload, type ProductImageUploadSlug } from "@/lib/landing/products";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AdminLandingHeroUpload } from "@/components/admin/admin-landing-hero-upload";
 import { AdminLandingFeatureCards } from "@/components/admin/admin-landing-feature-cards";
@@ -48,7 +48,7 @@ export default async function AdminLandingPage() {
     >
   );
 
-  const productImages = PRODUCTS.reduce(
+  const productImages = getProductsWithImageUpload().reduce(
     (acc, product) => {
       const setting = productImageSettings[product.slug];
       acc[product.slug] = {
@@ -61,7 +61,7 @@ export default async function AdminLandingPage() {
       return acc;
     },
     {} as Record<
-      ProductSlug,
+      ProductImageUploadSlug,
       { imageUrl: string; isCustom: boolean; updatedAt: string | null }
     >
   );
@@ -107,7 +107,7 @@ export default async function AdminLandingPage() {
               >
                 Product page images
               </a>{" "}
-              — hero images for Products nav links (6 pages)
+              — hero images for Products nav links (5 pages)
             </li>
           </ol>
         </nav>
@@ -163,9 +163,9 @@ export default async function AdminLandingPage() {
           <CardHeader>
             <CardTitle>Product page images — Products nav links</CardTitle>
             <CardDescription>
-              Upload hero images for each product page linked from the landing navbar Products
-              dropdown (QR Attendance, Assignment Management, Continuous Assessment, Performance
-              Analytics, Class Session Management, Secure Academic Records).
+              Upload hero images for product pages that use photo covers (QR Attendance, Assignment
+              Management, Continuous Assessment, Performance Analytics, Class Session Management).
+              Secure Academic Records uses a built-in illustration and has no upload slot.
             </CardDescription>
           </CardHeader>
           <CardContent>

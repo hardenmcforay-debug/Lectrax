@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
-import { isProductSlug } from "@/lib/landing/products";
+import { isProductImageUploadSlug } from "@/lib/landing/products";
 import {
   LANDING_ASSETS_BUCKET,
   LANDING_PRODUCT_IMAGES_SETTING_KEY,
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const file = formData.get("file");
   const productSlug = formData.get("productSlug");
 
-  if (typeof productSlug !== "string" || !isProductSlug(productSlug)) {
+  if (typeof productSlug !== "string" || !isProductImageUploadSlug(productSlug)) {
     return NextResponse.json({ error: "A valid product is required." }, { status: 400 });
   }
 
@@ -155,7 +155,7 @@ export async function DELETE(request: Request) {
   const { supabase, userId } = auth;
   const productSlug = new URL(request.url).searchParams.get("productSlug");
 
-  if (!productSlug || !isProductSlug(productSlug)) {
+  if (!productSlug || !isProductImageUploadSlug(productSlug)) {
     return NextResponse.json({ error: "A valid product is required." }, { status: 400 });
   }
 

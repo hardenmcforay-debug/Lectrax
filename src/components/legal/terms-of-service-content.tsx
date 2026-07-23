@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 import { CONTACT_EMAIL } from "@/lib/contact/constants";
 
@@ -259,11 +258,7 @@ export function TermsOfServiceContent() {
     <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <section className="border-b border-slate-200/80 bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
-            <FileText className="h-4 w-4" aria-hidden />
-            Legal
-          </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Terms of Service
           </h1>
           <p className="mt-4 text-sm text-slate-500">Last updated: {LAST_UPDATED}</p>

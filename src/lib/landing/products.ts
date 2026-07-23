@@ -424,6 +424,26 @@ export function isProductSlug(value: string): value is ProductSlug {
   return (PRODUCT_SLUGS as readonly string[]).includes(value);
 }
 
+/** Products that use an uploaded hero image (Secure Academic Records uses a custom illustration). */
+export const PRODUCT_IMAGE_UPLOAD_SLUGS = PRODUCT_SLUGS.filter(
+  (slug) => slug !== "secure-academic-records"
+);
+
+export type ProductImageUploadSlug = (typeof PRODUCT_IMAGE_UPLOAD_SLUGS)[number];
+
+export function isProductImageUploadSlug(value: string): value is ProductImageUploadSlug {
+  return (PRODUCT_IMAGE_UPLOAD_SLUGS as readonly string[]).includes(value);
+}
+
+export function getProductsWithImageUpload(): Array<
+  ProductDetail & { slug: ProductImageUploadSlug }
+> {
+  return PRODUCTS.filter(
+    (product): product is ProductDetail & { slug: ProductImageUploadSlug } =>
+      isProductImageUploadSlug(product.slug)
+  );
+}
+
 export function getProductBySlug(slug: string): ProductDetail | undefined {
   return PRODUCTS.find((product) => product.slug === slug);
 }

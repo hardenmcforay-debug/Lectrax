@@ -64,7 +64,7 @@ export function LandingFooter() {
           </div>
 
           <div>
-            <h3 className={footerHeadingClass}>Product</h3>
+            <h3 className={footerHeadingClass}>Products</h3>
             <ul className="mt-4 space-y-3">
               {productLinks.map((link) => (
                 <li key={link.href}>

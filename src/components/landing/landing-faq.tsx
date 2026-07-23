@@ -67,10 +67,10 @@ export function LandingFaq() {
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
 
         <LandingReveal className="text-center">
-          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
+          <h2 className="text-balance text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-3xl sm:leading-tight lg:text-4xl">
             Frequently Asked Questions
           </h2>
-          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
+          <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600 sm:mt-4 lg:text-lg">
             Everything you need to know about getting started with Lectrax.
           </p>
         </LandingReveal>

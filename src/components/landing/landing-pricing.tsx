@@ -49,10 +49,10 @@ export function LandingPricing() {
     <section id="pricing" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
-          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
+          <h2 className="text-balance text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-3xl sm:leading-tight lg:text-4xl">
             Simple and Transparent Pricing
           </h2>
-          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
+          <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600 sm:mt-4 lg:text-lg">
             Start free. Upgrade when your institution needs more capacity and premium capabilities.
           </p>
         </LandingReveal>

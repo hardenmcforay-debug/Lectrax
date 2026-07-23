@@ -5,7 +5,10 @@ import Image from "next/image";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { appFetch } from "@/lib/api/client-fetch";
 import { Button } from "@/components/ui/button";
-import { PRODUCTS, type ProductSlug } from "@/lib/landing/products";
+import {
+  getProductsWithImageUpload,
+  type ProductImageUploadSlug,
+} from "@/lib/landing/products";
 import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
@@ -17,7 +20,7 @@ type ProductImageState = {
 };
 
 type AdminLandingProductImagesProps = {
-  initialImages: Record<ProductSlug, ProductImageState>;
+  initialImages: Record<ProductImageUploadSlug, ProductImageState>;
 };
 
 function publicProductImageUrl(storagePath: string, cacheVersion?: string | number) {
@@ -31,7 +34,7 @@ function ProductImageUpload({
   state,
   onStateChange,
 }: {
-  productSlug: ProductSlug;
+  productSlug: ProductImageUploadSlug;
   title: string;
   defaultImage: string;
   state: ProductImageState;
@@ -207,15 +210,15 @@ export function AdminLandingProductImages({ initialImages }: AdminLandingProduct
       <div className="flex items-start gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
         <ImageIcon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
         <p>
-          Upload a hero image for each Products nav page (QR Attendance, Assignment Management,
-          Continuous Assessment, Performance Analytics, Class Session Management, Secure Academic
-          Records). JPEG, PNG, WebP, or GIF up to 5 MB. Removing an upload restores the default
-          illustration.
+          Upload a hero image for each Products nav page that uses a photo cover (QR Attendance,
+          Assignment Management, Continuous Assessment, Performance Analytics, Class Session
+          Management). Secure Academic Records uses a built-in illustration. JPEG, PNG, WebP, or GIF
+          up to 5 MB. Removing an upload restores the default illustration.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {PRODUCTS.map((product) => (
+        {getProductsWithImageUpload().map((product) => (
           <ProductImageUpload
             key={product.slug}
             productSlug={product.slug}

@@ -40,10 +40,10 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
     <section id="features" className="relative -mt-px scroll-mt-20 bg-white py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
-          <h2 className="text-balance text-xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-2xl sm:text-3xl sm:leading-tight lg:text-4xl">
+          <h2 className="text-balance text-2xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-3xl sm:text-3xl sm:leading-tight lg:text-4xl">
             Everything You Need to Manage Academic Activities
           </h2>
-          <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
+          <p className="mt-3.5 text-pretty text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-base sm:leading-relaxed lg:text-lg">
             A complete toolkit for lecturers, departments, and institutions. Designed for clarity,
             speed, and accuracy.
           </p>

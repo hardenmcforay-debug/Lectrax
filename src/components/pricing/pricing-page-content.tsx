@@ -141,8 +141,7 @@ export function PricingPageContent({
     <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <section className="border-b border-slate-200/80 bg-white py-14 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Pricing</p>
-          <h1 className="mt-3 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+          <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             Simple and Transparent Pricing
           </h1>
           <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600">

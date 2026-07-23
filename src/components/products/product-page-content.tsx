@@ -1,9 +1,57 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  Check,
+  ClipboardCheck,
+  FilePen,
+  ScanQrCode,
+  Shield,
+  type LucideIcon,
+} from "lucide-react";
 import { LandingCta } from "@/components/landing/landing-cta";
-import type { ProductDetail } from "@/lib/landing/products";
+import { ProductHeroImage } from "@/components/products/product-hero-image";
+import {
+  ProductOutcomeIllustration,
+  outcomeIllustrationVariant,
+} from "@/components/products/product-outcome-illustration";
+import {
+  ClassSessionHowIllustration,
+  classSessionHowStep,
+} from "@/components/products/class-session-how-illustration";
+import {
+  SecureAcademicHowIllustration,
+  secureAcademicHowStep,
+} from "@/components/products/secure-academic-how-illustration";
+import {
+  PerformanceAnalyticsHowIllustration,
+  performanceAnalyticsHowStep,
+} from "@/components/products/performance-analytics-how-illustration";
+import {
+  ContinuousAssessmentHowIllustration,
+  continuousAssessmentHowStep,
+} from "@/components/products/continuous-assessment-how-illustration";
+import {
+  AssignmentManagementHowIllustration,
+  assignmentManagementHowStep,
+} from "@/components/products/assignment-management-how-illustration";
+import {
+  QrAttendanceHowIllustration,
+  qrAttendanceHowStep,
+} from "@/components/products/qr-attendance-how-illustration";
+import { SecureAcademicRecordsIllustration } from "@/components/products/secure-academic-records-illustration";
+import type { ProductDetail, ProductSlug } from "@/lib/landing/products";
 import { PRODUCTS } from "@/lib/landing/products";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
+
+const PRODUCT_ICONS: Record<ProductSlug, LucideIcon> = {
+  "qr-attendance": ScanQrCode,
+  "assignment-management": FilePen,
+  "continuous-assessment": ClipboardCheck,
+  "performance-analytics": BarChart3,
+  "class-session-management": BookOpen,
+  "secure-academic-records": Shield,
+};
 
 type ProductPageContentProps = {
   product: ProductDetail;
@@ -13,14 +61,14 @@ type ProductPageContentProps = {
 export function ProductPageContent({ product, imageUrl }: ProductPageContentProps) {
   const heroImage = imageUrl ?? product.image;
   const otherProducts = PRODUCTS.filter((item) => item.slug !== product.slug);
+  const showSecureRecordsIllustration = product.slug === "secure-academic-records";
 
   return (
     <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <section className="border-b border-slate-200/80 bg-white py-14 sm:py-16 lg:py-20">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-primary">Product</p>
-            <h1 className="mt-3 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               {product.title}
             </h1>
             <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl">
@@ -29,33 +77,21 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
             <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
               {product.summary}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8">
               <Link
                 href="/signup"
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
               >
                 Get Started
               </Link>
-              <Link
-                href="/contact"
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
-              >
-                Contact Us
-              </Link>
             </div>
           </div>
 
-          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
-            <Image
-              src={heroImage}
-              alt=""
-              fill
-              unoptimized
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          </div>
+          {showSecureRecordsIllustration ? (
+            <SecureAcademicRecordsIllustration />
+          ) : (
+            <ProductHeroImage src={heroImage} />
+          )}
         </div>
       </section>
 
@@ -137,6 +173,42 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
                 key={step.title}
                 className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-7"
               >
+                {product.slug === "class-session-management" ? (
+                  <ClassSessionHowIllustration
+                    step={classSessionHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
+                {product.slug === "secure-academic-records" ? (
+                  <SecureAcademicHowIllustration
+                    step={secureAcademicHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
+                {product.slug === "performance-analytics" ? (
+                  <PerformanceAnalyticsHowIllustration
+                    step={performanceAnalyticsHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
+                {product.slug === "continuous-assessment" ? (
+                  <ContinuousAssessmentHowIllustration
+                    step={continuousAssessmentHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
+                {product.slug === "assignment-management" ? (
+                  <AssignmentManagementHowIllustration
+                    step={assignmentManagementHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
+                {product.slug === "qr-attendance" ? (
+                  <QrAttendanceHowIllustration
+                    step={qrAttendanceHowStep(index)}
+                    className="mb-5 h-44 w-full sm:h-52"
+                  />
+                ) : null}
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">
                   Step {String(index + 1).padStart(2, "0")}
                 </span>
@@ -250,11 +322,15 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
           </div>
 
           <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
-            {product.outcomes.map((outcome) => (
+            {product.outcomes.map((outcome, index) => (
               <div
                 key={outcome}
-                className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm"
+                className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm"
               >
+                <ProductOutcomeIllustration
+                  variant={outcomeIllustrationVariant(index)}
+                  className="mb-4 h-24 w-full max-w-[10rem]"
+                />
                 <p className="text-sm font-medium leading-relaxed text-slate-700 sm:text-base">
                   {outcome}
                 </p>
@@ -276,16 +352,24 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {otherProducts.map((item) => (
-              <Link
-                key={item.slug}
-                href={`/products/${item.slug}`}
-                className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition-colors hover:border-primary/30 hover:bg-white hover:shadow-sm"
-              >
-                <h3 className="text-base font-semibold text-slate-900">{item.navLabel}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.headline}</p>
-              </Link>
-            ))}
+            {otherProducts.map((item) => {
+              const Icon = PRODUCT_ICONS[item.slug];
+              return (
+                <Link
+                  key={item.slug}
+                  href={`/products/${item.slug}`}
+                  className="group rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition-colors hover:border-primary/30 hover:bg-white hover:shadow-sm"
+                >
+                  <Icon
+                    {...HERO_LUCIDE_ICON_PROPS}
+                    aria-hidden
+                    className="mb-3 h-7 w-7 text-[#60A5FA] transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-[#3B82F6]"
+                  />
+                  <h3 className="text-base font-semibold text-slate-900">{item.navLabel}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.headline}</p>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
