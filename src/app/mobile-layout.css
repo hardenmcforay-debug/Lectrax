@@ -477,3 +477,70 @@ html[data-portal-mobile="true"] .admin-portal-content {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   padding-top: 1rem;
 }
+
+/* ── Portal tab swipe (WhatsApp-style horizontal navigation) ── */
+.student-portal-content:has(.portal-tab-swipe-track),
+.lecturer-portal-content:has(.portal-tab-swipe-track) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-tab-swipe-root {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.portal-tab-swipe-track {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+  will-change: transform;
+}
+
+.portal-tab-swipe-panel {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
+.portal-tab-swipe-panel-placeholder {
+  min-height: 40vh;
+}
+
+.portal-tab-swipe-enabled {
+  touch-action: pan-y;
+}
+
+.portal-tab-swipe-enabled.is-horizontal-dragging,
+.portal-tab-swipe-enabled.is-horizontal-dragging .portal-tab-swipe-panel {
+  touch-action: none;
+  overscroll-behavior-x: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.portal-tab-swipe-pending {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-tab-swipe-track {
+    will-change: auto;
+  }
+}
+

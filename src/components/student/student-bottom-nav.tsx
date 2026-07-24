@@ -8,6 +8,8 @@ import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { getActiveStudentNavHref, STUDENT_NAV_ITEMS } from "@/lib/student/navigation";
 import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
 import { useStudentNotifications } from "@/components/student/student-notifications-provider";
+import { preparePortalTabNavigation } from "@/components/layout/portal-tab-swipe";
+import { requestPortalTabNavigation } from "@/lib/portal/tab-navigation";
 
 export function StudentBottomNav() {
   const pathname = usePathname();
@@ -30,7 +32,19 @@ export function StudentBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              scroll={false}
               aria-current={active ? "page" : undefined}
+              onClick={(event) => {
+                preparePortalTabNavigation(
+                  STUDENT_NAV_ITEMS,
+                  pathname,
+                  item.href,
+                  getActiveStudentNavHref
+                );
+                if (requestPortalTabNavigation(item.href)) {
+                  event.preventDefault();
+                }
+              }}
               className={cn(
                 "student-bottom-nav-item group relative flex min-h-11 min-w-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
                 active

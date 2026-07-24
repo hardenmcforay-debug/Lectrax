@@ -6,6 +6,8 @@ import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getActiveLecturerNavHref, LECTURER_NAV_ITEMS } from "@/lib/lecturer/navigation";
 import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
+import { preparePortalTabNavigation } from "@/components/layout/portal-tab-swipe";
+import { requestPortalTabNavigation } from "@/lib/portal/tab-navigation";
 
 export function LecturerBottomNav() {
   const pathname = usePathname();
@@ -26,7 +28,19 @@ export function LecturerBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              scroll={false}
               aria-current={active ? "page" : undefined}
+              onClick={(event) => {
+                preparePortalTabNavigation(
+                  LECTURER_NAV_ITEMS,
+                  pathname,
+                  item.href,
+                  getActiveLecturerNavHref
+                );
+                if (requestPortalTabNavigation(item.href)) {
+                  event.preventDefault();
+                }
+              }}
               className={cn(
                 "lecturer-bottom-nav-item group relative flex min-h-11 min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
                 active ? "text-emerald-300" : "text-white/65 hover:text-white/90",

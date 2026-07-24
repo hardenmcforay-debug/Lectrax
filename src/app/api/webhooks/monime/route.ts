@@ -7,12 +7,17 @@ import {
   verifyMonimePaymentCode,
 } from "@/lib/monime";
 import { isTransientError } from "@/lib/errors/classify";
-import { activatePremiumSubscription, canLecturerSelfSubscribe, PaymentActivationInProgressError } from "@/lib/subscription/lifecycle";
+import {
+  activatePremiumSubscription,
+  canLecturerSelfSubscribe,
+  PaymentActivationInProgressError,
+} from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
 import { logAudit, logSystemAudit } from "@/lib/audit";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { monimeWebhookEventSchema } from "@/lib/validations";
 import { logServerError } from "@/lib/errors/logger";
+import { completePartnershipPayment } from "@/lib/partnerships/complete-payment";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -44,18 +49,45 @@ export async function POST(request: Request) {
   const metadata = event.data?.metadata;
   const monimeResourceId = event.data?.id ?? event.object?.id;
   const eventName = event.event?.name ?? event.type;
+  const isPartnershipFlow =
+    metadata?.flow === "partnership" ||
+    String(metadata?.flow ?? "").toLowerCase() === "partnership";
 
   let paymentId = metadata?.payment_id ?? event.data?.reference;
   if (!paymentId && monimeResourceId) {
-    const { data: linkedPayments } = await service
-      .from("payments")
-      .select("id")
-      .or(
-        `monime_payment_id.eq.${monimeResourceId},transaction_reference.eq.${monimeResourceId}`
-      )
-      .order("created_at", { ascending: false })
-      .limit(1);
-    paymentId = linkedPayments?.[0]?.id;
+    if (isPartnershipFlow) {
+      const { data: linkedPartnershipPayments } = await service
+        .from("university_partnership_payments")
+        .select("id")
+        .or(
+          `monime_payment_id.eq.${monimeResourceId},transaction_reference.eq.${monimeResourceId}`
+        )
+        .order("created_at", { ascending: false })
+        .limit(1);
+      paymentId = linkedPartnershipPayments?.[0]?.id;
+    } else {
+      const { data: linkedPayments } = await service
+        .from("payments")
+        .select("id")
+        .or(
+          `monime_payment_id.eq.${monimeResourceId},transaction_reference.eq.${monimeResourceId}`
+        )
+        .order("created_at", { ascending: false })
+        .limit(1);
+      paymentId = linkedPayments?.[0]?.id;
+
+      if (!paymentId) {
+        const { data: linkedPartnershipPayments } = await service
+          .from("university_partnership_payments")
+          .select("id")
+          .or(
+            `monime_payment_id.eq.${monimeResourceId},transaction_reference.eq.${monimeResourceId}`
+          )
+          .order("created_at", { ascending: false })
+          .limit(1);
+        paymentId = linkedPartnershipPayments?.[0]?.id;
+      }
+    }
   }
 
   if (!paymentId) {
@@ -71,6 +103,71 @@ export async function POST(request: Request) {
     status === "completed" ||
     status === "paid" ||
     status === "success";
+
+  // Prefer partnership payment lookup when metadata says so, or when lecturer payment is missing
+  const { data: partnershipPayment } = await service
+    .from("university_partnership_payments")
+    .select("*")
+    .eq("id", paymentId)
+    .maybeSingle();
+
+  if (partnershipPayment) {
+    if (!eventCompleted && monimeResourceId) {
+      const monimeKind = (partnershipPayment.metadata as { monime_kind?: string } | null)
+        ?.monime_kind;
+      const verified =
+        monimeKind === "ussd"
+          ? await verifyMonimePaymentCode(monimeResourceId)
+          : await verifyMonimePayment(monimeResourceId);
+
+      if (!verified.completed) {
+        return NextResponse.json({ received: true });
+      }
+    } else if (!eventCompleted) {
+      return NextResponse.json({ received: true });
+    }
+
+    if (partnershipPayment.status === "completed") {
+      return NextResponse.json({ received: true });
+    }
+
+    try {
+      await completePartnershipPayment({
+        payment: {
+          id: partnershipPayment.id,
+          package_id: partnershipPayment.package_id,
+          package_name: partnershipPayment.package_name,
+          university_name: partnershipPayment.university_name,
+          department_name: partnershipPayment.department_name,
+          contact_person: partnershipPayment.contact_person,
+          email: partnershipPayment.email,
+          phone_number: partnershipPayment.phone_number,
+          country: partnershipPayment.country,
+          display_amount_usd: Number(partnershipPayment.display_amount_usd),
+          status: partnershipPayment.status,
+          inquiry_id: partnershipPayment.inquiry_id,
+          metadata: (partnershipPayment.metadata ?? {}) as Record<string, unknown>,
+        },
+        transactionReference: monimeResourceId ?? partnershipPayment.transaction_reference,
+        service,
+      });
+    } catch (err) {
+      void logSystemAudit({
+        action: "partnership_payment_completion_failed",
+        entityType: "university_partnership_payment",
+        entityId: partnershipPayment.id,
+        metadata: {
+          error: err instanceof Error ? err.message : "Completion failed",
+        },
+      });
+      if (isTransientError(err)) {
+        return handleApiRouteError("webhooks.monime.partnership", err);
+      }
+      return NextResponse.json({ received: true, error: "partnership_completion_failed" });
+    }
+
+    return NextResponse.json({ received: true });
+  }
 
   if (!eventCompleted && monimeResourceId) {
     const { data: paymentHint } = await service

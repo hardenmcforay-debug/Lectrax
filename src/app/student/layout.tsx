@@ -4,6 +4,7 @@ import { ServiceUnavailablePage } from "@/components/errors/service-unavailable-
 import { AttendanceDeviceRegistrar } from "@/components/student/attendance-device-registrar";
 import { PortalOnboardingGate } from "@/components/auth/portal-onboarding-gate";
 import { ProtectedSessionGuard } from "@/components/auth/protected-session-guard";
+import { StudentPortalFrame } from "@/components/student/student-portal-frame";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const guard = await requireRoleLayout("student");
@@ -21,7 +22,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <ProtectedSessionGuard />
       <PortalOnboardingGate user={guard.user} role="student" />
       <AttendanceDeviceRegistrar />
-      {children}
+      <StudentPortalFrame>{children}</StudentPortalFrame>
     </>
   );
 }

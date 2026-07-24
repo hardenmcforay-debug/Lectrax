@@ -75,6 +75,19 @@ export interface MonimeCheckoutParams {
   customerName?: string | null;
 }
 
+/** Generic Monime checkout for non-lecturer flows (e.g. university partnerships). */
+export interface MonimeCustomCheckoutParams {
+  name: string;
+  amountMajor: number;
+  paymentId: string;
+  paymentMethod: LectraxPaymentMethod;
+  successUrl: string;
+  cancelUrl: string;
+  customerName?: string | null;
+  metadata: Record<string, string>;
+  idempotencyPrefix?: string;
+}
+
 export type MonimeCheckoutResult =
   | {
       kind: "redirect";
@@ -90,18 +103,18 @@ export type MonimeCheckoutResult =
       currency: string;
     };
 
-function buildLineItems(plan: BillingPlan, currency: string, amountMinor: number) {
+function buildLineItems(name: string, currency: string, amountMinor: number) {
   return [
     {
       type: "custom" as const,
-      name: `Lectrax Premium — ${plan}`,
+      name,
       price: { currency, value: amountMinor },
       quantity: 1,
     },
   ];
 }
 
-function buildMetadata(params: MonimeCheckoutParams) {
+function buildLecturerMetadata(params: MonimeCheckoutParams) {
   return {
     lecturer_id: params.lecturerId,
     billing_plan: params.plan,
@@ -110,31 +123,33 @@ function buildMetadata(params: MonimeCheckoutParams) {
   };
 }
 
-async function createCardCheckoutSession(params: MonimeCheckoutParams): Promise<MonimeCheckoutResult> {
+async function createCardCheckoutSession(
+  params: MonimeCustomCheckoutParams
+): Promise<MonimeCheckoutResult> {
   const currency = getMonimeCurrency();
-  const amountMajor = getBillingChargeAmount(params.plan);
-  const amountMinor = toMonimeMinorUnits(amountMajor);
+  const amountMinor = toMonimeMinorUnits(params.amountMajor);
+  const prefix = params.idempotencyPrefix ?? "checkout";
 
   const data = await monimeFetch<{ id?: string; redirectUrl?: string }>(
     "/checkout-sessions",
     {
       method: "POST",
       body: JSON.stringify({
-      name: `Lectrax Premium — ${params.plan}`,
-      lineItems: buildLineItems(params.plan, currency, amountMinor),
-      reference: params.paymentId,
-      metadata: buildMetadata(params),
-      successUrl: params.successUrl,
-      cancelUrl: params.cancelUrl,
-      paymentOptions: {
-        card: { disable: false },
-        momo: { disable: true },
-        bank: { disable: true },
-        wallet: { disable: true },
-      },
-    }),
+        name: params.name,
+        lineItems: buildLineItems(params.name, currency, amountMinor),
+        reference: params.paymentId,
+        metadata: params.metadata,
+        successUrl: params.successUrl,
+        cancelUrl: params.cancelUrl,
+        paymentOptions: {
+          card: { disable: false },
+          momo: { disable: true },
+          bank: { disable: true },
+          wallet: { disable: true },
+        },
+      }),
     },
-    { idempotencyKey: `checkout:${params.paymentId}` }
+    { idempotencyKey: `${prefix}:${params.paymentId}` }
   );
 
   const checkoutUrl = data.redirectUrl ?? "";
@@ -145,32 +160,34 @@ async function createCardCheckoutSession(params: MonimeCheckoutParams): Promise<
   return { kind: "redirect", id: data.id, checkoutUrl };
 }
 
-async function createMobileMoneyPaymentCode(params: MonimeCheckoutParams): Promise<MonimeCheckoutResult> {
+async function createMobileMoneyPaymentCode(
+  params: MonimeCustomCheckoutParams
+): Promise<MonimeCheckoutResult> {
   const method = getPaymentMethodOption(params.paymentMethod);
   if (!method?.providerId) {
     throw new Error("Invalid mobile money payment method");
   }
 
   const currency = getMonimeCurrency();
-  const amountMajor = getBillingChargeAmount(params.plan);
-  const amountMinor = toMonimeMinorUnits(amountMajor);
+  const amountMinor = toMonimeMinorUnits(params.amountMajor);
+  const prefix = params.idempotencyPrefix ?? "payment-code";
 
   const data = await monimeFetch<{ id?: string; ussdCode?: string }>(
     "/payment-codes",
     {
       method: "POST",
       body: JSON.stringify({
-      mode: "one_time",
-      name: `Lectrax ${params.plan}`,
-      amount: { currency, value: amountMinor },
-      reference: params.paymentId,
-      duration: "30m",
-      authorizedProviders: [method.providerId],
-      customer: params.customerName ? { name: params.customerName } : undefined,
-      metadata: buildMetadata(params),
-    }),
+        mode: "one_time",
+        name: params.name,
+        amount: { currency, value: amountMinor },
+        reference: params.paymentId,
+        duration: "30m",
+        authorizedProviders: [method.providerId],
+        customer: params.customerName ? { name: params.customerName } : undefined,
+        metadata: params.metadata,
+      }),
     },
-    { idempotencyKey: `payment-code:${params.paymentId}` }
+    { idempotencyKey: `${prefix}:${params.paymentId}` }
   );
 
   if (!data.id || !data.ussdCode) {
@@ -182,12 +199,14 @@ async function createMobileMoneyPaymentCode(params: MonimeCheckoutParams): Promi
     id: data.id,
     ussdCode: data.ussdCode,
     providerLabel: method.label,
-    amountMajor,
+    amountMajor: params.amountMajor,
     currency,
   };
 }
 
-export async function createMonimeCheckout(params: MonimeCheckoutParams): Promise<MonimeCheckoutResult> {
+export async function createMonimeCustomCheckout(
+  params: MonimeCustomCheckoutParams
+): Promise<MonimeCheckoutResult> {
   const method = getPaymentMethodOption(params.paymentMethod);
   if (!method) {
     throw new Error("Unsupported payment method");
@@ -198,6 +217,21 @@ export async function createMonimeCheckout(params: MonimeCheckoutParams): Promis
   }
 
   return createMobileMoneyPaymentCode(params);
+}
+
+export async function createMonimeCheckout(params: MonimeCheckoutParams): Promise<MonimeCheckoutResult> {
+  const amountMajor = getBillingChargeAmount(params.plan);
+
+  return createMonimeCustomCheckout({
+    name: `Lectrax Premium — ${params.plan}`,
+    amountMajor,
+    paymentId: params.paymentId,
+    paymentMethod: params.paymentMethod,
+    successUrl: params.successUrl,
+    cancelUrl: params.cancelUrl,
+    customerName: params.customerName,
+    metadata: buildLecturerMetadata(params),
+  });
 }
 
 export async function verifyMonimePayment(sessionId: string): Promise<{

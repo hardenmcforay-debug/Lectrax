@@ -5,9 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
 import type { PartnershipInquiryInput } from "@/lib/validations";
 import { PartnershipInquiryForm } from "@/components/partnerships/partnership-inquiry-form";
+import { PartnershipPaymentSection } from "@/components/partnerships/partnership-payment-section";
+import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { cn } from "@/lib/utils";
 
-export function PartnershipsPageContent() {
+export function PartnershipsPageContent({
+  paymentMethodLogos,
+}: {
+  paymentMethodLogos?: Record<PaymentMethodLogoId, string | null>;
+}) {
   const [selectedPackage, setSelectedPackage] =
     useState<PartnershipInquiryInput["selectedPackage"]>("medium");
 
@@ -74,6 +80,8 @@ export function PartnershipsPageContent() {
           />
         </div>
       </section>
+
+      <PartnershipPaymentSection paymentMethodLogos={paymentMethodLogos} />
     </div>
   );
 }

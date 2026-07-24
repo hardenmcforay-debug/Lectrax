@@ -26,7 +26,14 @@ export function getClientIp(request: NextRequest): string {
 }
 
 function isPaymentStatusPath(pathname: string): boolean {
-  return /^\/api\/payments\/[^/]+\/status$/.test(pathname);
+  return (
+    /^\/api\/payments\/[^/]+\/status$/.test(pathname) ||
+    /^\/api\/partnerships\/payments\/[^/]+\/status$/.test(pathname)
+  );
+}
+
+function isPartnershipCheckoutPath(pathname: string): boolean {
+  return pathname === "/api/partnerships/checkout";
 }
 
 function isExportPath(pathname: string): boolean {
@@ -83,6 +90,10 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
 
   if (pathname === "/api/partnerships/inquiry" && upperMethod === "POST") {
     return { policy: "partnershipInquiry", rule: RATE_LIMIT_POLICIES.partnershipInquiry };
+  }
+
+  if (isPartnershipCheckoutPath(pathname) && upperMethod === "POST") {
+    return { policy: "paymentCheckout", rule: RATE_LIMIT_POLICIES.paymentCheckout };
   }
 
   if (pathname === "/api/auth/forgot-password" && upperMethod === "POST") {

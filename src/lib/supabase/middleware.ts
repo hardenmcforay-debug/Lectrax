@@ -126,6 +126,7 @@ export async function updateSession(request: NextRequest) {
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) ||
     PUBLIC_API_ROUTES.some((r) => pathname === r) ||
     isPublicAuthApiRoute(pathname) ||
+    /^\/api\/partnerships\/payments\/[^/]+\/status$/.test(pathname) ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron");
 

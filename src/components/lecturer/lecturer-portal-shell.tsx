@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useLayoutEffect } from "react";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
+import { usePortalFrame } from "@/components/layout/portal-frame-context";
 import { LecturerPageEnter } from "@/components/lecturer/lecturer-portal-motion";
 import { LecturerBottomNav } from "@/components/lecturer/lecturer-bottom-nav";
 import { LecturerMobileHeader } from "@/components/lecturer/lecturer-mobile-header";
@@ -17,23 +18,21 @@ type LecturerPortalShellProps = {
   children: ReactNode;
 };
 
-export function LecturerPortalShell({
+function LecturerPortalPageBody({
   title,
   description,
-  headerVariant = "default",
+  showHeader,
+  useGreetingHeader,
   disableEnterAnimation,
   children,
-}: LecturerPortalShellProps) {
-  const showHeader = headerVariant !== "hidden";
-  const useGreetingHeader = headerVariant === "lecturer-greeting";
-
-  useLayoutEffect(() => {
-    applyPortalChromeMarks();
-    requestAnimationFrame(() => {
-      applyPortalChromeMarks();
-    });
-  }, []);
-
+}: {
+  title?: string;
+  description?: string;
+  showHeader: boolean;
+  useGreetingHeader: boolean;
+  disableEnterAnimation?: boolean;
+  children: ReactNode;
+}) {
   const desktopHeaderClass =
     !disableEnterAnimation ? "lecturer-header-enter portal-page-header" : "portal-page-header";
 
@@ -64,15 +63,58 @@ export function LecturerPortalShell({
     ) : null;
 
   return (
+    <>
+      {desktopHeaderContent}
+      {mobilePageDescription}
+      {children}
+    </>
+  );
+}
+
+export function LecturerPortalShell({
+  title,
+  description,
+  headerVariant = "default",
+  disableEnterAnimation,
+  children,
+}: LecturerPortalShellProps) {
+  const inFrame = usePortalFrame();
+  const showHeader = headerVariant !== "hidden";
+  const useGreetingHeader = headerVariant === "lecturer-greeting";
+
+  useLayoutEffect(() => {
+    if (inFrame) return;
+    applyPortalChromeMarks();
+    requestAnimationFrame(() => {
+      applyPortalChromeMarks();
+    });
+  }, [inFrame]);
+
+  const pageBody = (
+    <LecturerPortalPageBody
+      title={title}
+      description={description}
+      showHeader={showHeader}
+      useGreetingHeader={useGreetingHeader}
+      disableEnterAnimation={disableEnterAnimation}
+    >
+      {children}
+    </LecturerPortalPageBody>
+  );
+
+  // Layout frame already owns chrome + swipe transitions.
+  if (inFrame) {
+    return <div className="lecturer-portal-page">{pageBody}</div>;
+  }
+
+  return (
     <div className="portal-shell-root flex h-dvh min-h-0 overflow-hidden bg-slate-50">
       <DashboardSidebar role="lecturer" className="lecturer-desktop-sidebar hidden lg:flex" />
       <main className="portal-mobile-shell min-h-0 min-w-0 flex-1 overflow-hidden">
         <LecturerMobileHeader />
         <div className="lecturer-portal-content min-h-0 min-w-0">
           <LecturerPageEnter disableEnterAnimation={disableEnterAnimation}>
-            {desktopHeaderContent}
-            {mobilePageDescription}
-            {children}
+            {pageBody}
           </LecturerPageEnter>
         </div>
         <LecturerBottomNav />

@@ -294,6 +294,33 @@ export const partnershipInquirySchema = z.object({
   additionalNotes: optionalSanitizedString(FIELD_LIMITS.NOTES),
 });
 
+export const partnershipCheckoutSchema = z.object({
+  packageId: z.enum(["small", "medium", "large"]),
+  universityName: sanitizedRequiredString({
+    min: 2,
+    max: FIELD_LIMITS.UNIVERSITY_NAME,
+    minMessage: "University name is required",
+  }),
+  departmentName: sanitizedRequiredString({
+    min: 2,
+    max: FIELD_LIMITS.DEPARTMENT_NAME,
+    minMessage: "Faculty/Department is required",
+  }),
+  contactPerson: sanitizedRequiredString({
+    min: 2,
+    max: FIELD_LIMITS.FULL_NAME,
+    minMessage: "Contact person is required",
+  }),
+  email: emailField,
+  phoneNumber: requiredPhoneField,
+  country: sanitizedRequiredString({
+    min: 2,
+    max: 80,
+    minMessage: "Country is required",
+  }),
+  paymentMethod: z.enum(["orange_money", "afrimoney", "visa_card"]),
+});
+
 export const adminToggleLecturerSchema = z.object({
   lecturerId: z.string().uuid("Invalid lecturer ID"),
   isActive: z.boolean(),
@@ -322,6 +349,7 @@ export type ClassSessionInput = z.infer<typeof classSessionSchema>;
 export type AssignmentInput = z.infer<typeof assignmentSchema>;
 export type ContactInquiryInput = z.infer<typeof contactInquirySchema>;
 export type PartnershipInquiryInput = z.infer<typeof partnershipInquirySchema>;
+export type PartnershipCheckoutInput = z.infer<typeof partnershipCheckoutSchema>;
 export type ManualStudentInput = z.infer<typeof manualStudentSchema>;
 export type JoinSessionInput = z.infer<typeof joinSessionSchema>;
 export type ClassTestInput = z.infer<typeof classTestSchema>;

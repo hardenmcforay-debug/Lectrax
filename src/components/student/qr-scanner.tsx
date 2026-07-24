@@ -457,7 +457,11 @@ export function QRScanner() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ScanResultNotice status={status} />
-          <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-lg" />
+          <div
+            id="qr-reader"
+            className="w-full max-w-sm overflow-hidden rounded-lg"
+            data-no-tab-swipe
+          />
           {!scanning ? (
             <Button
               variant="accent"

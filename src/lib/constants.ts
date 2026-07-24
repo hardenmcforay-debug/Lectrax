@@ -38,6 +38,7 @@ export const PUBLIC_ROUTES = [
 /** Public form/API endpoints that must work without login */
 export const PUBLIC_API_ROUTES = [
   "/api/partnerships/inquiry",
+  "/api/partnerships/checkout",
   "/api/contact",
 ] as const;
 
