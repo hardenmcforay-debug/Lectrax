@@ -81,7 +81,7 @@ export function StudentMobileHeader() {
             onClick={() => setOpen(false)}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50"
           >
-            <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-emerald-500" aria-hidden />
+            <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
           </button>
         </div>
 
@@ -107,7 +107,7 @@ export function StudentMobileHeader() {
               >
                 <Icon
                   {...HERO_LUCIDE_ICON_PROPS}
-                  className={cn("h-5 w-5 shrink-0", !active && "text-emerald-500")}
+                  className={cn("h-5 w-5 shrink-0", active ? "text-emerald-300" : "text-primary")}
                   aria-hidden
                 />
                 <span className="truncate">{item.label}</span>
@@ -133,7 +133,7 @@ export function StudentMobileHeader() {
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-5 w-5 shrink-0",
-                activeHref !== STUDENT_SETTINGS_HREF && "text-emerald-500"
+                activeHref === STUDENT_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
               )}
               aria-hidden
             />

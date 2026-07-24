@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import {
@@ -12,6 +10,7 @@ import { getStudentTableRows } from "@/lib/session-data";
 import type { ClassTestSummary } from "@/lib/session-data";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SessionPageClient } from "@/components/lecturer/session-page-client";
+import { BackLink } from "@/components/ui/back-link";
 import {
   buildSubscriptionDisplay,
   isPremiumFeatureUnlocked,
@@ -144,9 +143,7 @@ export default async function SessionDetailPage({
       description="Manage attendance, assignments, assessments, and student performance for this class session."
     >
       <div className="mb-4">
-        <Button asChild variant="outline" size="sm">
-          <Link href="/lecturer/sessions">Back</Link>
-        </Button>
+        <BackLink href="/lecturer/sessions" />
       </div>
       <SessionPageClient
         session={session}

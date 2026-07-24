@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
+import { BackLink } from "@/components/ui/back-link";
 import {
   canCreateAssignment,
   getAssignmentLimitReachedMessage,
@@ -52,9 +51,7 @@ export default async function SessionAssignmentsPage({
       description="Create assignments, set deadlines, and manage coursework for students in this class session."
     >
       <div className="mb-4">
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/lecturer/sessions/${id}?tab=assignments`}>Back</Link>
-        </Button>
+        <BackLink href={`/lecturer/sessions/${id}?tab=assignments`} />
       </div>
       {atLimit ? (
         <Card className={cn(lecturerPortalCardClass, "border-amber-200 bg-amber-50")}>

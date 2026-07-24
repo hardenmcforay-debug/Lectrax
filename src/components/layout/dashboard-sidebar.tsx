@@ -126,7 +126,7 @@ export function DashboardSidebar({
                 {...(isLecturer || isStudent ? HERO_LUCIDE_ICON_PROPS : {})}
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  (isLecturer || isStudent) && !active && "text-emerald-500"
+                  (isLecturer || isStudent) && (active ? "text-emerald-300" : "text-primary")
                 )}
               />
               <span className={cn("truncate", isLecturer && "leading-none")}>{item.label}</span>
@@ -157,7 +157,7 @@ export function DashboardSidebar({
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-4 w-4 shrink-0",
-                activeHref !== LECTURER_SETTINGS_HREF && "text-emerald-500"
+                activeHref === LECTURER_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
               )}
             />
             <span className="truncate leading-none">Settings</span>
@@ -179,7 +179,7 @@ export function DashboardSidebar({
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-4 w-4 shrink-0",
-                activeHref !== STUDENT_SETTINGS_HREF && "text-emerald-500"
+                activeHref === STUDENT_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
               )}
             />
             Settings
@@ -195,7 +195,7 @@ export function DashboardSidebar({
           <LogOut
             {...(isLecturer || isStudent ? HERO_LUCIDE_ICON_PROPS : {})}
             className={cn(
-              isLecturer || isStudent ? "h-4 w-4 text-emerald-500" : "h-4 w-4"
+              isLecturer || isStudent ? "h-4 w-4 text-primary" : "h-4 w-4"
             )}
           />
           Log out

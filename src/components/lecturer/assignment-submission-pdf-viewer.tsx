@@ -25,6 +25,12 @@ import {
 } from "lucide-react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { appFetch } from "@/lib/api/client-fetch";
+import {
+  getPdfJsModule,
+  getPrefetchedSubmissionPdf,
+  prefetchPdfEngine,
+  prefetchSubmissionPdf,
+} from "@/lib/assignments/pdf-viewer-prefetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,24 +62,19 @@ export type AssignmentSubmissionViewerData = {
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.5;
 const SCALE_STEP = 0.25;
+/** Desktop / large screens */
 const DEFAULT_SCALE = 1.75;
+/** Small screens (phones): open at 100% so the page fits the viewport */
+const DEFAULT_SCALE_SMALL = 1;
+const SMALL_SCREEN_MAX_WIDTH = 767;
 const MAX_RENDER_DPR = 2;
 const LAZY_PAGE_ROOT_MARGIN = "320px 0px";
 
-let pdfjsModulePromise: Promise<typeof import("pdfjs-dist")> | null = null;
-
-function getPdfJsModule() {
-  if (!pdfjsModulePromise) {
-    pdfjsModulePromise = import("pdfjs-dist").then((pdfjs) => {
-      configurePdfWorker(pdfjs);
-      return pdfjs;
-    });
-  }
-  return pdfjsModulePromise;
-}
-
-function configurePdfWorker(pdfjs: typeof import("pdfjs-dist")) {
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+function getDefaultPdfScale(): number {
+  if (typeof window === "undefined") return DEFAULT_SCALE;
+  return window.matchMedia(`(max-width: ${SMALL_SCREEN_MAX_WIDTH}px)`).matches
+    ? DEFAULT_SCALE_SMALL
+    : DEFAULT_SCALE;
 }
 
 function formatSubmittedAt(value: string | null): string {
@@ -221,7 +222,7 @@ export function AssignmentSubmissionPdfViewer({
   const [pdfSourceUrl, setPdfSourceUrl] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(DEFAULT_SCALE);
+  const [scale, setScale] = useState(getDefaultPdfScale);
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -234,7 +235,7 @@ export function AssignmentSubmissionPdfViewer({
     });
     setPageCount(0);
     setCurrentPage(1);
-    setScale(DEFAULT_SCALE);
+    setScale(getDefaultPdfScale());
     setLoading(false);
     setLoadProgress(null);
     setLoadError(false);
@@ -255,39 +256,27 @@ export function AssignmentSubmissionPdfViewer({
     setCurrentPage(1);
 
     try {
-      const [pdfjs, response] = await Promise.all([
+      const prefetchedPromise =
+        getPrefetchedSubmissionPdf(fetchUrl) ?? prefetchSubmissionPdf(fetchUrl);
+
+      // If bytes are already (or almost) ready, skip indeterminate progress.
+      setLoadProgress(35);
+
+      const [pdfjs, prefetched] = await Promise.all([
         getPdfJsModule(),
-        appFetch(fetchUrl),
+        prefetchedPromise,
       ]);
 
-      if (!response.ok) {
-        throw new Error("Could not resolve submission PDF.");
-      }
+      setPdfSourceUrl(prefetched.signedUrl);
+      setLoadProgress(70);
 
-      const payload = (await response.json()) as { url?: string };
-      if (!payload.url) {
-        throw new Error("Missing submission PDF URL.");
-      }
-
-      setPdfSourceUrl(payload.url);
-
+      // Copy buffer so PDF.js can transfer/own its own ArrayBuffer safely.
+      const dataCopy = prefetched.data.slice(0);
       const loadingTask = pdfjs.getDocument({
-        url: payload.url,
-        disableAutoFetch: false,
-        disableStream: false,
+        data: dataCopy,
+        disableAutoFetch: true,
+        disableStream: true,
       });
-
-      loadingTask.onProgress = ({
-        loaded,
-        total,
-      }: {
-        loaded: number;
-        total: number;
-      }) => {
-        if (total > 0) {
-          setLoadProgress(Math.min(99, Math.round((loaded / total) * 100)));
-        }
-      };
 
       const doc = await loadingTask.promise;
 
@@ -295,7 +284,45 @@ export function AssignmentSubmissionPdfViewer({
       setPageCount(doc.numPages);
       setLoadProgress(100);
     } catch {
-      setLoadError(true);
+      // Fallback path if prefetch failed mid-flight: try classic URL stream once.
+      try {
+        const [pdfjs, response] = await Promise.all([
+          getPdfJsModule(),
+          appFetch(fetchUrl),
+        ]);
+
+        if (!response.ok) throw new Error("Could not resolve submission PDF.");
+
+        const payload = (await response.json()) as { url?: string };
+        if (!payload.url) throw new Error("Missing submission PDF URL.");
+
+        setPdfSourceUrl(payload.url);
+
+        const loadingTask = pdfjs.getDocument({
+          url: payload.url,
+          disableAutoFetch: false,
+          disableStream: false,
+        });
+
+        loadingTask.onProgress = ({
+          loaded,
+          total,
+        }: {
+          loaded: number;
+          total: number;
+        }) => {
+          if (total > 0) {
+            setLoadProgress(Math.min(99, Math.round((loaded / total) * 100)));
+          }
+        };
+
+        const doc = await loadingTask.promise;
+        setPdfDoc(doc);
+        setPageCount(doc.numPages);
+        setLoadProgress(100);
+      } catch {
+        setLoadError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -303,7 +330,7 @@ export function AssignmentSubmissionPdfViewer({
 
   useEffect(() => {
     setMounted(true);
-    void getPdfJsModule();
+    void prefetchPdfEngine();
   }, []);
 
   useEffect(() => {
@@ -312,6 +339,8 @@ export function AssignmentSubmissionPdfViewer({
       return;
     }
 
+    // Reset zoom for the current viewport whenever the viewer opens.
+    setScale(getDefaultPdfScale());
     void loadDocument(data.viewUrl);
   }, [open, data?.viewUrl, loadDocument, resetViewer]);
 

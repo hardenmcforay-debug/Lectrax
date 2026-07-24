@@ -42,6 +42,9 @@ export const RATE_LIMIT_POLICIES = {
   subscriptionSync: { limit: 5, windowMs: 60 * 60_000 },
   webhookIngress: { limit: 120, windowMs: 60_000 },
 
+  // Account lifecycle
+  accountDeletion: { limit: 3, windowMs: 60 * 60_000 },
+
   // Administrative
   adminMutation: { limit: 40, windowMs: 60_000 },
   dataExport: { limit: 10, windowMs: 60 * 60_000 },

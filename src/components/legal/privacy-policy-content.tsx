@@ -139,7 +139,10 @@ const sections = [
       <ul className="list-disc space-y-2 pl-6">
         <li>Access and update your account information through your profile settings</li>
         <li>Request correction of inaccurate personal information</li>
-        <li>Request deletion of your account, subject to legal and academic record obligations</li>
+        <li>
+          Delete your account from Settings (Delete account), subject to legal and academic record
+          obligations. Institutional academic records may be retained in anonymized form.
+        </li>
         <li>Opt out of non-essential communications where applicable</li>
         <li>Contact us to exercise privacy rights available in your jurisdiction</li>
       </ul>

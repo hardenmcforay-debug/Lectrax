@@ -52,6 +52,11 @@ import {
   AssignmentSubmissionPdfViewer,
   type AssignmentSubmissionViewerData,
 } from "@/components/lecturer/assignment-submission-pdf-viewer";
+import {
+  prefetchPdfEngine,
+  prefetchSubmissionPdf,
+  prefetchSubmissionPdfWhenIdle,
+} from "@/lib/assignments/pdf-viewer-prefetch";
 
 function gradesFromRows(
   rows: AssignmentGradeEntryData["rows"],
@@ -122,6 +127,20 @@ export function AssignmentGradesClient({
     setSavedGrades(serverGrades);
   }, [serverGrades]);
 
+  const submissionViewUrlFor = useCallback(
+    (enrollmentId: string) =>
+      `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}`,
+    [assignment.id, classSessionId],
+  );
+
+  useEffect(() => {
+    void prefetchPdfEngine();
+    const firstSubmitted = rows.find((row) => row.hasSubmission);
+    if (firstSubmitted) {
+      prefetchSubmissionPdfWhenIdle(submissionViewUrlFor(firstSubmitted.enrollmentId));
+    }
+  }, [rows, submissionViewUrlFor]);
+
   const dirtyCount = useMemo(
     () => countDirtyGrades(enrollmentIds, grades, savedGrades),
 
@@ -182,6 +201,9 @@ export function AssignmentGradesClient({
         return;
       }
 
+      const viewUrl = submissionViewUrlFor(enrollmentId);
+      void prefetchSubmissionPdf(viewUrl);
+
       setError(null);
       setPdfViewer({
         enrollmentId,
@@ -190,10 +212,17 @@ export function AssignmentGradesClient({
         assignmentTitle: assignment.title,
         submittedAt: row.submittedAt,
         fileName: row.fileName,
-        viewUrl: `/api/lecturer/sessions/${classSessionId}/assignments/${assignment.id}/submissions/download?enrollmentId=${enrollmentId}`,
+        viewUrl,
       });
     },
-    [assignment.id, assignment.title, classSessionId, rows],
+    [assignment.title, rows, submissionViewUrlFor],
+  );
+
+  const prefetchPdf = useCallback(
+    (enrollmentId: string) => {
+      void prefetchSubmissionPdf(submissionViewUrlFor(enrollmentId));
+    },
+    [submissionViewUrlFor],
   );
 
   const saveViewerGrade = useCallback(async () => {
@@ -526,6 +555,7 @@ export function AssignmentGradesClient({
                       hasSubmission={row.hasSubmission}
                       onChange={updateGrade}
                       onOpenPdf={(id) => void openPdf(id)}
+                      onPrefetchPdf={prefetchPdf}
                     />
                   ))}
                 </TableBody>

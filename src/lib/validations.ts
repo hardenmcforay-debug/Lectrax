@@ -135,6 +135,11 @@ export const manualStudentSchema = z.object({
   collegeId: optionalSanitizedString(FIELD_LIMITS.COLLEGE_ID),
 });
 
+/** Update college ID for an existing manual student. */
+export const manualStudentCollegeIdSchema = z.object({
+  collegeId: optionalSanitizedString(FIELD_LIMITS.COLLEGE_ID),
+});
+
 export const joinSessionSchema = z.object({
   sessionCode: sessionCodeField,
 });
@@ -351,5 +356,6 @@ export type ContactInquiryInput = z.infer<typeof contactInquirySchema>;
 export type PartnershipInquiryInput = z.infer<typeof partnershipInquirySchema>;
 export type PartnershipCheckoutInput = z.infer<typeof partnershipCheckoutSchema>;
 export type ManualStudentInput = z.infer<typeof manualStudentSchema>;
+export type ManualStudentCollegeIdInput = z.infer<typeof manualStudentCollegeIdSchema>;
 export type JoinSessionInput = z.infer<typeof joinSessionSchema>;
 export type ClassTestInput = z.infer<typeof classTestSchema>;

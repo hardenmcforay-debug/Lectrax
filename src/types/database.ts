@@ -22,6 +22,7 @@ export interface Profile {
   subscription_start_date: string | null;
   subscription_end_date: string | null;
   grace_period_end_date: string | null;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +47,7 @@ export interface Enrollment {
   student_id: string | null;
   manual_student_id: string | null;
   college_id: string | null;
+  former_student_label?: string | null;
   is_manual: boolean;
   joined_at: string;
   created_at: string;

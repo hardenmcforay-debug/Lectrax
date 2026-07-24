@@ -25,6 +25,7 @@ import type { UserRole } from "@/types/database";
 import { User, Phone, GraduationCap, CreditCard, Lock, Mail } from "lucide-react";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
+import { DeleteAccountSection } from "@/components/settings/delete-account-section";
 import { cn } from "@/lib/utils";
 
 export function ProfileSettings({
@@ -305,6 +306,8 @@ export function ProfileSettings({
           <p>Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "—"}</p>
         </CardContent>
       </Card>
+
+      <DeleteAccountSection role={role} cardClassName={portalCardClass} />
     </div>
   );
 }

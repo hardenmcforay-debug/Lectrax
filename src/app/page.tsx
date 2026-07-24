@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AccountDeletedBanner } from "@/components/auth/account-deleted-banner";
 import { LoginFailedBanner } from "@/components/auth/login-failed-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { AuthLaunchGate } from "@/components/pwa/auth-launch-gate";
@@ -21,12 +22,18 @@ export default async function HomePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const dashboardPath = await getAuthenticatedHomeRedirect();
-  if (dashboardPath) {
-    redirect(dashboardPath);
+  const params = await searchParams;
+  const accountDeleted = readParam(params.accountDeleted) === "1";
+
+  // After account deletion the session is already cleared; skip auth home redirect
+  // so the confirmation banner can show on the landing page.
+  if (!accountDeleted) {
+    const dashboardPath = await getAuthenticatedHomeRedirect();
+    if (dashboardPath) {
+      redirect(dashboardPath);
+    }
   }
 
-  const params = await searchParams;
   const showLoginFailed =
     readParam(params.login_failed) === "1" || readParam(params.error) === "auth";
 
@@ -45,7 +52,8 @@ export default async function HomePage({
 
   return (
     <AuthLaunchGate>
-      <LoginFailedBanner show={showLoginFailed} />
+      <AccountDeletedBanner show={accountDeleted} />
+      <LoginFailedBanner show={showLoginFailed && !accountDeleted} />
       <LandingPage heroImageUrl={heroImageUrl} featureImages={featureImages} />
     </AuthLaunchGate>
   );

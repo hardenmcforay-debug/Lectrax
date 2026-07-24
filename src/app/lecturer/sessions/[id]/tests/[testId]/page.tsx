@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { getTestGradeEntryData } from "@/lib/lecturer/class-tests";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Button } from "@/components/ui/button";
+import { BackLink } from "@/components/ui/back-link";
 import { TestGradesClient } from "@/components/lecturer/test-grades-client";
 
 export const dynamic = "force-dynamic";
@@ -27,9 +26,7 @@ export default async function TestGradesPage({
         description="Enter and manage test scores while maintaining accurate student assessment records."
       >
         <div className="mb-4">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/lecturer/sessions/${id}?tab=ca`}>Back</Link>
-          </Button>
+          <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />
         </div>
         <TestGradesClient classSessionId={id} data={data} />
       </DashboardShell>
@@ -45,9 +42,7 @@ export default async function TestGradesPage({
         description="Enter and manage test scores while maintaining accurate student assessment records."
       >
         <div className="mb-4">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/lecturer/sessions/${id}?tab=ca`}>Back</Link>
-          </Button>
+          <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />
         </div>
         <p className="text-sm text-destructive">
           Could not load test grades. Please refresh the page or try again later.

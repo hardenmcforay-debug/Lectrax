@@ -28,8 +28,8 @@ export function LecturerBottomNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "lecturer-bottom-nav-item group relative flex min-h-11 min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
-                active ? "text-emerald-300" : "text-white/65 hover:text-white/90",
+                "lecturer-bottom-nav-item group relative flex min-h-11 min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
+                active ? "text-emerald-300" : "text-sky-300/70 hover:text-sky-200",
                 !reducedMotion && "transition-all duration-200"
               )}
             >

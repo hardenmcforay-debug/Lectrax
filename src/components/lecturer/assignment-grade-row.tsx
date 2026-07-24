@@ -22,6 +22,7 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
   hasSubmission,
   onChange,
   onOpenPdf,
+  onPrefetchPdf,
 }: {
   enrollmentId: string;
   name: string;
@@ -37,6 +38,7 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
   hasSubmission: boolean;
   onChange: (enrollmentId: string, value: string) => void;
   onOpenPdf: (enrollmentId: string) => void;
+  onPrefetchPdf?: (enrollmentId: string) => void;
 }) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +76,8 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
             type="button"
             variant="link"
             className="h-auto p-0 text-sm"
+            onPointerEnter={() => onPrefetchPdf?.(enrollmentId)}
+            onFocus={() => onPrefetchPdf?.(enrollmentId)}
             onClick={() => onOpenPdf(enrollmentId)}
           >
             {fileName ?? "View PDF"}

@@ -28,6 +28,12 @@ import {
   AssignmentUploadOverlay,
   type AssignmentUploadOverlayPhase,
 } from "@/components/student/assignment-upload-overlay";
+import {
+  clearPrefetchedSubmissionPdf,
+  prefetchPdfEngine,
+  prefetchSubmissionPdf,
+  prefetchSubmissionPdfWhenIdle,
+} from "@/lib/assignments/pdf-viewer-prefetch";
 
 const SUCCESS_DISPLAY_MS = 2200;
 
@@ -98,11 +104,37 @@ export function StudentAssignmentDetailClient({
 
   const canUpload = !submission && !pastDeadline;
   const isUploading = overlayOpen && overlayPhase === "uploading";
+  const submissionViewUrl = `/api/student/assignments/${assignmentId}/download`;
+
+  useEffect(() => {
+    void prefetchPdfEngine();
+    if (submission) {
+      prefetchSubmissionPdfWhenIdle(submissionViewUrl);
+    }
+  }, [submission, submissionViewUrl]);
 
   const gradeDisplay = useMemo(() => {
     if (grade === null) return null;
     return `${grade}/${Number(assignment.max_score)}`;
   }, [assignment.max_score, grade]);
+
+  const openSubmissionPdf = useCallback(() => {
+    if (!submission) return;
+    void prefetchSubmissionPdf(submissionViewUrl);
+    setPdfViewer({
+      enrollmentId: initial.enrollmentId,
+      assignmentTitle: assignment.title,
+      submittedAt: submission.submitted_at,
+      fileName: submission.file_name,
+      viewUrl: submissionViewUrl,
+      viewerTitle: "Your Submission",
+    });
+  }, [
+    assignment.title,
+    initial.enrollmentId,
+    submission,
+    submissionViewUrl,
+  ]);
 
   function handleFileSelect(file: File | null) {
     if (!file || isUploading) return;
@@ -159,6 +191,7 @@ export function StudentAssignmentDetailClient({
       setOverlayPhase("success");
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      clearPrefetchedSubmissionPdf(submissionViewUrl);
 
       clearSuccessTimer();
       successTimerRef.current = window.setTimeout(() => {
@@ -184,6 +217,7 @@ export function StudentAssignmentDetailClient({
     router,
     selectedFile,
     submission,
+    submissionViewUrl,
   ]);
 
   function handleRetryUpload() {
@@ -261,16 +295,13 @@ export function StudentAssignmentDetailClient({
                 type="button"
                 variant="link"
                 className="h-auto p-0"
-                onClick={() =>
-                  setPdfViewer({
-                    enrollmentId: initial.enrollmentId,
-                    assignmentTitle: assignment.title,
-                    submittedAt: submission.submitted_at,
-                    fileName: submission.file_name,
-                    viewUrl: `/api/student/assignments/${assignmentId}/download`,
-                    viewerTitle: "Your Submission",
-                  })
-                }
+                onPointerEnter={() => {
+                  void prefetchSubmissionPdf(submissionViewUrl);
+                }}
+                onFocus={() => {
+                  void prefetchSubmissionPdf(submissionViewUrl);
+                }}
+                onClick={openSubmissionPdf}
               >
                 View your uploaded PDF
               </Button>

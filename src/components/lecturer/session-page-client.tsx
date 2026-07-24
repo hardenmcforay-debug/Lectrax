@@ -148,6 +148,9 @@ export function SessionPageClient({
     useState<SessionAssignmentSummary | null>(null);
   const [deletingAssignment, setDeletingAssignment] = useState(false);
   const [deleteAssignmentError, setDeleteAssignmentError] = useState<string | null>(null);
+  const [removeStudentTarget, setRemoveStudentTarget] = useState<StudentTableRow | null>(null);
+  const [removingStudent, setRemovingStudent] = useState(false);
+  const [removeStudentError, setRemoveStudentError] = useState<string | null>(null);
   const [assignmentLimitMessage, setAssignmentLimitMessage] = useState<string | null>(null);
   const [closeSessionOpen, setCloseSessionOpen] = useState(false);
   const [closingSession, setClosingSession] = useState(false);
@@ -348,6 +351,38 @@ export function SessionPageClient({
     }
   }
 
+  async function handleRemoveStudent() {
+    if (!removeStudentTarget || removingStudent || !canWrite) return;
+    setRemoveStudentError(null);
+    setRemovingStudent(true);
+
+    try {
+      const res = await appFetch(
+        `/api/lecturer/sessions/${session.id}/enrollments/${removeStudentTarget.enrollmentId}`,
+        { method: "DELETE" }
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        setRemoveStudentError(
+          sanitizeErrorMessage(data.error) ?? "Could not remove student. Please try again."
+        );
+        return;
+      }
+
+      setStudentRows((prev) =>
+        prev.filter((row) => row.enrollmentId !== removeStudentTarget.enrollmentId)
+      );
+      setRemoveStudentTarget(null);
+      await refreshStudentRows();
+      router.refresh();
+    } catch {
+      setRemoveStudentError("Network error. Please try again.");
+    } finally {
+      setRemovingStudent(false);
+    }
+  }
+
   async function addManualStudent(event?: FormEvent) {
     event?.preventDefault();
     if (addingManual) return;
@@ -491,7 +526,14 @@ export function SessionPageClient({
       <TabsContent value="students">
         {canWrite ? (
         <Card className={cn(lecturerPortalCardClass, "mb-4")}>
-          <CardHeader><CardTitle className="text-base">Add Manual Student</CardTitle></CardHeader>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <CardTitle className="text-base">Add Manual Student</CardTitle>
+            <Button asChild size="sm" className="shrink-0">
+              <Link href={`/lecturer/sessions/${session.id}/manual-students`}>
+                Manage College IDs
+              </Link>
+            </Button>
+          </CardHeader>
           <CardContent>
             <form
               className="flex flex-wrap items-end gap-2"
@@ -528,8 +570,15 @@ export function SessionPageClient({
         </Card>
         ) : (
           <Card className={cn(lecturerPortalCardClass, "mb-4 border-amber-200 bg-amber-50")}>
-            <CardContent className="py-4 text-sm text-amber-900">
-              Your account is in read-only mode. Renew your subscription to add students.
+            <CardContent className="space-y-3 py-4">
+              <p className="text-sm text-amber-900">
+                Your account is in read-only mode. Renew your subscription to add students.
+              </p>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/lecturer/sessions/${session.id}/manual-students`}>
+                  View Manual Students
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -581,7 +630,28 @@ export function SessionPageClient({
             </TableHeader>
             <TableBody>
               {studentRows.map((r, index) => (
-                <TableRow key={r.enrollmentId}>
+                <TableRow
+                  key={r.enrollmentId}
+                  className={cn(
+                    canWrite &&
+                      "cursor-pointer transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none"
+                  )}
+                  tabIndex={canWrite ? 0 : undefined}
+                  aria-label={canWrite ? `Remove ${r.name}` : undefined}
+                  onClick={() => {
+                    if (!canWrite || removingStudent) return;
+                    setRemoveStudentError(null);
+                    setRemoveStudentTarget(r);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!canWrite || removingStudent) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setRemoveStudentError(null);
+                      setRemoveStudentTarget(r);
+                    }
+                  }}
+                >
                   <TableCell className="px-3 py-3 text-center align-middle tabular-nums text-sm text-muted-foreground">
                     {index + 1}
                   </TableCell>
@@ -629,6 +699,54 @@ export function SessionPageClient({
             </TableBody>
           </Table>
         </div>
+
+        <Dialog
+          open={removeStudentTarget !== null}
+          onOpenChange={(open) => {
+            if (!open && !removingStudent) {
+              setRemoveStudentTarget(null);
+              setRemoveStudentError(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                Remove {removeStudentTarget?.name ?? "student"}?
+              </DialogTitle>
+              <DialogDescription className="space-y-2 pt-2 text-left">
+                <span className="block">
+                  This removes the student from this class
+                  {removeStudentTarget?.isManual ? " (manual entry)" : ""}.
+                </span>
+                <span className="block">This action cannot be undone.</span>
+                <span className="block">
+                  Their attendance, assignment submissions, and grades for this class will be
+                  permanently deleted.
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            {removeStudentError && (
+              <p className="text-sm text-destructive">{removeStudentError}</p>
+            )}
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setRemoveStudentTarget(null)}
+                disabled={removingStudent}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => void handleRemoveStudent()}
+                loading={removingStudent}
+              >
+                {removingStudent ? "Removing..." : "Remove"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       <TabsContent value="attendance">
