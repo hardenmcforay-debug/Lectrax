@@ -78,8 +78,6 @@ const ADMIN_PRUNE_PATHS = [
   "src/components/errors/data-fetch-error.tsx",
   "src/components/errors/form-error-message.tsx",
   "src/components/errors/offline-cache-writer.tsx",
-  "src/components/layout/portal-tab-swipe.tsx",
-  "src/components/layout/portal-frame-context.tsx",
   "src/lib/subscription/guards.ts",
   "src/app/api/auth/login/route.ts",
   "src/app/api/auth/resolve-login/route.ts",

@@ -3,7 +3,6 @@ import { requireRoleLayout } from "@/lib/auth/require-role-layout";
 import { ServiceUnavailablePage } from "@/components/errors/service-unavailable-page";
 import { PortalOnboardingGate } from "@/components/auth/portal-onboarding-gate";
 import { ProtectedSessionGuard } from "@/components/auth/protected-session-guard";
-import { LecturerPortalFrame } from "@/components/lecturer/lecturer-portal-frame";
 
 export default async function LecturerLayout({ children }: { children: React.ReactNode }) {
   const guard = await requireRoleLayout("lecturer");
@@ -20,7 +19,7 @@ export default async function LecturerLayout({ children }: { children: React.Rea
     <>
       <ProtectedSessionGuard />
       <PortalOnboardingGate user={guard.user} role="lecturer" />
-      <LecturerPortalFrame>{children}</LecturerPortalFrame>
+      {children}
     </>
   );
 }
