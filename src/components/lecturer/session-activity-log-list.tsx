@@ -39,7 +39,7 @@ export function SessionActivityLogList({
   }, [initialLogs]);
 
   async function handleDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleting) return;
     setError(null);
     setDeleting(true);
 
@@ -66,6 +66,7 @@ export function SessionActivityLogList({
   }
 
   async function handleDeleteAll() {
+    if (deletingAll) return;
     setError(null);
     setDeletingAll(true);
 
@@ -179,7 +180,7 @@ export function SessionActivityLogList({
             <Button
               variant="destructive"
               onClick={() => void handleDeleteAll()}
-              disabled={deletingAll}
+              loading={deletingAll}
             >
               {deletingAll ? "Deleting..." : "Delete All"}
             </Button>
@@ -211,7 +212,11 @@ export function SessionActivityLogList({
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => void handleDelete()} disabled={deleting}>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDelete()}
+              loading={deleting}
+            >
               {deleting ? "Deleting..." : "Delete Log"}
             </Button>
           </DialogFooter>

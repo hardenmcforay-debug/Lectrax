@@ -309,7 +309,8 @@ export function StudentAssignmentDetailClient({
                 type="button"
                 variant="accent"
                 className="w-full sm:w-auto"
-                disabled={!selectedFile || isUploading || pastDeadline}
+                loading={isUploading}
+                disabled={!selectedFile || pastDeadline}
                 onClick={() => void submitAssignment()}
               >
                 Submit Assignment

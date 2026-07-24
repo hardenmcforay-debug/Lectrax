@@ -122,7 +122,7 @@ export function ContactForm() {
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          loading={isSubmitting}
           variant="accent"
           className="h-11 w-full rounded-xl text-sm font-semibold md:text-base"
         >

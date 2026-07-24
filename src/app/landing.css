@@ -89,10 +89,10 @@ html {
 /* Secondary faint glow — deepest layer */
 .hero-halo-ambient {
   position: absolute;
-  inset: -22%;
-  border-radius: 50%;
+  inset: -18%;
+  border-radius: 2rem;
   background: radial-gradient(
-    circle,
+    ellipse at center,
     rgba(34, 211, 238, 0.09) 0%,
     rgba(59, 130, 246, 0.06) 35%,
     rgba(147, 197, 253, 0.03) 55%,
@@ -105,10 +105,10 @@ html {
 
 .hero-halo-ambient-secondary {
   position: absolute;
-  inset: -14%;
-  border-radius: 50%;
+  inset: -10%;
+  border-radius: 1.75rem;
   background: radial-gradient(
-    circle,
+    ellipse at center,
     rgba(255, 255, 255, 0.04) 0%,
     rgba(34, 211, 238, 0.05) 40%,
     transparent 65%
@@ -127,10 +127,10 @@ html {
 /* Diffused outer glow layers */
 .hero-halo-glow-outer {
   position: absolute;
-  inset: -16%;
-  border-radius: 50%;
+  inset: -12%;
+  border-radius: 1.85rem;
   background: radial-gradient(
-    circle,
+    ellipse at center,
     transparent 44%,
     rgba(34, 211, 238, 0.18) 58%,
     rgba(59, 130, 246, 0.12) 68%,
@@ -143,10 +143,10 @@ html {
 
 .hero-halo-glow-mid {
   position: absolute;
-  inset: -8%;
-  border-radius: 50%;
+  inset: -6%;
+  border-radius: 1.65rem;
   background: radial-gradient(
-    circle,
+    ellipse at center,
     transparent 50%,
     rgba(56, 189, 248, 0.22) 62%,
     rgba(96, 165, 250, 0.15) 70%,
@@ -160,9 +160,9 @@ html {
 .hero-halo-glow-inner {
   position: absolute;
   inset: -2%;
-  border-radius: 50%;
+  border-radius: 1.5rem;
   background: radial-gradient(
-    circle,
+    ellipse at center,
     transparent 54%,
     rgba(103, 232, 249, 0.25) 64%,
     rgba(255, 255, 255, 0.12) 70%,
@@ -175,17 +175,17 @@ html {
 .hero-portal-frame {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: 1.5rem;
 }
 
-/* Thick outer glowing ring */
+/* Thick outer glowing frame */
 .hero-portal-ring-outer {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  padding: 4px;
-  background: conic-gradient(
-    from 210deg,
+  border-radius: 1.5rem;
+  padding: 3px;
+  background: linear-gradient(
+    135deg,
     rgba(34, 211, 238, 0.85),
     rgba(56, 189, 248, 0.8),
     rgba(96, 165, 250, 0.75),
@@ -211,11 +211,11 @@ html {
   z-index: 3;
 }
 
-/* Thin bright inner ring */
+/* Thin bright inner frame */
 .hero-portal-ring-inner {
   position: absolute;
-  inset: 7%;
-  border-radius: 50%;
+  inset: 4%;
+  border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
     0 0 4px rgba(255, 255, 255, 0.4),
@@ -229,8 +229,8 @@ html {
 /* Portal core — matches hero section background */
 .hero-portal-core {
   position: absolute;
-  inset: 9%;
-  border-radius: 50%;
+  inset: 5%;
+  border-radius: 1.15rem;
   overflow: hidden;
   z-index: 2;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -241,7 +241,7 @@ html {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: inherit;
   opacity: 0.4;
   pointer-events: none;
   z-index: 0;
@@ -253,7 +253,7 @@ html {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: inherit;
 }
 
 .hero-portal-core--image {

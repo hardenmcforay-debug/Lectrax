@@ -96,7 +96,7 @@ export function CreateSessionForm() {
             )}
           </div>
           {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Session"}
           </Button>
         </form>

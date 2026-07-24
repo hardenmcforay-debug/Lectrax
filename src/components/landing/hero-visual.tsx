@@ -74,7 +74,7 @@ export function HeroVisual({ imageUrl }: HeroVisualProps) {
       ))}
 
       <motion.div
-        className="hero-portal relative aspect-square w-full max-w-[min(100%,28rem)]"
+        className="hero-portal relative aspect-[4/3] w-full max-w-[min(100%,32rem)]"
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
@@ -121,7 +121,7 @@ export function HeroVisual({ imageUrl }: HeroVisualProps) {
                     fill
                     unoptimized
                     className="object-cover"
-                    sizes="(max-width: 1024px) 80vw, 28rem"
+                    sizes="(max-width: 1024px) 90vw, 32rem"
                     priority
                   />
                 ) : (

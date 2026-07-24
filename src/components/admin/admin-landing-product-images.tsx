@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { ImageIcon, Trash2, Upload } from "lucide-react";
 import { appFetch } from "@/lib/api/client-fetch";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +47,8 @@ function ProductImageUpload({
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
+    if (uploading || removing) return;
+
     const validationError = validateBrandingImageFile(file);
     if (validationError) {
       setError(validationError);
@@ -100,6 +102,7 @@ function ProductImageUpload({
   }
 
   async function handleRemove() {
+    if (uploading || removing) return;
     setRemoving(true);
     setError(null);
     setMessage(null);
@@ -170,14 +173,11 @@ function ProductImageUpload({
           <Button
             type="button"
             size="sm"
-            disabled={uploading || removing}
+            loading={uploading}
+            disabled={removing}
             onClick={() => inputRef.current?.click()}
           >
-            {uploading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="mr-2 h-4 w-4" />
-            )}
+            {!uploading && <Upload className="mr-2 h-4 w-4" />}
             {state.isCustom ? "Replace" : "Upload"}
           </Button>
           {state.isCustom && (
@@ -185,14 +185,11 @@ function ProductImageUpload({
               type="button"
               size="sm"
               variant="outline"
-              disabled={uploading || removing}
+              loading={removing}
+              disabled={uploading}
               onClick={() => void handleRemove()}
             >
-              {removing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
+              {!removing && <Trash2 className="mr-2 h-4 w-4" />}
               Reset
             </Button>
           )}

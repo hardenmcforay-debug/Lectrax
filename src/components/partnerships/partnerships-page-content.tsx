@@ -58,7 +58,7 @@ export function PartnershipsPageContent() {
                 </p>
                 <p className="mt-6 text-4xl font-bold text-slate-900">
                   ${pkg.price.toLocaleString()}
-                  <span className="text-base font-normal text-slate-500"> / Year</span>
+                  <span className="text-base font-normal text-slate-500"> / Academic Year</span>
                 </p>
               </button>
             ))}

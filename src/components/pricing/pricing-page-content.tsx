@@ -87,7 +87,7 @@ const lecturerHowItWorks = [
   {
     title: "Choose a Premium plan when you need more",
     description:
-      "Upgrade to Monthly, Semester, or 8 Months when you need unlimited sessions, students, and premium tools.",
+      "Upgrade to Monthly, Semester, or Academic year when you need unlimited sessions, students, and premium tools.",
   },
   {
     title: "Pay with a local payment method",

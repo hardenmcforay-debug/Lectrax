@@ -381,6 +381,7 @@ export function QRScanner() {
   submitTokenRef.current = submitToken;
 
   async function handleTransferDevice() {
+    if (transferring) return;
     setTransferring(true);
     try {
       const identity = getAttendanceDeviceIdentity();
@@ -458,11 +459,15 @@ export function QRScanner() {
           <ScanResultNotice status={status} />
           <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-lg" />
           {!scanning ? (
-            <Button variant="accent" onClick={() => void startScanner()} disabled={submitting}>
+            <Button
+              variant="accent"
+              onClick={() => void startScanner()}
+              disabled={submitting}
+            >
               Open Camera Scanner
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => void stopScannerInstance()}>
+            <Button variant="outline" onClick={() => stopScannerInstance()}>
               Stop Scanner
             </Button>
           )}
@@ -517,7 +522,11 @@ export function QRScanner() {
             >
               Cancel
             </Button>
-            <Button variant="accent" onClick={() => void handleTransferDevice()} disabled={transferring}>
+            <Button
+              variant="accent"
+              onClick={() => void handleTransferDevice()}
+              loading={transferring}
+            >
               {transferring ? "Transferring..." : "Continue"}
             </Button>
           </DialogFooter>

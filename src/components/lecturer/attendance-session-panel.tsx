@@ -107,6 +107,8 @@ export function AttendanceSessionPanel({
   const [qrRendering, setQrRendering] = useState(false);
   const [presentRecords, setPresentRecords] = useState<PresentRecordMap>(new Map());
   const [starting, setStarting] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const attendanceActionInFlightRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = useState(
@@ -483,6 +485,8 @@ export function AttendanceSessionPanel({
   }, [activeSession]);
 
   async function startAttendance() {
+    if (starting || ending || attendanceActionInFlightRef.current) return;
+    attendanceActionInFlightRef.current = true;
     setError(null);
     setNotice(null);
     setStarting(true);
@@ -532,16 +536,19 @@ export function AttendanceSessionPanel({
     } catch {
       setError("Network error. Check your connection and try again.");
     } finally {
+      attendanceActionInFlightRef.current = false;
       setStarting(false);
     }
   }
 
   async function endAttendance() {
-    if (!activeSession) return;
+    if (!activeSession || ending || starting || attendanceActionInFlightRef.current) return;
+    attendanceActionInFlightRef.current = true;
 
     const endedSessionId = activeSession.id;
     setError(null);
     setNotice(null);
+    setEnding(true);
 
     setActiveSession(null);
     setQrImage(null);
@@ -567,12 +574,16 @@ export function AttendanceSessionPanel({
       }
     } catch {
       setError("Network error. Check your connection and try again.");
+    } finally {
+      attendanceActionInFlightRef.current = false;
+      setEnding(false);
     }
   }
 
   async function markManual(enrollmentId: string) {
     if (!activeSession) return;
     if (presentRecords.has(enrollmentId)) return;
+    if (pendingManualMarksRef.current.has(enrollmentId)) return;
 
     pendingManualUnmarksRef.current.delete(enrollmentId);
     pendingManualMarksRef.current.add(enrollmentId);
@@ -640,7 +651,7 @@ export function AttendanceSessionPanel({
   }
 
   async function confirmUnmark() {
-    if (!activeSession || !unmarkTarget) return;
+    if (!activeSession || !unmarkTarget || unmarking) return;
 
     const { enrollmentId } = unmarkTarget;
     const method = presentRecords.get(enrollmentId);
@@ -741,8 +752,13 @@ export function AttendanceSessionPanel({
                   Choose how long students can check in. Default is 10 minutes.
                 </p>
               </div>
-              <Button onClick={() => void startAttendance()} disabled={starting} variant="accent">
-                {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate QR Code"}
+              <Button
+                onClick={() => void startAttendance()}
+                loading={starting}
+                disabled={ending}
+                variant="accent"
+              >
+                Generate QR Code
               </Button>
               </>
               )}
@@ -792,7 +808,12 @@ export function AttendanceSessionPanel({
                 </div>
               )}
 
-              <Button variant="destructive" onClick={() => void endAttendance()} disabled={readOnly}>
+              <Button
+                variant="destructive"
+                onClick={() => void endAttendance()}
+                loading={ending}
+                disabled={readOnly}
+              >
                 End Attendance
               </Button>
             </>
@@ -900,10 +921,10 @@ export function AttendanceSessionPanel({
             <Button
               type="button"
               variant="destructive"
-              disabled={unmarking}
+              loading={unmarking}
               onClick={() => void confirmUnmark()}
             >
-              {unmarking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove"}
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>

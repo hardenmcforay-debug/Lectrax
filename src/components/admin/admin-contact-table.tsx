@@ -3,7 +3,7 @@
 import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Trash2 } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
   }, [query, inquiries]);
 
   async function updateStatus(id: string, status: ContactInquiryStatus) {
+    if (updatingId !== null || deletingId !== null) return;
     setUpdatingId(id);
     try {
       const response = await appFetch(`/api/admin/contact/${id}`, {
@@ -66,6 +67,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
   }
 
   async function deleteInquiry(id: string, fullName: string) {
+    if (updatingId !== null || deletingId !== null) return;
     if (!confirm(`Delete the contact message from ${fullName}? This cannot be undone.`)) {
       return;
     }
@@ -169,15 +171,12 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
                       variant="ghost"
                       size="icon"
                       className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => deleteInquiry(inquiry.id, inquiry.full_name)}
-                      disabled={updatingId === inquiry.id || deletingId === inquiry.id}
+                      onClick={() => void deleteInquiry(inquiry.id, inquiry.full_name)}
+                      loading={deletingId === inquiry.id}
+                      disabled={updatingId === inquiry.id || deletingId !== null}
                       aria-label={`Delete message from ${inquiry.full_name}`}
                     >
-                      {deletingId === inquiry.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
+                      {deletingId === inquiry.id ? null : <Trash2 className="h-4 w-4" />}
                     </Button>
                   </TableCell>
                 </TableRow>

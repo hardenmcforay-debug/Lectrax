@@ -39,6 +39,7 @@ export function SessionAttendanceSessionsList({
   }, [initialPresentBySession]);
 
   async function fetchPresentStudents(sessionId: string) {
+    if (loadingId !== null) return;
     setLoadingId(sessionId);
 
     try {

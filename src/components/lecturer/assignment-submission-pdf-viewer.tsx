@@ -546,7 +546,8 @@ export function AssignmentSubmissionPdfViewer({
                             variant="accent"
                             size="sm"
                             className="h-9"
-                            disabled={grading.disabled || grading.saving || !grading.isDirty}
+                            loading={grading.saving}
+                            disabled={grading.disabled || !grading.isDirty}
                             onClick={grading.onSave}
                           >
                             {grading.saving ? "Saving..." : "Save Grade"}
@@ -566,7 +567,7 @@ export function AssignmentSubmissionPdfViewer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => void handleDownload()}
+                    onClick={() => handleDownload()}
                     disabled={!pdfDoc || loading || loadError}
                   >
                     <Download className="mr-1.5 h-4 w-4" />

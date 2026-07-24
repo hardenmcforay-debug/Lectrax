@@ -12,6 +12,7 @@ import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboar
 import { localDateTimeInputToIso } from "@/lib/assignments/deadline";
 import { assignmentSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { useAsyncAction } from "@/hooks/use-async-action";
 
 export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -19,10 +20,10 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
   const [maxScore, setMaxScore] = useState("100");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isPending: creating, run } = useAsyncAction();
 
-  async function createAssignment() {
+  function createAssignment() {
     let deadlineIso: string;
     try {
       deadlineIso = localDateTimeInputToIso(deadline);
@@ -44,28 +45,27 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
     }
 
     setError(null);
-    setCreating(true);
 
-    try {
-      const res = await appFetch(`/api/lecturer/sessions/${sessionId}/assignments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
+    void run(async () => {
+      try {
+        const res = await appFetch(`/api/lecturer/sessions/${sessionId}/assignments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed.data),
+        });
 
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(sanitizeErrorMessage(data.error) ?? "Could not create assignment.");
-        return;
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(sanitizeErrorMessage(data.error) ?? "Could not create assignment.");
+          return;
+        }
+
+        router.push(`/lecturer/sessions/${sessionId}?tab=assignments`);
+        router.refresh();
+      } catch {
+        setError("Network error. Please try again.");
       }
-
-      router.push(`/lecturer/sessions/${sessionId}?tab=assignments`);
-      router.refresh();
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setCreating(false);
-    }
+    });
   }
 
   return (
@@ -123,7 +123,11 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-fit" onClick={() => void createAssignment()} disabled={creating}>
+          <Button
+            className="w-fit"
+            onClick={() => void createAssignment()}
+            loading={creating}
+          >
             {creating ? "Creating..." : "Create Assignment"}
           </Button>
         </CardContent>

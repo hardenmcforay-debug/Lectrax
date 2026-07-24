@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   startTransition,
 } from "react";
@@ -91,6 +92,8 @@ export function AssignmentGradesClient({
   const [saving, setSaving] = useState(false);
 
   const [deleting, setDeleting] = useState(false);
+
+  const gradesActionInFlightRef = useRef(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -194,7 +197,7 @@ export function AssignmentGradesClient({
   );
 
   const saveViewerGrade = useCallback(async () => {
-    if (!pdfViewer) return;
+    if (!pdfViewer || saving || deleting || gradesActionInFlightRef.current) return;
 
     setError(null);
     setSuccess(null);
@@ -216,6 +219,7 @@ export function AssignmentGradesClient({
       return;
     }
 
+    gradesActionInFlightRef.current = true;
     setSaving(true);
 
     try {
@@ -243,16 +247,19 @@ export function AssignmentGradesClient({
     } catch {
       setError("Network error. Try again.");
     } finally {
+      gradesActionInFlightRef.current = false;
       setSaving(false);
     }
   }, [
     assignment.id,
     classSessionId,
+    deleting,
     grades,
     maxScore,
     pdfViewer,
     router,
     savedGrades,
+    saving,
   ]);
 
   const viewerGrading = useMemo(() => {
@@ -284,6 +291,8 @@ export function AssignmentGradesClient({
   ]);
 
   async function saveAllGrades() {
+    if (saving || deleting || gradesActionInFlightRef.current) return;
+
     setError(null);
 
     setSuccess(null);
@@ -310,6 +319,7 @@ export function AssignmentGradesClient({
       return;
     }
 
+    gradesActionInFlightRef.current = true;
     setSaving(true);
 
     try {
@@ -347,11 +357,14 @@ export function AssignmentGradesClient({
     } catch {
       setError("Network error. Try again.");
     } finally {
+      gradesActionInFlightRef.current = false;
       setSaving(false);
     }
   }
 
   async function deleteAllSubmissions() {
+    if (saving || deleting || gradesActionInFlightRef.current) return;
+
     if (!allSubmittedGraded) {
       setError(
         "All submitted students must be graded before deleting submissions.",
@@ -370,6 +383,7 @@ export function AssignmentGradesClient({
 
     setSuccess(null);
 
+    gradesActionInFlightRef.current = true;
     setDeleting(true);
 
     try {
@@ -396,6 +410,7 @@ export function AssignmentGradesClient({
     } catch {
       setError("Network error. Try again.");
     } finally {
+      gradesActionInFlightRef.current = false;
       setDeleting(false);
     }
   }
@@ -441,7 +456,8 @@ export function AssignmentGradesClient({
           <div className="flex flex-wrap gap-2">
             <Button
               variant="accent"
-              disabled={saving || dirtyCount === 0}
+              loading={saving}
+              disabled={deleting || dirtyCount === 0}
               onClick={() => void saveAllGrades()}
             >
               {saving ? "Saving..." : "Save All"}
@@ -452,7 +468,8 @@ export function AssignmentGradesClient({
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                disabled={deleting || !allSubmittedGraded || dirtyCount > 0}
+                loading={deleting}
+                disabled={saving || !allSubmittedGraded || dirtyCount > 0}
                 aria-label={
                   deleting
                     ? "Deleting all submissions"
@@ -460,7 +477,7 @@ export function AssignmentGradesClient({
                 }
                 onClick={() => void deleteAllSubmissions()}
               >
-                <Trash2 className="h-4 w-4" />
+                {deleting ? null : <Trash2 className="h-4 w-4" />}
               </Button>
             )}
           </div>

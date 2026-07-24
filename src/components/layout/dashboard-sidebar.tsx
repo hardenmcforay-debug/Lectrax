@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings, LogOut } from "lucide-react";
 import { Logo } from "./logo";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
-import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   getActiveStudentNavHref,
   STUDENT_NAV_ITEMS,
@@ -74,10 +74,6 @@ export function DashboardSidebar({
               ? [...nav.map((n) => n.href), footerSettingsHref]
               : nav.map((n) => n.href)
           );
-
-  async function handleLogout() {
-    await signOutAndClearClientStorage();
-  }
 
   return (
     <aside
@@ -189,10 +185,9 @@ export function DashboardSidebar({
             Settings
           </Link>
         )}
-        <button
-          onClick={handleLogout}
+        <LogoutButton
           className={cn(
-            "flex w-full items-center rounded-lg text-muted-foreground hover:bg-muted",
+            "flex w-full items-center rounded-lg text-muted-foreground hover:bg-muted disabled:cursor-wait disabled:opacity-50",
             isLecturer && "lecturer-nav-link",
             isLecturer ? "gap-2 px-2.5 py-1.5 text-sm leading-none" : "gap-3 px-3 py-2 text-sm"
           )}
@@ -204,7 +199,7 @@ export function DashboardSidebar({
             )}
           />
           Log out
-        </button>
+        </LogoutButton>
       </div>
     </aside>
   );

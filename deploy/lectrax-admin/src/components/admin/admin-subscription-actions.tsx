@@ -93,7 +93,7 @@ export function AdminSubscriptionActions({
         <SelectContent>
           <SelectItem value="monthly">Monthly</SelectItem>
           <SelectItem value="semester">Semester</SelectItem>
-          <SelectItem value="annual">8 Months</SelectItem>
+          <SelectItem value="annual">Academic year</SelectItem>
         </SelectContent>
       </Select>
       <Button

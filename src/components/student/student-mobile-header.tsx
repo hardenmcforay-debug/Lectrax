@@ -7,9 +7,9 @@ import { LogOut, Menu, Settings, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
 import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
 import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
-import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   getActiveStudentNavHref,
   STUDENT_NAV_ITEMS,
@@ -46,11 +46,6 @@ export function StudentMobileHeader() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  async function handleLogout() {
-    setOpen(false);
-    await signOutAndClearClientStorage();
-  }
-
   return (
     <header className="student-mobile-header portal-mobile-header portal-mobile-only z-40">
       <div className="portal-mobile-header-bar flex w-full items-center justify-between border-b border-slate-200/80 bg-white/95 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
@@ -66,9 +61,9 @@ export function StudentMobileHeader() {
           className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-primary transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           {open ? (
-            <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-emerald-500" aria-hidden />
+            <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
           ) : (
-            <Menu {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-emerald-500" aria-hidden />
+            <Menu {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
           )}
         </button>
       </div>
@@ -144,15 +139,14 @@ export function StudentMobileHeader() {
             />
             Settings
           </Link>
-          <button
-            type="button"
+          <LogoutButton
             role="menuitem"
-            onClick={handleLogout}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            onBeforeLogout={() => setOpen(false)}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-50"
           >
             <LogOut {...HERO_LUCIDE_ICON_PROPS} className="h-4 w-4" aria-hidden />
             Log out
-          </button>
+          </LogoutButton>
         </div>
       </PortalMobileMenu>
     </header>

@@ -182,6 +182,7 @@ export function SessionPageClient({
   }
 
   async function handleCloseSession() {
+    if (closingSession) return;
     setCloseSessionError(null);
     setClosingSession(true);
 
@@ -321,7 +322,7 @@ export function SessionPageClient({
   }, [session.id, scheduleRefreshStudentRows]);
 
   async function handleDeleteAssignment() {
-    if (!deleteAssignmentTarget) return;
+    if (!deleteAssignmentTarget || deletingAssignment) return;
     setDeleteAssignmentError(null);
     setDeletingAssignment(true);
 
@@ -349,6 +350,7 @@ export function SessionPageClient({
 
   async function addManualStudent(event?: FormEvent) {
     event?.preventDefault();
+    if (addingManual) return;
     setManualError(null);
 
     const parsed = manualStudentSchema.safeParse({
@@ -477,7 +479,7 @@ export function SessionPageClient({
               <Button
                 variant="destructive"
                 onClick={() => void handleCloseSession()}
-                disabled={closingSession}
+                loading={closingSession}
               >
                 {closingSession ? "Closing..." : "Close Session"}
               </Button>
@@ -517,7 +519,7 @@ export function SessionPageClient({
                   maxLength={50}
                 />
               </div>
-              <Button type="submit" disabled={addingManual}>
+              <Button type="submit" loading={addingManual}>
                 {addingManual ? "Adding..." : "Add Student"}
               </Button>
             </form>
@@ -749,7 +751,7 @@ export function SessionPageClient({
               <Button
                 variant="destructive"
                 onClick={() => void handleDeleteAssignment()}
-                disabled={deletingAssignment}
+                loading={deletingAssignment}
               >
                 {deletingAssignment ? "Deleting..." : "Delete"}
               </Button>

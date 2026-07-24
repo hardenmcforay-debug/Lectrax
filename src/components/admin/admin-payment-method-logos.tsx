@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Loader2, Smartphone, Trash2, Upload } from "lucide-react";
+import { Smartphone, Trash2, Upload } from "lucide-react";
 import { appFetch } from "@/lib/api/client-fetch";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,8 @@ function PaymentMethodLogoUpload({
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
+    if (uploading || removing) return;
+
     const validationError = validateBrandingImageFile(file);
     if (validationError) {
       setError(validationError);
@@ -89,6 +91,7 @@ function PaymentMethodLogoUpload({
   }
 
   async function handleRemove() {
+    if (uploading || removing) return;
     setRemoving(true);
     setError(null);
     setMessage(null);
@@ -160,14 +163,11 @@ function PaymentMethodLogoUpload({
         <Button
           type="button"
           size="sm"
-          disabled={uploading || removing}
+          loading={uploading}
+          disabled={removing}
           onClick={() => inputRef.current?.click()}
         >
-          {uploading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-2 h-4 w-4" />
-          )}
+          {!uploading && <Upload className="mr-2 h-4 w-4" />}
           {state.imageUrl ? "Replace logo" : "Upload logo"}
         </Button>
         {state.imageUrl && (
@@ -175,14 +175,11 @@ function PaymentMethodLogoUpload({
             type="button"
             size="sm"
             variant="outline"
-            disabled={uploading || removing}
+            loading={removing}
+            disabled={uploading}
             onClick={() => void handleRemove()}
           >
-            {removing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-2 h-4 w-4" />
-            )}
+            {!removing && <Trash2 className="mr-2 h-4 w-4" />}
             Remove
           </Button>
         )}

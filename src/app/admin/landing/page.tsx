@@ -88,7 +88,7 @@ export default async function AdminLandingPage() {
             </li>
             <li>
               <a href="#hero-image" className="text-primary underline-offset-2 hover:underline">
-                Hero circle image
+                Hero image
               </a>
             </li>
             <li>
@@ -130,9 +130,9 @@ export default async function AdminLandingPage() {
 
         <Card id="hero-image" className="scroll-mt-6">
           <CardHeader>
-            <CardTitle>Hero circle image</CardTitle>
+            <CardTitle>Hero image</CardTitle>
             <CardDescription>
-              Upload an image to Supabase storage. It appears inside the glowing portal on the
+              Upload an image to Supabase storage. It appears inside the glowing frame on the
               landing page hero section.
             </CardDescription>
           </CardHeader>

@@ -98,8 +98,8 @@ export function AdminLandingHeroUpload({
   return (
     <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border bg-slate-950 p-6">
-        <div className="relative mx-auto aspect-square w-full max-w-sm">
-          <div className="absolute inset-[9%] overflow-hidden rounded-full border border-white/15 hero-gradient">
+        <div className="relative mx-auto aspect-[4/3] w-full max-w-sm">
+          <div className="absolute inset-[5%] overflow-hidden rounded-2xl border border-white/15 hero-gradient">
             <div className="hero-grid absolute inset-0 opacity-40" aria-hidden />
             {imageUrl ? (
               <div className="relative z-[1] h-full w-full">
@@ -172,7 +172,7 @@ export function AdminLandingHeroUpload({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        JPEG, PNG, WebP, or GIF · Max 5 MB · Shown inside the glowing circle on the landing page.
+        JPEG, PNG, WebP, or GIF · Max 5 MB · Shown inside the glowing frame on the landing page.
       </p>
     </div>
   );

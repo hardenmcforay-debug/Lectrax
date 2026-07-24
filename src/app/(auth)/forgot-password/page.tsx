@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
               {error && (
                 <AuthErrorNotice error={error} onRetry={() => setError(null)} />
               )}
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" loading={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send reset link"}
               </Button>
             </form>

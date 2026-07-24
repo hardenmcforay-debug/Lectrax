@@ -235,7 +235,7 @@ export function ProfileSettings({
               <p className="text-sm font-medium text-accent">Settings saved successfully.</p>
             )}
 
-            <Button type="submit" variant="accent" disabled={isSubmitting}>
+            <Button type="submit" variant="accent" loading={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save settings"}
             </Button>
           </CardContent>
@@ -287,7 +287,7 @@ export function ProfileSettings({
             {passwordSaved && (
               <p className="text-sm font-medium text-accent">Password updated successfully.</p>
             )}
-            <Button type="submit" variant="outline" disabled={pwSubmitting}>
+            <Button type="submit" variant="outline" loading={pwSubmitting}>
               {pwSubmitting ? "Updating..." : "Update password"}
             </Button>
           </form>

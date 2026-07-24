@@ -5,6 +5,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Copy, Loader2, Smartphone } from "lucide-react";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import {
   Dialog,
   DialogContent,
@@ -138,7 +139,7 @@ export function PaymentCheckoutFlow({
 }) {
   const [step, setStep] = useState<"method" | "ussd">("method");
   const [selectedMethod, setSelectedMethod] = useState<LectraxPaymentMethod | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { isPending: loading, run } = useAsyncAction();
   const [error, setError] = useState<string | null>(null);
   const [ussdDetails, setUssdDetails] = useState<Extract<CheckoutResponse, { kind: "ussd" }> | null>(
     null
@@ -181,51 +182,50 @@ export function PaymentCheckoutFlow({
     return () => window.clearInterval(interval);
   }, [ussdDetails, polling, onOpenChange, onPaymentComplete]);
 
-  async function startCheckout() {
+  function startCheckout() {
     if (!plan || !selectedMethod) return;
 
-    setLoading(true);
     setError(null);
 
-    try {
-      const result = await platformFetch<CheckoutResponse & { error?: string }>(
-        "/api/payments/checkout",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, paymentMethod: selectedMethod }),
+    void run(async () => {
+      try {
+        const result = await platformFetch<CheckoutResponse & { error?: string }>(
+          "/api/payments/checkout",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan, paymentMethod: selectedMethod }),
+          }
+        );
+
+        if (!result.ok) {
+          const paymentMessage =
+            result.error.category === "payment"
+              ? `${ERROR_MESSAGES.payment.title}. ${ERROR_MESSAGES.payment.description}`
+              : result.error.userMessage;
+          setError(paymentMessage);
+          return;
         }
-      );
 
-      if (!result.ok) {
-        const paymentMessage =
-          result.error.category === "payment"
-            ? `${ERROR_MESSAGES.payment.title}. ${ERROR_MESSAGES.payment.description}`
-            : result.error.userMessage;
-        setError(paymentMessage);
-        return;
+        const data = result.data;
+
+        if (data.kind === "redirect" && data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+
+        if (data.kind === "ussd") {
+          setUssdDetails(data);
+          setStep("ussd");
+          setPolling(true);
+          return;
+        }
+
+        setError("Unexpected payment response. Please try again.");
+      } catch {
+        setError(`${ERROR_MESSAGES.payment.title}. ${ERROR_MESSAGES.payment.description}`);
       }
-
-      const data = result.data;
-
-      if (data.kind === "redirect" && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-        return;
-      }
-
-      if (data.kind === "ussd") {
-        setUssdDetails(data);
-        setStep("ussd");
-        setPolling(true);
-        return;
-      }
-
-      setError("Unexpected payment response. Please try again.");
-    } catch {
-      setError(`${ERROR_MESSAGES.payment.title}. ${ERROR_MESSAGES.payment.description}`);
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   async function copyUssd() {
@@ -291,10 +291,11 @@ export function PaymentCheckoutFlow({
                 </Button>
                 <Button
                   variant="accent"
-                  disabled={!selectedMethod || loading}
+                  loading={loading}
+                  disabled={!selectedMethod}
                   onClick={() => void startCheckout()}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to Pay"}
+                  Continue to Pay
                 </Button>
               </DialogFooter>
             </div>

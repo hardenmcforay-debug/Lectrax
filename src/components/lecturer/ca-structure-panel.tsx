@@ -106,6 +106,8 @@ export function CaStructurePanel({
   async function saveCAConfig(
     weights: CAWeights = caWeights
   ): Promise<{ ok: boolean; error?: string }> {
+    if (savingConfig) return { ok: false, error: "Save already in progress." };
+
     setConfigError(null);
     setConfigMessage(null);
 
@@ -154,6 +156,8 @@ export function CaStructurePanel({
   }
 
   async function handleResetApply() {
+    if (resetting || savingConfig) return;
+
     setResetError(null);
     setResetting(true);
 
@@ -172,7 +176,7 @@ export function CaStructurePanel({
     resetWeights.attendance + resetWeights.assignment + resetWeights.test;
 
   async function handleCreateTest() {
-    if (!nextTestNumber) return;
+    if (!nextTestNumber || creating) return;
     setCreateError(null);
 
     const parsed = classTestSchema.safeParse({
@@ -219,7 +223,7 @@ export function CaStructurePanel({
   }
 
   async function handleDeleteTest() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleting) return;
     setDeleteError(null);
     setDeleting(true);
 
@@ -310,7 +314,11 @@ export function CaStructurePanel({
           </p>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => void saveCAConfig()} disabled={savingConfig || readOnly}>
+            <Button
+              onClick={() => void saveCAConfig()}
+              loading={savingConfig}
+              disabled={readOnly || resetting}
+            >
               {savingConfig ? "Saving..." : "Save"}
             </Button>
             <Button
@@ -453,7 +461,11 @@ export function CaStructurePanel({
             <Button variant="outline" onClick={() => setResetOpen(false)} disabled={resetting}>
               Cancel
             </Button>
-            <Button variant="accent" onClick={() => void handleResetApply()} disabled={resetting}>
+            <Button
+              variant="accent"
+              onClick={() => void handleResetApply()}
+              loading={resetting}
+            >
               {resetting ? "Applying..." : "Apply"}
             </Button>
           </DialogFooter>
@@ -502,7 +514,11 @@ export function CaStructurePanel({
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
               Cancel
             </Button>
-            <Button variant="accent" onClick={() => void handleCreateTest()} disabled={creating}>
+            <Button
+              variant="accent"
+              onClick={() => void handleCreateTest()}
+              loading={creating}
+            >
               {creating ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -543,7 +559,7 @@ export function CaStructurePanel({
             <Button
               variant="destructive"
               onClick={() => void handleDeleteTest()}
-              disabled={deleting}
+              loading={deleting}
             >
               {deleting ? "Deleting..." : "Delete Test"}
             </Button>

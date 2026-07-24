@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -8,6 +8,10 @@ import { Logo } from "@/components/layout/logo";
 import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+/** Stable IDs — avoid useId() hydration mismatches for aria-controls. */
+const PRODUCTS_MENU_ID = "landing-nav-products-menu";
+const COMPANY_MENU_ID = "landing-nav-company-menu";
 
 type ProductLink = {
   label: string;
@@ -74,8 +78,6 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onOutside: ()
 
 export function LandingNav() {
   const pathname = usePathname();
-  const productsMenuId = useId();
-  const companyMenuId = useId();
   const productsRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
 
@@ -316,7 +318,7 @@ export function LandingNav() {
               setProductsOpen(open);
               if (open) setCompanyOpen(false);
             },
-            menuId: productsMenuId,
+            menuId: PRODUCTS_MENU_ID,
             containerRef: productsRef,
             active: isProductsActive(),
             children: PRODUCT_LINKS.map((link) => (
@@ -339,7 +341,7 @@ export function LandingNav() {
               setCompanyOpen(open);
               if (open) setProductsOpen(false);
             },
-            menuId: companyMenuId,
+            menuId: COMPANY_MENU_ID,
             containerRef: companyRef,
             active: isCompanyActive(),
             children: COMPANY_LINKS.map((link) => (
@@ -395,12 +397,7 @@ export function LandingNav() {
             "bg-gradient-to-br from-[#0B3D91] via-[#0F4DA8] to-[#0A3580] text-white"
         )}
       >
-        <div
-          className={cn(
-            "flex items-center justify-between border-b px-1 py-3",
-            mobileMenuOnHero ? "border-white/10" : "border-slate-100"
-          )}
-        >
+        <div className="flex items-center justify-between px-1 py-3">
           <Logo variant={mobileMenuOnHero ? "light" : "default"} iconWithBackground />
           <button
             type="button"
@@ -493,12 +490,7 @@ export function LandingNav() {
           {SECONDARY_LINKS.map((link) => renderNavLink(link, true))}
         </nav>
 
-        <div
-          className={cn(
-            "mt-auto flex flex-col gap-2 border-t px-1 py-3",
-            mobileMenuOnHero ? "border-white/10" : "border-slate-100"
-          )}
-        >
+        <div className="mt-auto flex flex-col gap-2 px-1 py-3">
           <Button
             variant="default"
             asChild

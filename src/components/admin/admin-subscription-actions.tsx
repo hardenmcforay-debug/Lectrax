@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BillingPlan } from "@/types/database";
+import { useKeyedAsyncAction } from "@/hooks/use-async-action";
 
 function hasActiveSubscriptionPeriod(
   plan: string,
@@ -39,50 +40,12 @@ export function AdminSubscriptionActions({
 }) {
   const [billingPlan, setBillingPlan] = useState<BillingPlan>("monthly");
   const [days, setDays] = useState("30");
-  const [loading, setLoading] = useState<string | null>(null);
+  const { pendingKey, isPending, run } = useKeyedAsyncAction<"activate" | "extend" | "revoke">();
   const activateBlocked = hasActiveSubscriptionPeriod(
     plan,
     subscriptionStatus,
     subscriptionEndDate
   );
-
-  async function activate() {
-    if (activateBlocked) return;
-    setLoading("activate");
-    const res = await appFetch("/api/admin/subscriptions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lecturerId, billingPlan }),
-    });
-    setLoading(null);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to activate");
-  }
-
-  async function extend() {
-    setLoading("extend");
-    const res = await appFetch("/api/admin/subscriptions", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lecturerId, days: Number(days) }),
-    });
-    setLoading(null);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to extend");
-  }
-
-  async function revoke() {
-    if (!confirm("Revoke premium and revert this lecturer to the free plan?")) return;
-    setLoading("revoke");
-    const res = await appFetch("/api/admin/subscriptions", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lecturerId }),
-    });
-    setLoading(null);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to revoke");
-  }
 
   return (
     <div className="flex min-w-[280px] flex-wrap items-center gap-2">
@@ -93,21 +56,33 @@ export function AdminSubscriptionActions({
         <SelectContent>
           <SelectItem value="monthly">Monthly</SelectItem>
           <SelectItem value="semester">Semester</SelectItem>
-          <SelectItem value="annual">8 Months</SelectItem>
+          <SelectItem value="annual">Academic year</SelectItem>
         </SelectContent>
       </Select>
       <Button
         size="sm"
         variant="accent"
-        disabled={loading !== null || activateBlocked}
+        loading={pendingKey === "activate"}
+        disabled={isPending || activateBlocked}
         title={
           activateBlocked
             ? "Cannot activate while the lecturer has an active subscription period"
             : undefined
         }
-        onClick={() => void activate()}
+        onClick={() => {
+          if (activateBlocked) return;
+          void run("activate", async () => {
+            const res = await appFetch("/api/admin/subscriptions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ lecturerId, billingPlan }),
+            });
+            if (res.ok) window.location.reload();
+            else alert((await res.json()).error ?? "Failed to activate");
+          });
+        }}
       >
-        {loading === "activate" ? "..." : "Activate"}
+        Activate
       </Button>
       <Select value={days} onValueChange={setDays}>
         <SelectTrigger className="h-8 w-20">
@@ -120,17 +95,45 @@ export function AdminSubscriptionActions({
           <SelectItem value="240">+240d</SelectItem>
         </SelectContent>
       </Select>
-      <Button size="sm" variant="outline" disabled={loading !== null} onClick={() => void extend()}>
-        {loading === "extend" ? "..." : "Extend"}
+      <Button
+        size="sm"
+        variant="outline"
+        loading={pendingKey === "extend"}
+        disabled={isPending}
+        onClick={() =>
+          void run("extend", async () => {
+            const res = await appFetch("/api/admin/subscriptions", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ lecturerId, days: Number(days) }),
+            });
+            if (res.ok) window.location.reload();
+            else alert((await res.json()).error ?? "Failed to extend");
+          })
+        }
+      >
+        Extend
       </Button>
       {plan === "premium" && (
         <Button
           size="sm"
           variant="destructive"
-          disabled={loading !== null}
-          onClick={() => void revoke()}
+          loading={pendingKey === "revoke"}
+          disabled={isPending}
+          onClick={() => {
+            if (!confirm("Revoke premium and revert this lecturer to the free plan?")) return;
+            void run("revoke", async () => {
+              const res = await appFetch("/api/admin/subscriptions", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lecturerId }),
+              });
+              if (res.ok) window.location.reload();
+              else alert((await res.json()).error ?? "Failed to revoke");
+            });
+          }}
         >
-          {loading === "revoke" ? "..." : "Revoke"}
+          Revoke
         </Button>
       )}
     </div>

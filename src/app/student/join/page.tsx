@@ -13,15 +13,16 @@ import { studentDashboardCardClass } from "@/components/student/student-dashboar
 import { joinSessionSchema } from "@/lib/validations";
 import { sanitizeSessionCode } from "@/lib/security/sanitize";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { useAsyncAction } from "@/hooks/use-async-action";
 
 export default function JoinClassPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { isPending, run } = useAsyncAction();
 
-  async function handleJoin() {
+  function handleJoin() {
     setError(null);
     setSuccess(null);
 
@@ -31,9 +32,7 @@ export default function JoinClassPage() {
       return;
     }
 
-    setLoading(true);
-
-    try {
+    void run(async () => {
       const res = await appFetch("/api/student/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,9 +56,7 @@ export default function JoinClassPage() {
       setTimeout(() => {
         router.push("/student/academic-overview");
       }, 1500);
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   return (
@@ -80,8 +77,14 @@ export default function JoinClassPage() {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           {success && <p className="text-sm text-accent">{success}</p>}
-          <Button variant="accent" className="w-full" onClick={handleJoin} disabled={loading || !code.trim()}>
-            {loading ? "Joining..." : "Join Class"}
+          <Button
+            variant="accent"
+            className="w-full"
+            onClick={handleJoin}
+            loading={isPending}
+            disabled={!code.trim()}
+          >
+            {isPending ? "Joining..." : "Join Class"}
           </Button>
         </CardContent>
         </Card>

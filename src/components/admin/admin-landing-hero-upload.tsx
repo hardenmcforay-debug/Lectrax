@@ -4,7 +4,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { ImageIcon, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { validateBrandingImageFile } from "@/lib/landing/branding-image-validation";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
@@ -35,6 +35,8 @@ export function AdminLandingHeroUpload({
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
+    if (uploading || removing) return;
+
     const validationError = validateBrandingImageFile(file);
     if (validationError) {
       setError(validationError);
@@ -75,6 +77,7 @@ export function AdminLandingHeroUpload({
   }
 
   async function handleRemove() {
+    if (uploading || removing) return;
     setRemoving(true);
     setError(null);
     setMessage(null);
@@ -98,8 +101,8 @@ export function AdminLandingHeroUpload({
   return (
     <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border bg-slate-950 p-6">
-        <div className="relative mx-auto aspect-square w-full max-w-sm">
-          <div className="absolute inset-[9%] overflow-hidden rounded-full border border-white/15 hero-gradient">
+        <div className="relative mx-auto aspect-[4/3] w-full max-w-sm">
+          <div className="absolute inset-[5%] overflow-hidden rounded-2xl border border-white/15 hero-gradient">
             <div className="hero-grid absolute inset-0 opacity-40" aria-hidden />
             {imageUrl ? (
               <div className="relative z-[1] h-full w-full">
@@ -144,35 +147,29 @@ export function AdminLandingHeroUpload({
         />
         <Button
           type="button"
-          disabled={uploading || removing}
+          loading={uploading}
+          disabled={removing}
           onClick={() => inputRef.current?.click()}
         >
-          {uploading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-2 h-4 w-4" />
-          )}
+          {!uploading && <Upload className="mr-2 h-4 w-4" />}
           {imageUrl ? "Replace image" : "Upload image"}
         </Button>
         {imageUrl && (
           <Button
             type="button"
             variant="outline"
-            disabled={uploading || removing}
+            loading={removing}
+            disabled={uploading}
             onClick={() => void handleRemove()}
           >
-            {removing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-2 h-4 w-4" />
-            )}
+            {!removing && <Trash2 className="mr-2 h-4 w-4" />}
             Remove image
           </Button>
         )}
       </div>
 
       <p className="text-sm text-muted-foreground">
-        JPEG, PNG, WebP, or GIF · Max 5 MB · Shown inside the glowing circle on the landing page.
+        JPEG, PNG, WebP, or GIF · Max 5 MB · Shown inside the glowing frame on the landing page.
       </p>
     </div>
   );

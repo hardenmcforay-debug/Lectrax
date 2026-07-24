@@ -3,7 +3,7 @@
 import { appFetch } from "@/lib/api/client-fetch";
 
 import { useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadWorkbookBuffer } from "@/lib/lecturer/download-workbook";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
@@ -30,6 +30,8 @@ export function StudentPerformanceExportButton({
   const [error, setError] = useState<string | null>(null);
 
   async function handleExport() {
+    if (exporting) return;
+
     setExporting(true);
     setError(null);
 
@@ -73,20 +75,13 @@ export function StudentPerformanceExportButton({
       <Button
         type="button"
         variant="outline"
-        size={exporting ? "icon" : "default"}
-        className={exporting ? "h-9 w-9 shrink-0" : undefined}
-        disabled={exporting || disabled}
+        loading={exporting}
+        disabled={disabled}
         onClick={() => void handleExport()}
         aria-label={exporting ? "Exporting student performance" : "Export student performance"}
       >
-        {exporting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </>
-        )}
+        {!exporting && <Download className="mr-2 h-4 w-4" />}
+        Export
       </Button>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {disabled && (

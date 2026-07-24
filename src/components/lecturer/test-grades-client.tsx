@@ -97,6 +97,8 @@ export function TestGradesClient({
   }, []);
 
   async function saveAllGrades() {
+    if (saving) return;
+
     setError(null);
     setSuccess(null);
 
@@ -181,7 +183,8 @@ export function TestGradesClient({
           <Button
             variant="accent"
             size="default"
-            disabled={saving || dirtyCount === 0}
+            loading={saving}
+            disabled={dirtyCount === 0}
             onClick={() => void saveAllGrades()}
           >
             {saving ? "Saving..." : "Save All"}

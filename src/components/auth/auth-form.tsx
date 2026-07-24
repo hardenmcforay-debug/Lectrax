@@ -289,7 +289,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          loading={isSubmitting}
           className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
           {isSubmitting ? "Signing in..." : "Sign In"}
@@ -639,7 +639,7 @@ export function SignupForm() {
 
         <Button
           type="submit"
-          disabled={isSubmitting}
+          loading={isSubmitting}
           className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
           {isSubmitting ? "Creating account..." : "Create Account"}

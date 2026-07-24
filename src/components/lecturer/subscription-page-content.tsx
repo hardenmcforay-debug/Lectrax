@@ -157,7 +157,7 @@ export function SubscriptionPageContent({
   }
 
   async function handleDeletePayment() {
-    if (!deletePaymentTarget) return;
+    if (!deletePaymentTarget || deletingPayment) return;
     setDeletePaymentError(null);
     setDeletingPayment(true);
 
@@ -180,6 +180,7 @@ export function SubscriptionPageContent({
   }
 
   async function handleDeleteAllPayments() {
+    if (deletingAllPayments) return;
     setDeletePaymentError(null);
     setDeletingAllPayments(true);
 
@@ -415,7 +416,7 @@ export function SubscriptionPageContent({
             <Button
               variant="destructive"
               onClick={() => void handleDeleteAllPayments()}
-              disabled={deletingAllPayments}
+              loading={deletingAllPayments}
             >
               {deletingAllPayments ? "Deleting..." : "Delete All"}
             </Button>
@@ -456,7 +457,7 @@ export function SubscriptionPageContent({
             <Button
               variant="destructive"
               onClick={() => void handleDeletePayment()}
-              disabled={deletingPayment}
+              loading={deletingPayment}
             >
               {deletingPayment ? "Deleting..." : "Delete"}
             </Button>

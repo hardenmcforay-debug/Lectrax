@@ -45,7 +45,7 @@ export const BILLING_PLANS = {
   annual: {
     price: 35,
     days: 240,
-    label: "8 Months",
+    label: "Academic year",
     description: "8 months of Premium",
   },
 } as const;
