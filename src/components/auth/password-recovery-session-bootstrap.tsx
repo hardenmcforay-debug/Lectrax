@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PASSWORD_RESET_PAGE_PATH } from "@/lib/auth/password-recovery";
 
+const EXCHANGE_LOCK_PREFIX = "lectrax:pw-reset-exchange:";
+
 function goToResetPasswordPage() {
   if (window.location.pathname !== PASSWORD_RESET_PAGE_PATH) {
     window.location.replace(PASSWORD_RESET_PAGE_PATH);
@@ -18,15 +20,24 @@ function hasRecoveryQueryParams(url: URL): boolean {
     return true;
   }
 
-  if (url.searchParams.has("token_hash") && url.searchParams.get("type") === "recovery") {
-    return true;
-  }
-
   return url.pathname === PASSWORD_RESET_PAGE_PATH && url.searchParams.has("code");
 }
 
 function hasRecoveryHash(): boolean {
   return window.location.hash.includes("type=recovery");
+}
+
+function claimExchangeLock(key: string): boolean {
+  try {
+    const storageKey = `${EXCHANGE_LOCK_PREFIX}${key}`;
+    if (sessionStorage.getItem(storageKey)) {
+      return false;
+    }
+    sessionStorage.setItem(storageKey, "1");
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 /**
@@ -40,7 +51,10 @@ export function PasswordRecoverySessionBootstrap() {
     const shouldHandleRecovery =
       hasRecoveryQueryParams(currentUrl) ||
       hasRecoveryHash() ||
-      currentUrl.pathname === PASSWORD_RESET_PAGE_PATH;
+      (currentUrl.pathname === PASSWORD_RESET_PAGE_PATH &&
+        (currentUrl.searchParams.has("code") ||
+          currentUrl.searchParams.has("token_hash") ||
+          hasRecoveryHash()));
 
     if (!shouldHandleRecovery) {
       return;
@@ -53,6 +67,10 @@ export function PasswordRecoverySessionBootstrap() {
       const type = url.searchParams.get("type");
 
       if (code) {
+        if (!claimExchangeLock(`code:${code}`)) {
+          return;
+        }
+
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error) {
           goToResetPasswordPage();
@@ -61,6 +79,10 @@ export function PasswordRecoverySessionBootstrap() {
       }
 
       if (tokenHash && type === "recovery") {
+        if (!claimExchangeLock(`token:${tokenHash}`)) {
+          return;
+        }
+
         const { error } = await supabase.auth.verifyOtp({
           type: "recovery",
           token_hash: tokenHash,

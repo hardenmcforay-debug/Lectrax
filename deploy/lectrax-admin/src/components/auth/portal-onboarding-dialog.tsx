@@ -5,6 +5,7 @@ import Link from "next/link";
 import { appFetch } from "@/lib/api/client-fetch";
 import { APP_NAME } from "@/lib/constants";
 import { getPortalSettingsPath } from "@/lib/auth/signup-method";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import {
   Dialog,
   DialogContent,
@@ -23,17 +24,21 @@ export function PortalOnboardingDialog({
   showRecoveryEmailNotice: boolean;
 }) {
   const [open, setOpen] = useState(true);
+  const { isPending, run } = useAsyncAction();
 
   const settingsPath = getPortalSettingsPath(role);
 
   function handleAcknowledge() {
-    setOpen(false);
-
-    void appFetch("/api/auth/acknowledge-portal-onboarding", {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {
-      // Best-effort; the popup may reappear on a later visit if this fails.
+    void run(async () => {
+      setOpen(false);
+      try {
+        await appFetch("/api/auth/acknowledge-portal-onboarding", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // Best-effort; the popup may reappear on a later visit if this fails.
+      }
     });
   }
 
@@ -78,7 +83,12 @@ export function PortalOnboardingDialog({
         </DialogHeader>
 
         <DialogFooter className="sm:justify-center">
-          <Button type="button" className="w-full sm:w-auto" onClick={handleAcknowledge}>
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            loading={isPending}
+            onClick={handleAcknowledge}
+          >
             Okay
           </Button>
         </DialogFooter>

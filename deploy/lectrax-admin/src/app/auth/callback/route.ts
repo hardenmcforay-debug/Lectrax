@@ -62,6 +62,7 @@ export async function GET(request: Request) {
 
     if (!error) {
       if (recoveryRedirect) {
+        // Recovery session cookies are on sessionResponse — return it as-is.
         return sessionResponse;
       }
 

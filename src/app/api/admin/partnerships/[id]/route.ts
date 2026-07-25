@@ -70,14 +70,33 @@ export async function DELETE(
     return NextResponse.json({ error: "Inquiry not found" }, { status: 404 });
   }
 
-  const { error: notificationError } = await auth.service
+  const { data: linkedPayments } = await auth.service
+    .from("university_partnership_payments")
+    .select("id")
+    .eq("inquiry_id", id);
+
+  const linkedPaymentIds = (linkedPayments ?? []).map((payment) => payment.id);
+
+  const { error: inquiryNotificationError } = await auth.service
     .from("platform_admin_notifications")
     .delete()
     .eq("type", "partnership_inquiry")
     .eq("reference_id", id);
 
-  if (notificationError) {
-    logServerError("partnerships.notification.delete", notificationError);
+  if (inquiryNotificationError) {
+    logServerError("partnerships.notification.delete", inquiryNotificationError);
+  }
+
+  if (linkedPaymentIds.length > 0) {
+    const { error: paymentNotificationError } = await auth.service
+      .from("platform_admin_notifications")
+      .delete()
+      .eq("type", "partnership_payment")
+      .in("reference_id", linkedPaymentIds);
+
+    if (paymentNotificationError) {
+      logServerError("partnerships.payment_notification.delete", paymentNotificationError);
+    }
   }
 
   const { error } = await auth.service

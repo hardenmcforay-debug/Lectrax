@@ -5,6 +5,7 @@ import {
 import {
   getAdaptiveFetchTimeoutMs,
   readConnectionQuality,
+  reportNetworkSample,
 } from "@/lib/network/connection-quality";
 import { isAbortError } from "@/lib/errors/classify";
 import {
@@ -31,10 +32,12 @@ function resolveUrl(input: RequestInfo | URL): string {
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit,
-  timeoutMs: number
+  timeoutMs: number,
+  reportSample: boolean
 ): Promise<Response> {
   const controller = new AbortController();
   let timedOut = false;
+  const startedAt = performance.now();
   const timeoutId = window.setTimeout(() => {
     timedOut = true;
     controller.abort();
@@ -49,16 +52,42 @@ async function fetchWithTimeout(
     }
   }
 
+  const elapsedMs = () => Math.round(performance.now() - startedAt);
+
   try {
-    return await fetch(input, {
+    const response = await fetch(input, {
       ...init,
       signal: controller.signal,
     });
+    if (reportSample) {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: true,
+      });
+    }
+    return response;
   } catch (error) {
     if (isAbortError(error)) {
       if (timedOut) {
+        if (reportSample) {
+          reportNetworkSample({
+            durationMs: elapsedMs(),
+            ok: false,
+            timedOut: true,
+          });
+        }
         throw new Error("Request timed out. Please try again.");
       }
+      // Caller aborted (navigation/unmount) — not a connection problem.
+      throw error;
+    }
+
+    if (reportSample) {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: false,
+        networkError: true,
+      });
     }
     throw error;
   } finally {
@@ -102,7 +131,9 @@ export async function appFetch(
     headers,
   };
 
-  const execute = () => fetchWithTimeout(input, requestInit, timeoutMs);
+  // Only measure same-origin app API calls — avoid noise from analytics/CDN/assets.
+  const reportSample = isAppApi;
+  const execute = () => fetchWithTimeout(input, requestInit, timeoutMs, reportSample);
 
   if (shouldDedupe) {
     const key = buildInFlightRequestKey(method, url);
@@ -113,4 +144,4 @@ export async function appFetch(
 }
 
 export { DEFAULT_TIMEOUT_MS as APP_FETCH_DEFAULT_TIMEOUT_MS };
-
+

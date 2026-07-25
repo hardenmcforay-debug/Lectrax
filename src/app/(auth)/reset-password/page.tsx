@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -23,15 +23,81 @@ type ResetPasswordInput = {
   confirmPassword: string;
 };
 
+type SessionStatus = "checking" | "ready" | "expired";
+
+const LINK_EXPIRED_ERROR: AuthUserMessage = {
+  title: "Link Expired",
+  description:
+    "This reset link is invalid or has already been used. Request a new one and open it in the same browser where you asked for the reset.",
+  retryable: false,
+};
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus>("checking");
   const [error, setError] = useState<AuthUserMessage | null>(null);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordInput>({ resolver: zodResolver(passwordChangeSchema) });
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function waitForRecoverySession() {
+      // Allow hash/code bootstrap a moment to finish before declaring expiry.
+      for (let attempt = 0; attempt < 25; attempt += 1) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          if (!cancelled) {
+            setSessionStatus("ready");
+            setError(null);
+          }
+          return;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 120));
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (cancelled) return;
+
+      if (user) {
+        setSessionStatus("ready");
+        setError(null);
+        return;
+      }
+
+      setSessionStatus("expired");
+      setError(LINK_EXPIRED_ERROR);
+    }
+
+    void waitForRecoverySession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
+        setSessionStatus("ready");
+        setError(null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   async function onSubmit(data: ResetPasswordInput) {
     setError(null);
@@ -43,11 +109,8 @@ export default function ResetPasswordPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setError({
-          title: "Link Expired",
-          description: "This reset link is invalid or has expired. Request a new one.",
-          retryable: false,
-        });
+        setSessionStatus("expired");
+        setError(LINK_EXPIRED_ERROR);
         return;
       }
 
@@ -56,8 +119,23 @@ export default function ResetPasswordPage() {
       });
 
       if (updateError) {
+        const mapped = mapSupabaseAuthError(
+          updateError,
+          "password-reset",
+          "auth.passwordReset.update"
+        );
+        // Common when the recovery session was never established (failed PKCE exchange).
+        if (
+          /session|jwt|expired|invalid/i.test(updateError.message) ||
+          updateError.status === 401
+        ) {
+          setSessionStatus("expired");
+          setError(LINK_EXPIRED_ERROR);
+          return;
+        }
+
         setError(
-          mapSupabaseAuthError(updateError, "password-reset", "auth.passwordReset.update") ?? {
+          mapped ?? {
             title: "Request Failed",
             description: "Could not update your password. Please try again.",
             retryable: true,
@@ -95,6 +173,15 @@ export default function ResetPasswordPage() {
         <CardContent>
           {saved ? (
             <p className="text-sm text-accent">Password updated. Redirecting to sign in...</p>
+          ) : sessionStatus === "checking" ? (
+            <p className="text-sm text-muted-foreground">Validating your reset link…</p>
+          ) : sessionStatus === "expired" ? (
+            <div className="space-y-4">
+              {error && <AuthErrorNotice error={error} />}
+              <Button asChild className="w-full">
+                <Link href="/forgot-password">Request a new reset link</Link>
+              </Button>
+            </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>

@@ -3,7 +3,7 @@
 import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Trash2 } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
 import { Badge } from "@/components/ui/badge";
@@ -27,14 +27,23 @@ import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminPartnershipsTable({
   inquiries: initialInquiries,
+  paidInquiryIds = [],
 }: {
   inquiries: UniversityPartnershipInquiry[];
+  paidInquiryIds?: string[];
 }) {
   const [inquiries, setInquiries] = useState(initialInquiries);
   const [emailQuery, setEmailQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const paidIds = useMemo(() => new Set(paidInquiryIds), [paidInquiryIds]);
+
+  function isPaidInquiry(inquiry: UniversityPartnershipInquiry) {
+    return (
+      paidIds.has(inquiry.id) || inquiry.position_role === "Partnership Payment"
+    );
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -52,6 +61,7 @@ export function AdminPartnershipsTable({
   }, [emailQuery, inquiries]);
 
   async function updateStatus(id: string, status: PartnershipInquiryStatus) {
+    if (updatingId !== null || deletingId !== null) return;
     setUpdatingId(id);
     try {
       const response = await appFetch(`/api/admin/partnerships/${id}`, {
@@ -71,6 +81,7 @@ export function AdminPartnershipsTable({
   }
 
   async function deleteInquiry(id: string, universityName: string) {
+    if (updatingId !== null || deletingId !== null) return;
     if (
       !confirm(
         `Delete the partnership inquiry from ${universityName}? This cannot be undone.`
@@ -169,9 +180,14 @@ export function AdminPartnershipsTable({
                     <TableCell>{formatDate(inquiry.created_at)}</TableCell>
                     <TableCell>
                       <div className="flex min-w-[180px] flex-col gap-2">
-                        <Badge variant={statusVariant(inquiry.status)}>
-                          {PARTNERSHIP_STATUS_LABELS[inquiry.status]}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant={statusVariant(inquiry.status)}>
+                            {PARTNERSHIP_STATUS_LABELS[inquiry.status]}
+                          </Badge>
+                          {isPaidInquiry(inquiry) ? (
+                            <Badge variant="default">Paid</Badge>
+                          ) : null}
+                        </div>
                         {mounted ? (
                           <Select
                             value={inquiry.status}
@@ -204,15 +220,12 @@ export function AdminPartnershipsTable({
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => deleteInquiry(inquiry.id, inquiry.university_name)}
-                        disabled={updatingId === inquiry.id || deletingId === inquiry.id}
+                        onClick={() => void deleteInquiry(inquiry.id, inquiry.university_name)}
+                        loading={deletingId === inquiry.id}
+                        disabled={updatingId === inquiry.id || deletingId !== null}
                         aria-label={`Delete inquiry from ${inquiry.university_name}`}
                       >
-                        {deletingId === inquiry.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
+                        {deletingId === inquiry.id ? null : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </TableCell>
                   </TableRow>

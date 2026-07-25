@@ -35,12 +35,11 @@ export const ERROR_MESSAGES: Record<
   },
 };
 
-export const OFFLINE_MODE_MESSAGE = "You're currently offline.";
+export const OFFLINE_MODE_MESSAGE = "You're offline";
 export const OFFLINE_MODE_SUBMESSAGE = "Reconnect to continue.";
 
-export const POOR_CONNECTION_MESSAGE = "Poor Connection";
-export const POOR_CONNECTION_SUBMESSAGE =
-  "Your network connection is unstable. Some updates may take longer to load.";
+export const POOR_CONNECTION_MESSAGE = "Poor connection";
+export const POOR_CONNECTION_SUBMESSAGE = "";
 
 export function getMessageForCode(code: PlatformErrorCode): {
   title: string;

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import type { LucideIcon } from "lucide-react";
 
 export function StatCard({
@@ -10,6 +11,7 @@ export function StatCard({
   trend,
   className,
   titleClassName,
+  iconClassName,
 }: {
   title: string;
   value: string | number;
@@ -18,6 +20,7 @@ export function StatCard({
   trend?: string;
   className?: string;
   titleClassName?: string;
+  iconClassName?: string;
 }) {
   return (
     <Card className={cn("h-full min-w-0", className)}>
@@ -30,7 +33,13 @@ export function StatCard({
         >
           {title}
         </CardTitle>
-        {Icon && <Icon className="h-4 w-4 shrink-0 text-accent" aria-hidden />}
+        {Icon && (
+          <Icon
+            {...HERO_LUCIDE_ICON_PROPS}
+            className={cn("h-5 w-5 shrink-0 text-emerald-500", iconClassName)}
+            aria-hidden
+          />
+        )}
       </CardHeader>
       <CardContent className="p-3.5 pt-0 sm:p-6 sm:pt-0">
         <div className="break-words text-lg font-bold sm:text-2xl">{value}</div>

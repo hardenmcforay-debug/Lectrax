@@ -5,7 +5,6 @@ import {
   authAccountExistsForIdentifier,
   buildPasswordResetRateLimitKey,
   PASSWORD_RESET_SUCCESS_MESSAGE,
-  sendPasswordResetEmail,
   waitForMinimumResponseTime,
 } from "@/lib/auth/password-reset";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
@@ -24,6 +23,11 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
+/**
+ * Rate-limits and audits password-reset requests.
+ * The recovery email is sent from the browser after this returns (PKCE requires
+ * the code_verifier cookie). This route never calls resetPasswordForEmail.
+ */
 export async function POST(request: Request) {
   const startedAt = Date.now();
 
@@ -57,14 +61,6 @@ export async function POST(request: Request) {
     const service = await createServiceClient();
     const account = await authAccountExistsForIdentifier(identifier, service);
 
-    if (account.exists && account.email && account.recoverable) {
-      await sendPasswordResetEmail({
-        email: account.email,
-        redirectOrigin: new URL(request.url).origin,
-        service,
-      });
-    }
-
     const { error: auditError } = await service.from("audit_logs").insert({
       actor_id: null,
       action: "password_reset_requested",
@@ -73,7 +69,7 @@ export async function POST(request: Request) {
       metadata: {
         outcome: account.exists
           ? account.recoverable
-            ? "email_attempted"
+            ? "client_dispatch"
             : "suppressed_no_contact_email"
           : "suppressed",
         client_ip: getClientIp(request),

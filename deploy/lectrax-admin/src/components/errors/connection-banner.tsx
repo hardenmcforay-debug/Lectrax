@@ -3,9 +3,7 @@
 import { Signal, WifiOff } from "lucide-react";
 import {
   OFFLINE_MODE_MESSAGE,
-  OFFLINE_MODE_SUBMESSAGE,
   POOR_CONNECTION_MESSAGE,
-  POOR_CONNECTION_SUBMESSAGE,
 } from "@/lib/errors/messages";
 import type { ConnectionQuality } from "@/lib/network/connection-quality";
 import { cn } from "@/lib/utils";
@@ -33,18 +31,13 @@ export function ConnectionNoticeToast({
       aria-live="polite"
       aria-hidden={!visible}
     >
-      <div className="pointer-events-auto flex max-w-md items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-lg">
+      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm font-medium text-amber-900 shadow-lg">
         {isOffline ? (
-          <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
         ) : (
-          <Signal className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <Signal className="h-3.5 w-3.5 shrink-0" aria-hidden />
         )}
-        <span>
-          <span className="font-medium">
-            {isOffline ? OFFLINE_MODE_MESSAGE : POOR_CONNECTION_MESSAGE}
-          </span>{" "}
-          {isOffline ? OFFLINE_MODE_SUBMESSAGE : POOR_CONNECTION_SUBMESSAGE}
-        </span>
+        <span>{isOffline ? OFFLINE_MODE_MESSAGE : POOR_CONNECTION_MESSAGE}</span>
       </div>
     </div>
   );

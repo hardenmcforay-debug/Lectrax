@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { PortalMobileMenu } from "@/components/layout/portal-mobile-menu";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
-import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
 import {
   ADMIN_NAV_ITEMS,
   getActiveAdminNavHref,
@@ -42,11 +42,6 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
-
-  async function handleLogout() {
-    setOpen(false);
-    await signOutAndClearClientStorage();
-  }
 
   return (
     <header className="admin-mobile-header portal-mobile-header portal-mobile-only z-40">
@@ -114,15 +109,14 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
         </nav>
 
         <div className="mt-auto border-t border-slate-100 px-1 py-3">
-          <button
-            type="button"
+          <LogoutButton
             role="menuitem"
-            onClick={handleLogout}
-            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+            onBeforeLogout={() => setOpen(false)}
+            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-wait disabled:opacity-50"
           >
             <LogOut className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
             Logout
-          </button>
+          </LogoutButton>
         </div>
       </PortalMobileMenu>
     </header>

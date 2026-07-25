@@ -27,14 +27,23 @@ import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 export function AdminPartnershipsTable({
   inquiries: initialInquiries,
+  paidInquiryIds = [],
 }: {
   inquiries: UniversityPartnershipInquiry[];
+  paidInquiryIds?: string[];
 }) {
   const [inquiries, setInquiries] = useState(initialInquiries);
   const [emailQuery, setEmailQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const paidIds = useMemo(() => new Set(paidInquiryIds), [paidInquiryIds]);
+
+  function isPaidInquiry(inquiry: UniversityPartnershipInquiry) {
+    return (
+      paidIds.has(inquiry.id) || inquiry.position_role === "Partnership Payment"
+    );
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -171,9 +180,14 @@ export function AdminPartnershipsTable({
                     <TableCell>{formatDate(inquiry.created_at)}</TableCell>
                     <TableCell>
                       <div className="flex min-w-[180px] flex-col gap-2">
-                        <Badge variant={statusVariant(inquiry.status)}>
-                          {PARTNERSHIP_STATUS_LABELS[inquiry.status]}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant={statusVariant(inquiry.status)}>
+                            {PARTNERSHIP_STATUS_LABELS[inquiry.status]}
+                          </Badge>
+                          {isPaidInquiry(inquiry) ? (
+                            <Badge variant="default">Paid</Badge>
+                          ) : null}
+                        </div>
                         {mounted ? (
                           <Select
                             value={inquiry.status}

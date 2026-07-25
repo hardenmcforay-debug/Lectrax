@@ -301,6 +301,32 @@ export interface UniversityPartnershipInquiry {
   updated_at: string;
 }
 
+export interface UniversityPartnershipPayment {
+  id: string;
+  package_id: PartnershipPackage;
+  package_name: string;
+  amount: number;
+  currency: string;
+  display_amount_usd: number;
+  billing_cycle: string;
+  university_name: string;
+  department_name: string;
+  contact_person: string;
+  email: string;
+  phone_number: string;
+  country: string;
+  payment_method: string | null;
+  status: PaymentStatus;
+  payment_provider: string;
+  monime_payment_id: string | null;
+  transaction_reference: string | null;
+  metadata: Record<string, unknown>;
+  inquiry_id: string | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PlatformAdminNotification {
   id: string;
   type: string;

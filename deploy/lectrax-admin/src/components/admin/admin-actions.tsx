@@ -11,22 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAsyncAction } from "@/hooks/use-async-action";
 
 export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
   const [days, setDays] = useState("240");
-  const [loading, setLoading] = useState(false);
-
-  async function grantFree() {
-    setLoading(true);
-    const res = await appFetch("/api/admin/grant-free", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lecturerId, days: Number(days) }),
-    });
-    setLoading(false);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to grant free plan");
-  }
+  const { isPending, run } = useAsyncAction();
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -41,8 +30,23 @@ export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
           <SelectItem value="240">8 months</SelectItem>
         </SelectContent>
       </Select>
-      <Button size="sm" variant="accent" disabled={loading} onClick={grantFree}>
-        {loading ? "..." : "Grant free"}
+      <Button
+        size="sm"
+        variant="accent"
+        loading={isPending}
+        onClick={() =>
+          void run(async () => {
+            const res = await appFetch("/api/admin/grant-free", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ lecturerId, days: Number(days) }),
+            });
+            if (res.ok) window.location.reload();
+            else alert((await res.json()).error ?? "Failed to grant free plan");
+          })
+        }
+      >
+        Grant free
       </Button>
     </div>
   );
@@ -55,47 +59,33 @@ export function AdminToggleLecturerButton({
   lecturerId: string;
   isActive: boolean;
 }) {
-  const [loading, setLoading] = useState(false);
-
-  async function toggle() {
-    setLoading(true);
-    const res = await appFetch("/api/admin/toggle-lecturer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lecturerId, isActive: !isActive }),
-    });
-    setLoading(false);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to update lecturer");
-  }
+  const { isPending, run } = useAsyncAction();
 
   return (
     <Button
       size="sm"
       variant={isActive ? "outline" : "destructive"}
-      disabled={loading}
-      onClick={toggle}
+      loading={isPending}
+      onClick={() =>
+        void run(async () => {
+          const res = await appFetch("/api/admin/toggle-lecturer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lecturerId, isActive: !isActive }),
+          });
+          if (res.ok) window.location.reload();
+          else alert((await res.json()).error ?? "Failed to update lecturer");
+        })
+      }
     >
-      {loading ? "..." : isActive ? "Deactivate" : "Activate"}
+      {isActive ? "Deactivate" : "Activate"}
     </Button>
   );
 }
 
 export function AdminExtendSubscriptionButton({ subscriptionId }: { subscriptionId: string }) {
   const [days, setDays] = useState("30");
-  const [loading, setLoading] = useState(false);
-
-  async function extend() {
-    setLoading(true);
-    const res = await appFetch("/api/admin/extend-subscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscriptionId, days: Number(days) }),
-    });
-    setLoading(false);
-    if (res.ok) window.location.reload();
-    else alert((await res.json()).error ?? "Failed to extend subscription");
-  }
+  const { isPending, run } = useAsyncAction();
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -110,8 +100,23 @@ export function AdminExtendSubscriptionButton({ subscriptionId }: { subscription
           <SelectItem value="240">+240d</SelectItem>
         </SelectContent>
       </Select>
-      <Button size="sm" variant="outline" disabled={loading} onClick={extend}>
-        {loading ? "..." : "Extend"}
+      <Button
+        size="sm"
+        variant="outline"
+        loading={isPending}
+        onClick={() =>
+          void run(async () => {
+            const res = await appFetch("/api/admin/extend-subscription", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ subscriptionId, days: Number(days) }),
+            });
+            if (res.ok) window.location.reload();
+            else alert((await res.json()).error ?? "Failed to extend subscription");
+          })
+        }
+      >
+        Extend
       </Button>
     </div>
   );

@@ -15,7 +15,7 @@ import { ConnectionNoticeToast } from "@/components/errors/connection-banner";
 import { ErrorFallback } from "@/components/errors/error-fallback";
 import type { ErrorCategory } from "@/lib/errors/types";
 import { logPlatformError } from "@/lib/errors/logger";
-import { createPlatformError, isAbortError } from "@/lib/errors/classify";
+import { createPlatformError, isAbortError, isBenignResizeObserverError } from "@/lib/errors/classify";
 import {
   subscribeToConnectionQuality,
   type ConnectionQuality,
@@ -150,6 +150,14 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     };
 
     const handleWindowError = (event: ErrorEvent) => {
+      if (
+        isBenignResizeObserverError(event.message) ||
+        isBenignResizeObserverError(event.error)
+      ) {
+        event.preventDefault();
+        return;
+      }
+
       logPlatformError(
         "window.error",
         createPlatformError("unknown", "UNKNOWN", event.error ?? event.message)

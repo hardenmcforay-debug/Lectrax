@@ -140,6 +140,26 @@ export function isAbortError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * Benign browser notice when ResizeObserver defers notifications to the next frame.
+ * Not an application bug — common with layout/animation libraries.
+ */
+export function isBenignResizeObserverError(error: unknown): boolean {
+  const message =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : error && typeof error === "object" && "message" in error
+          ? String((error as { message: unknown }).message)
+          : "";
+
+  return (
+    message.includes("ResizeObserver loop") ||
+    message.includes("ResizeObserver loop limit exceeded")
+  );
+}
+
 export function hasSupabaseAuthCookies(
   cookies: Array<{ name: string; value: string }>
 ): boolean {

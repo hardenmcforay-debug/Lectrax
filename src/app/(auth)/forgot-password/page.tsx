@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validations";
 import Link from "next/link";
 import { PASSWORD_RESET_SUCCESS_MESSAGE } from "@/lib/auth/password-reset-constants";
+import { requestPasswordResetEmail } from "@/lib/auth/request-password-reset";
 import { appFetch } from "@/lib/api/client-fetch";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,15 @@ export default function ForgotPasswordPage() {
           retryable: false,
         });
         return;
+      }
+
+      // Always dispatch from the browser after rate-limit checks so the PKCE
+      // code_verifier is stored here. Supabase itself does not reveal whether
+      // the account exists. Ignore send failures for the same reason.
+      try {
+        await requestPasswordResetEmail(data.identifier);
+      } catch {
+        // Enumeration-safe: still show the uniform success message.
       }
 
       setSent(true);

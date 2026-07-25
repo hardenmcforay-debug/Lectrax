@@ -2,10 +2,7 @@ import "server-only";
 
 import { createHash } from "crypto";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getAppUrl } from "@/lib/env";
-import { logServerError } from "@/lib/errors/logger";
 import { PASSWORD_RESET_SUCCESS_MESSAGE } from "@/lib/auth/password-reset-constants";
-import { getPasswordResetRedirectUrl } from "@/lib/auth/password-recovery";
 import { resolvePasswordResetTargetEmail } from "@/lib/auth/recovery-email";
 
 export { PASSWORD_RESET_SUCCESS_MESSAGE };
@@ -42,25 +39,6 @@ export async function authAccountExistsForEmail(
 ): Promise<boolean> {
   const result = await authAccountExistsForIdentifier(email, service);
   return result.exists;
-}
-
-export async function sendPasswordResetEmail(params: {
-  email: string;
-  redirectOrigin?: string;
-  service?: ServiceClient;
-}): Promise<boolean> {
-  const supabase = params.service ?? (await createServiceClient());
-  const normalized = normalizeAuthEmail(params.email);
-  const redirectTo = getPasswordResetRedirectUrl(getAppUrl(params.redirectOrigin));
-
-  const { error } = await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
-
-  if (error) {
-    logServerError("auth.passwordReset.send", error);
-    return false;
-  }
-
-  return true;
 }
 
 export async function waitForMinimumResponseTime(
