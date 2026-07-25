@@ -54,6 +54,8 @@ export function StudentAssignmentDetailClient({
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [overlayPhase, setOverlayPhase] = useState<AssignmentUploadOverlayPhase>("uploading");
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
+  const [uploadCanRetry, setUploadCanRetry] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [pdfViewer, setPdfViewer] = useState<AssignmentSubmissionViewerData | null>(null);
 
@@ -165,6 +167,8 @@ export function StudentAssignmentDetailClient({
 
     uploadInFlightRef.current = true;
     setValidationError(null);
+    setUploadErrorMessage(null);
+    setUploadCanRetry(true);
     setOverlayPhase("uploading");
     setUploadProgress(0);
     setOverlayOpen(true);
@@ -184,6 +188,15 @@ export function StudentAssignmentDetailClient({
       );
 
       if (!result.ok) {
+        const body = result.body as { error?: string; code?: string } | null;
+        const apiError = typeof body?.error === "string" ? body.error.trim() : "";
+        const isPremiumBlocked = body?.code === "PREMIUM_REQUIRED";
+
+        setUploadErrorMessage(
+          apiError ||
+            "We couldn't upload your assignment.\n\nPlease try again. If this keeps happening, contact your lecturer."
+        );
+        setUploadCanRetry(!isPremiumBlocked);
         setOverlayPhase("failed");
         return;
       }
@@ -197,14 +210,24 @@ export function StudentAssignmentDetailClient({
       successTimerRef.current = window.setTimeout(() => {
         setOverlayOpen(false);
         setUploadProgress(null);
+        setUploadErrorMessage(null);
         router.refresh();
       }, SUCCESS_DISPLAY_MS);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         setOverlayOpen(false);
         setUploadProgress(null);
+        setUploadErrorMessage(null);
         return;
       }
+
+      const message =
+        error instanceof Error && error.message === "UPLOAD_TIMEOUT"
+          ? "The upload timed out.\n\nPlease check your internet connection and try again."
+          : "We couldn't upload your assignment.\n\nPlease check your internet connection and try again.";
+
+      setUploadErrorMessage(message);
+      setUploadCanRetry(true);
       setOverlayPhase("failed");
     } finally {
       uploadInFlightRef.current = false;
@@ -232,6 +255,8 @@ export function StudentAssignmentDetailClient({
   function handleDismissUploadFailure() {
     setOverlayOpen(false);
     setUploadProgress(null);
+    setUploadErrorMessage(null);
+    setUploadCanRetry(true);
   }
 
   return (
@@ -369,6 +394,8 @@ export function StudentAssignmentDetailClient({
         open={overlayOpen}
         phase={overlayPhase}
         progress={uploadProgress}
+        errorMessage={uploadErrorMessage}
+        canRetry={uploadCanRetry}
         onRetry={handleRetryUpload}
         onDismiss={handleDismissUploadFailure}
       />

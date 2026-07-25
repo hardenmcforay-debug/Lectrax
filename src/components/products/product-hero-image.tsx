@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { ProductMediaMotion } from "@/components/products/product-media-motion";
 
 type ProductHeroImageProps = {
   src: string;
@@ -15,8 +18,8 @@ export function ProductHeroImage({ src }: ProductHeroImageProps) {
   const optimize = shouldOptimizeProductImage(src);
 
   return (
-    <div className="relative aspect-[16/10] w-full overflow-hidden">
-      <div className="landing-float absolute inset-0">
+    <ProductMediaMotion intensity="hero" className="relative aspect-[16/10] w-full overflow-hidden">
+      <div className="relative h-full w-full">
         <Image
           src={src}
           alt=""
@@ -28,6 +31,6 @@ export function ProductHeroImage({ src }: ProductHeroImageProps) {
           className="object-contain object-center"
         />
       </div>
-    </div>
+    </ProductMediaMotion>
   );
 }

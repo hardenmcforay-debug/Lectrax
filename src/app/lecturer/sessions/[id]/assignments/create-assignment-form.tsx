@@ -57,14 +57,20 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
           setError(sanitizeErrorMessage(data.error) ?? "Could not create assignment.");
-          return;
+          throw new Error("CREATE_ASSIGNMENT_FAILED");
         }
 
         router.push(`/lecturer/sessions/${sessionId}?tab=assignments`);
         router.refresh();
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === "CREATE_ASSIGNMENT_FAILED") {
+          throw error;
+        }
         setError("Network error. Please try again.");
+        throw error instanceof Error ? error : new Error("CREATE_ASSIGNMENT_NETWORK");
       }
+    }, { holdOnSuccess: true }).catch(() => {
+      // Error UI already set; swallow to avoid unhandled rejection.
     });
   }
 

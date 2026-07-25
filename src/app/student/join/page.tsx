@@ -49,13 +49,16 @@ export default function JoinClassPage() {
         setError(
           sanitizeErrorMessage(result.error) ?? "Session not found. Check the code and try again."
         );
-        return;
+        throw new Error("JOIN_FAILED");
       }
 
       setSuccess(`Joined ${result.session.courseCode} — ${result.session.title}`);
       setTimeout(() => {
         router.push("/student/academic-overview");
       }, 1500);
+    }, { holdOnSuccess: true }).catch((error: unknown) => {
+      if (error instanceof Error && error.message === "JOIN_FAILED") return;
+      setError("Could not join class. Please try again.");
     });
   }
 

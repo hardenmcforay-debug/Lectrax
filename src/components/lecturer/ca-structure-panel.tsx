@@ -205,14 +205,15 @@ export function CaStructurePanel({
         setCreateError(
           sanitizeErrorMessage(data.error) ?? "Could not create test."
         );
+        setCreating(false);
         return;
       }
 
       setCreateOpen(false);
       router.push(`/lecturer/sessions/${session.id}/tests/${data.test.id}`);
+      // Keep `creating` locked until navigation unmounts this view.
     } catch {
       setCreateError("Network error. Try again.");
-    } finally {
       setCreating(false);
     }
   }

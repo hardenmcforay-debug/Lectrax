@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LandingCta } from "@/components/landing/landing-cta";
 import { ProductHeroImage } from "@/components/products/product-hero-image";
+import { ProductMediaMotion } from "@/components/products/product-media-motion";
 import {
   ProductOutcomeIllustration,
   outcomeIllustrationVariant,
@@ -168,56 +169,61 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
           </div>
 
           <ol className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2">
-            {product.howItWorks.map((step, index) => (
-              <li
-                key={step.title}
-                className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-7"
-              >
-                {product.slug === "class-session-management" ? (
+            {product.howItWorks.map((step, index) => {
+              const illustrationClassName = "h-44 w-full sm:h-52";
+              const howIllustration =
+                product.slug === "class-session-management" ? (
                   <ClassSessionHowIllustration
                     step={classSessionHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                {product.slug === "secure-academic-records" ? (
+                ) : product.slug === "secure-academic-records" ? (
                   <SecureAcademicHowIllustration
                     step={secureAcademicHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                {product.slug === "performance-analytics" ? (
+                ) : product.slug === "performance-analytics" ? (
                   <PerformanceAnalyticsHowIllustration
                     step={performanceAnalyticsHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                {product.slug === "continuous-assessment" ? (
+                ) : product.slug === "continuous-assessment" ? (
                   <ContinuousAssessmentHowIllustration
                     step={continuousAssessmentHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                {product.slug === "assignment-management" ? (
+                ) : product.slug === "assignment-management" ? (
                   <AssignmentManagementHowIllustration
                     step={assignmentManagementHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                {product.slug === "qr-attendance" ? (
+                ) : product.slug === "qr-attendance" ? (
                   <QrAttendanceHowIllustration
                     step={qrAttendanceHowStep(index)}
-                    className="mb-5 h-44 w-full sm:h-52"
+                    className={illustrationClassName}
                   />
-                ) : null}
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                  Step {String(index + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                  {step.description}
-                </p>
-              </li>
-            ))}
+                ) : null;
+
+              return (
+                <li
+                  key={step.title}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-7"
+                >
+                  {howIllustration ? (
+                    <ProductMediaMotion delay={Math.min(index, 3) * 0.08} className="mb-5">
+                      {howIllustration}
+                    </ProductMediaMotion>
+                  ) : null}
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                    Step {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+                    {step.description}
+                  </p>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
@@ -327,10 +333,12 @@ export function ProductPageContent({ product, imageUrl }: ProductPageContentProp
                 key={outcome}
                 className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm"
               >
-                <ProductOutcomeIllustration
-                  variant={outcomeIllustrationVariant(index)}
-                  className="mb-4 h-24 w-full max-w-[10rem]"
-                />
+                <ProductMediaMotion delay={index * 0.1} className="mb-4 w-full max-w-[10rem]">
+                  <ProductOutcomeIllustration
+                    variant={outcomeIllustrationVariant(index)}
+                    className="h-24 w-full"
+                  />
+                </ProductMediaMotion>
                 <p className="text-sm font-medium leading-relaxed text-slate-700 sm:text-base">
                   {outcome}
                 </p>

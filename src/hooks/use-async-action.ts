@@ -4,25 +4,50 @@ import { useCallback, useRef, useState } from "react";
 
 type AsyncFn<TArgs extends unknown[], TResult> = (...args: TArgs) => Promise<TResult>;
 
+export type AsyncActionRunOptions = {
+  /**
+   * Keep the lock after a successful run so the user cannot fire the action again
+   * while a slow navigation/transition is still opening the next page.
+   * Failures must throw to release the lock.
+   */
+  holdOnSuccess?: boolean;
+};
+
 /**
  * Locks an async action so it cannot run concurrently.
- * Sets pending immediately (ref + state), ignores duplicate calls, and always clears in `finally`.
+ * Sets pending immediately (ref + state), ignores duplicate calls, and clears in `finally`
+ * unless `holdOnSuccess` keeps the lock after a successful resolve.
  */
 export function useAsyncAction() {
   const [isPending, setIsPending] = useState(false);
   const inFlightRef = useRef(false);
 
-  const run = useCallback(async <TResult>(action: () => Promise<TResult>): Promise<TResult | undefined> => {
-    if (inFlightRef.current) return undefined;
-    inFlightRef.current = true;
-    setIsPending(true);
-    try {
-      return await action();
-    } finally {
-      inFlightRef.current = false;
-      setIsPending(false);
-    }
-  }, []);
+  const run = useCallback(
+    async <TResult>(
+      action: () => Promise<TResult>,
+      options?: AsyncActionRunOptions
+    ): Promise<TResult | undefined> => {
+      if (inFlightRef.current) return undefined;
+      inFlightRef.current = true;
+      setIsPending(true);
+
+      let hold = false;
+      try {
+        const result = await action();
+        hold = Boolean(options?.holdOnSuccess);
+        return result;
+      } catch (error) {
+        hold = false;
+        throw error;
+      } finally {
+        if (!hold) {
+          inFlightRef.current = false;
+          setIsPending(false);
+        }
+      }
+    },
+    []
+  );
 
   return { isPending, run } as const;
 }
@@ -36,15 +61,28 @@ export function useKeyedAsyncAction<TKey extends string = string>() {
   const inFlightRef = useRef(false);
 
   const run = useCallback(
-    async <TResult>(key: TKey, action: () => Promise<TResult>): Promise<TResult | undefined> => {
+    async <TResult>(
+      key: TKey,
+      action: () => Promise<TResult>,
+      options?: AsyncActionRunOptions
+    ): Promise<TResult | undefined> => {
       if (inFlightRef.current) return undefined;
       inFlightRef.current = true;
       setPendingKey(key);
+
+      let hold = false;
       try {
-        return await action();
+        const result = await action();
+        hold = Boolean(options?.holdOnSuccess);
+        return result;
+      } catch (error) {
+        hold = false;
+        throw error;
       } finally {
-        inFlightRef.current = false;
-        setPendingKey(null);
+        if (!hold) {
+          inFlightRef.current = false;
+          setPendingKey(null);
+        }
       }
     },
     []
@@ -62,22 +100,34 @@ export function useKeyedAsyncAction<TKey extends string = string>() {
  * Useful when the handler signature is fixed (e.g. form submit, click with args).
  */
 export function useLockedAsyncHandler<TArgs extends unknown[], TResult>(
-  action: AsyncFn<TArgs, TResult>
+  action: AsyncFn<TArgs, TResult>,
+  options?: AsyncActionRunOptions
 ) {
   const [isPending, setIsPending] = useState(false);
   const inFlightRef = useRef(false);
   const actionRef = useRef(action);
   actionRef.current = action;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const execute = useCallback(async (...args: TArgs): Promise<TResult | undefined> => {
     if (inFlightRef.current) return undefined;
     inFlightRef.current = true;
     setIsPending(true);
+
+    let hold = false;
     try {
-      return await actionRef.current(...args);
+      const result = await actionRef.current(...args);
+      hold = Boolean(optionsRef.current?.holdOnSuccess);
+      return result;
+    } catch (error) {
+      hold = false;
+      throw error;
     } finally {
-      inFlightRef.current = false;
-      setIsPending(false);
+      if (!hold) {
+        inFlightRef.current = false;
+        setIsPending(false);
+      }
     }
   }, []);
 

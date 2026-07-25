@@ -27,7 +27,7 @@ export function getAdminActivateBlockedMessage(endDate: string | null): string {
 }
 
 export const STUDENT_SUBMISSIONS_DISABLED_MESSAGE =
-  "Assignment submissions are not enabled for this class session.\n\nPlease contact your lecturer for submission instructions.";
+  "Online assignment submission is not available for this class.";
 
 export const BILLING_PLANS = {
   monthly: {

@@ -195,15 +195,16 @@ export function SessionPageClient({
 
       if (!res.ok) {
         setCloseSessionError(data.error ?? "Could not close session.");
+        setClosingSession(false);
         return;
       }
 
       setCloseSessionOpen(false);
       router.push("/lecturer/sessions");
       router.refresh();
+      // Keep locked until navigation unmounts this view.
     } catch {
       setCloseSessionError("Network error. Please try again.");
-    } finally {
       setClosingSession(false);
     }
   }

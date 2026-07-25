@@ -9,16 +9,23 @@ import { Progress } from "@/components/ui/progress";
 
 export type AssignmentUploadOverlayPhase = "uploading" | "success" | "failed";
 
+const DEFAULT_UPLOAD_FAILURE_MESSAGE =
+  "We couldn't upload your assignment.\n\nPlease check your internet connection and try again.";
+
 export function AssignmentUploadOverlay({
   open,
   phase,
   progress,
+  errorMessage,
+  canRetry = true,
   onRetry,
   onDismiss,
 }: {
   open: boolean;
   phase: AssignmentUploadOverlayPhase;
   progress: number | null;
+  errorMessage?: string | null;
+  canRetry?: boolean;
   onRetry: () => void;
   onDismiss: () => void;
 }) {
@@ -133,17 +140,16 @@ export function AssignmentUploadOverlay({
                 </div>
                 <div className="space-y-2">
                   <p className="text-base font-semibold text-foreground">Upload Failed</p>
-                  <p className="text-sm text-muted-foreground">
-                    We couldn&apos;t upload your assignment.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Please check your internet connection and try again.
+                  <p className="whitespace-pre-line text-sm text-muted-foreground">
+                    {errorMessage?.trim() || DEFAULT_UPLOAD_FAILURE_MESSAGE}
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 pt-1">
-                  <Button type="button" variant="accent" size="sm" onClick={onRetry}>
-                    Retry
-                  </Button>
+                  {canRetry ? (
+                    <Button type="button" variant="accent" size="sm" onClick={onRetry}>
+                      Retry
+                    </Button>
+                  ) : null}
                   <Button type="button" variant="outline" size="sm" onClick={onDismiss}>
                     Close
                   </Button>
