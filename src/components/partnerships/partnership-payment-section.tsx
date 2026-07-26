@@ -10,6 +10,11 @@ import {
 } from "@/lib/partnerships/constants";
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { PartnershipPaymentModal } from "@/components/partnerships/partnership-payment-modal";
+import {
+  LandingReveal,
+  LandingStagger,
+  LandingStaggerItem,
+} from "@/components/landing/landing-motion";
 import { appFetch } from "@/lib/api/client-fetch";
 import { cn } from "@/lib/utils";
 
@@ -163,28 +168,30 @@ export function PartnershipPaymentSection({
       className="scroll-mt-24 border-t border-slate-200/80 bg-gradient-to-b from-white via-slate-50/50 to-white py-16 sm:py-20"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div
-          role="note"
-          className="mb-10 rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-5 shadow-md shadow-amber-200/60 ring-4 ring-amber-200/50 sm:px-6 sm:py-6"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-sm">
-              <AlertTriangle className="h-6 w-6" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-bold tracking-tight text-amber-950 sm:text-lg">
-                Important: Complete the inquiry form before paying
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-amber-950/85 sm:text-base">
-                Please fill out the partnership inquiry form above and wait to hear from our team
-                before making a payment. Our team will confirm your package and guide you through
-                onboarding.
-              </p>
+        <LandingReveal className="mb-10">
+          <div
+            role="note"
+            className="rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-5 shadow-md shadow-amber-200/60 ring-4 ring-amber-200/50 sm:px-6 sm:py-6"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-sm">
+                <AlertTriangle className="h-6 w-6" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold tracking-tight text-amber-950 sm:text-lg">
+                  Important: Complete the inquiry form before paying
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-amber-950/85 sm:text-base">
+                  Please fill out the partnership inquiry form above and wait to hear from our team
+                  before making a payment. Our team will confirm your package and guide you through
+                  onboarding.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </LandingReveal>
 
-        <div className="mb-10 text-center sm:mb-12">
+        <LandingReveal className="mb-10 text-center sm:mb-12">
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">
             University Partnership Payment
           </p>
@@ -195,7 +202,7 @@ export function PartnershipPaymentSection({
             Select the package that best fits your department or institution and complete your
             partnership payment securely through Lectrax.
           </p>
-        </div>
+        </LandingReveal>
 
         {confirmingReturn && (
           <div className="mb-8 flex items-center justify-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
@@ -204,9 +211,9 @@ export function PartnershipPaymentSection({
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <LandingStagger className="grid gap-6 lg:grid-cols-3">
           {PARTNERSHIP_PAYMENT_PACKAGES.map((pkg) => (
-            <article
+            <LandingStaggerItem
               key={pkg.id}
               className={cn(
                 "relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:p-8",
@@ -253,9 +260,9 @@ export function PartnershipPaymentSection({
               >
                 Choose Package
               </Button>
-            </article>
+            </LandingStaggerItem>
           ))}
-        </div>
+        </LandingStagger>
       </div>
 
       <PartnershipPaymentModal

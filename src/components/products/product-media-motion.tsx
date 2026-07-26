@@ -38,8 +38,7 @@ export function ProductMediaMotion({
     <motion.div
       className={cn("will-change-transform", className)}
       initial={{ opacity: 0, y: 14, scale: 0.97 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.3 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
         duration: 0.55,
         delay,

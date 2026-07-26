@@ -8,6 +8,7 @@ import { LandingUniversityPartnerships } from "@/components/landing/landing-univ
 import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingCta } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { MarketingPageEnter } from "@/components/landing/landing-motion";
 
 type LandingPageProps = {
   heroImageUrl?: string | null;
@@ -18,17 +19,19 @@ export function LandingPage({ heroImageUrl, featureImages }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <LandingNav />
-      <main>
-        <LandingHero heroImageUrl={heroImageUrl} />
-        <LandingFeatures featureImages={featureImages} />
-        <LandingHowItWorks />
-        <LandingBenefits />
-        <LandingPricing />
-        <LandingUniversityPartnerships />
-        <LandingFaq />
-        <LandingCta />
-      </main>
-      <LandingFooter />
+      <MarketingPageEnter>
+        <main>
+          <LandingHero heroImageUrl={heroImageUrl} />
+          <LandingFeatures featureImages={featureImages} />
+          <LandingHowItWorks />
+          <LandingBenefits />
+          <LandingPricing />
+          <LandingUniversityPartnerships />
+          <LandingFaq />
+          <LandingCta />
+        </main>
+        <LandingFooter />
+      </MarketingPageEnter>
     </div>
   );
 }

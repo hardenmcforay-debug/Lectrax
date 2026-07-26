@@ -9,6 +9,14 @@ import { ResponseTimeLogo } from "@/components/contact/response-time-logo";
 import { TikTokLogo } from "@/components/contact/tiktok-logo";
 import { UniversityPartnershipsLogo } from "@/components/contact/university-partnerships-logo";
 import { XLogo } from "@/components/contact/x-logo";
+import {
+  HeroItem,
+  HeroStagger,
+  LandingReveal,
+  LandingStagger,
+  LandingStaggerItem,
+  MarketingPageEnter,
+} from "@/components/landing/landing-motion";
 import { CONTACT_EMAIL, CONTACT_SOCIAL_LINKS } from "@/lib/contact/constants";
 
 type ContactChannel = {
@@ -53,67 +61,70 @@ const contactChannels: ContactChannel[] = [
 
 export function ContactPageContent() {
   return (
-    <div className="bg-white">
+    <MarketingPageEnter className="bg-white">
       <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Contact Us
-          </h1>
-          <p className="mt-4 text-lg leading-relaxed text-slate-600">
-            Get in touch through any of the channels below.
-          </p>
-        </div>
+        <HeroStagger className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+          <HeroItem>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Contact Us
+            </h1>
+          </HeroItem>
+          <HeroItem>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">
+              Get in touch through any of the channels below.
+            </p>
+          </HeroItem>
+        </HeroStagger>
 
         <div className="mx-auto mt-12 max-w-7xl px-4 sm:mt-16 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
-            <div className="space-y-6">
+            <LandingStagger className="space-y-6">
               <div className="grid gap-4">
                 {contactChannels.map((channel) => {
                   const Icon = channel.icon;
 
                   if (channel.customIcon === "gmail") {
                     return (
-                      <div
-                        key={channel.title}
-                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                      >
-                        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                          <a
-                            href={channel.href}
-                            aria-label={`Email ${channel.value}`}
-                            className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100 px-3 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-200/80 sm:py-5"
-                          >
-                            <EmailLogo className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
-                            <span className="text-sm font-semibold text-slate-800">Email</span>
-                            <span className="break-all text-xs font-medium text-slate-600">
-                              {channel.value}
-                            </span>
-                          </a>
-                          {CONTACT_SOCIAL_LINKS.map((social) => {
-                            const SocialIcon = socialIcons[social.id];
-                            return (
-                              <a
-                                key={social.id}
-                                href={social.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={social.label}
-                                className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100 px-3 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-200/80 sm:py-5"
-                              >
-                                <SocialIcon className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
-                                <span className="text-sm font-semibold text-slate-800">
-                                  {social.label}
-                                </span>
-                                {social.handle ? (
-                                  <span className="break-all text-xs font-medium text-slate-600">
-                                    {social.handle}
+                      <LandingStaggerItem key={channel.title}>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                            <a
+                              href={channel.href}
+                              aria-label={`Email ${channel.value}`}
+                              className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100 px-3 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-200/80 sm:py-5"
+                            >
+                              <EmailLogo className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+                              <span className="text-sm font-semibold text-slate-800">Email</span>
+                              <span className="break-all text-xs font-medium text-slate-600">
+                                {channel.value}
+                              </span>
+                            </a>
+                            {CONTACT_SOCIAL_LINKS.map((social) => {
+                              const SocialIcon = socialIcons[social.id];
+                              return (
+                                <a
+                                  key={social.id}
+                                  href={social.href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={social.label}
+                                  className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100 px-3 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-200/80 sm:py-5"
+                                >
+                                  <SocialIcon className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    {social.label}
                                   </span>
-                                ) : null}
-                              </a>
-                            );
-                          })}
+                                  {social.handle ? (
+                                    <span className="break-all text-xs font-medium text-slate-600">
+                                      {social.handle}
+                                    </span>
+                                  ) : null}
+                                </a>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      </LandingStaggerItem>
                     );
                   }
 
@@ -147,21 +158,27 @@ export function ContactPageContent() {
 
                   if (channel.href) {
                     return (
-                      <Link key={channel.title} href={channel.href} className="block">
-                        {content}
-                      </Link>
+                      <LandingStaggerItem key={channel.title}>
+                        <Link href={channel.href} className="block">
+                          {content}
+                        </Link>
+                      </LandingStaggerItem>
                     );
                   }
 
-                  return <div key={channel.title}>{content}</div>;
+                  return (
+                    <LandingStaggerItem key={channel.title}>{content}</LandingStaggerItem>
+                  );
                 })}
               </div>
-            </div>
+            </LandingStagger>
 
-            <ContactForm />
+            <LandingReveal>
+              <ContactForm />
+            </LandingReveal>
           </div>
         </div>
       </section>
-    </div>
+    </MarketingPageEnter>
   );
 }

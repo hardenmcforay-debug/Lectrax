@@ -3,6 +3,14 @@ import Link from "next/link";
 import { Check, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LandingCta } from "@/components/landing/landing-cta";
+import {
+  HeroItem,
+  HeroStagger,
+  LandingReveal,
+  LandingStagger,
+  LandingStaggerItem,
+  MarketingPageEnter,
+} from "@/components/landing/landing-motion";
 import { PARTNERSHIP_BENEFITS, PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
 import { BILLING_PLANS } from "@/lib/subscription/constants";
 import { PAYMENT_METHOD_OPTIONS } from "@/lib/monime/payment-methods";
@@ -148,32 +156,36 @@ export function PricingPageContent({
   paymentMethodLogos: Record<PaymentMethodLogoId, string | null>;
 }) {
   return (
-    <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <MarketingPageEnter className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <section className="border-b border-slate-200/80 bg-white py-14 sm:py-16 lg:py-20">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Simple and Transparent Pricing
-          </h1>
-          <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600">
-            Choose lecturer subscriptions for individual educators, or university partnership packages
-            for departments. Students always use Lectrax for free.
-          </p>
-        </div>
+        <HeroStagger className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <HeroItem>
+            <h1 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Simple and Transparent Pricing
+            </h1>
+          </HeroItem>
+          <HeroItem>
+            <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-600">
+              Choose lecturer subscriptions for individual educators, or university partnership packages
+              for departments. Students always use Lectrax for free.
+            </p>
+          </HeroItem>
+        </HeroStagger>
       </section>
 
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <LandingReveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Lecturer Subscriptions
             </h2>
             <p className="mt-3 text-base text-slate-600 sm:text-lg">
               Start free, then upgrade to Lectrax Premium when your teaching needs grow.
             </p>
-          </div>
+          </LandingReveal>
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <LandingStagger className="mt-10 grid gap-6 lg:grid-cols-2">
+            <LandingStaggerItem className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h3 className="text-xl font-bold text-slate-900">Free Plan</h3>
               <p className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
                 $0
@@ -186,9 +198,9 @@ export function PricingPageContent({
               >
                 Get Started Free
               </Link>
-            </div>
+            </LandingStaggerItem>
 
-            <div className="relative rounded-2xl border-2 border-accent bg-white p-6 shadow-lg ring-1 ring-accent/20 sm:p-8">
+            <LandingStaggerItem className="relative rounded-2xl border-2 border-accent bg-white p-6 shadow-lg ring-1 ring-accent/20 sm:p-8">
               <Badge variant="accent" className="absolute -top-3 left-6">
                 Recommended
               </Badge>
@@ -201,12 +213,12 @@ export function PricingPageContent({
               >
                 Upgrade to Standard
               </Link>
-            </div>
-          </div>
+            </LandingStaggerItem>
+          </LandingStagger>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <LandingStagger className="mt-8 grid gap-4 sm:grid-cols-3">
             {billingOptions.map((plan) => (
-              <div
+              <LandingStaggerItem
                 key={plan.id}
                 className={cn(
                   "rounded-2xl border bg-white p-5 text-center shadow-sm sm:p-6",
@@ -225,15 +237,15 @@ export function PricingPageContent({
                 <p className="font-semibold text-slate-900">{plan.label}</p>
                 <p className="mt-2 text-3xl font-bold text-primary">${plan.price}</p>
                 <p className="mt-2 text-sm text-slate-500">{plan.description}</p>
-              </div>
+              </LandingStaggerItem>
             ))}
-          </div>
+          </LandingStagger>
         </div>
       </section>
 
       <section className="border-y border-slate-200/80 bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <LandingReveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               University Partnerships
             </h2>
@@ -241,11 +253,11 @@ export function PricingPageContent({
               Annual departmental packages for universities that want to provide Premium access for
               their lecturers.
             </p>
-          </div>
+          </LandingReveal>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <LandingStagger className="mt-10 grid gap-6 md:grid-cols-3">
             {PARTNERSHIP_PACKAGES.map((pkg) => (
-              <div
+              <LandingStaggerItem
                 key={pkg.id}
                 className={cn(
                   "relative rounded-2xl border bg-slate-50/50 p-6 sm:p-8",
@@ -267,11 +279,11 @@ export function PricingPageContent({
                   ${pkg.price.toLocaleString()}
                   <span className="text-base font-normal text-slate-500"> / Year</span>
                 </p>
-              </div>
+              </LandingStaggerItem>
             ))}
-          </div>
+          </LandingStagger>
 
-          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-8">
+          <LandingReveal className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-8">
             <h3 className="text-lg font-semibold text-slate-900">Included with every package</h3>
             <FeatureList items={[...PARTNERSHIP_BENEFITS]} />
             <Link
@@ -280,23 +292,23 @@ export function PricingPageContent({
             >
               Request Partnership
             </Link>
-          </div>
+          </LandingReveal>
         </div>
       </section>
 
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <LandingReveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               How pricing works
             </h2>
             <p className="mt-3 text-base text-slate-600 sm:text-lg">
               Clear paths for individual lecturers and university departments.
             </p>
-          </div>
+          </LandingReveal>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <LandingStagger className="mt-12 grid gap-8 lg:grid-cols-2">
+            <LandingStaggerItem className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h3 className="text-xl font-semibold text-slate-900">For lecturers</h3>
               <ol className="mt-6 space-y-5">
                 {lecturerHowItWorks.map((step, index) => (
@@ -309,9 +321,9 @@ export function PricingPageContent({
                   </li>
                 ))}
               </ol>
-            </div>
+            </LandingStaggerItem>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <LandingStaggerItem className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h3 className="text-xl font-semibold text-slate-900">For universities</h3>
               <ol className="mt-6 space-y-5">
                 {partnershipHowItWorks.map((step, index) => (
@@ -324,14 +336,14 @@ export function PricingPageContent({
                   </li>
                 ))}
               </ol>
-            </div>
-          </div>
+            </LandingStaggerItem>
+          </LandingStagger>
         </div>
       </section>
 
       <section className="border-y border-slate-200/80 bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <LandingReveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Payment providers
             </h2>
@@ -339,11 +351,11 @@ export function PricingPageContent({
               Lecturer Premium checkout is processed securely through Monime with local payment
               options.
             </p>
-          </div>
+          </LandingReveal>
 
-          <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <LandingStagger className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
             {PAYMENT_METHOD_OPTIONS.map((method) => (
-              <div
+              <LandingStaggerItem
                 key={method.id}
                 className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50/50 p-6 text-center sm:p-7"
               >
@@ -353,18 +365,20 @@ export function PricingPageContent({
                 />
                 <p className="mt-4 text-lg font-semibold text-slate-900">{method.label}</p>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{method.description}</p>
-              </div>
+              </LandingStaggerItem>
             ))}
-          </div>
+          </LandingStagger>
 
-          <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-slate-500">
-            Plan prices are shown in USD. At checkout, Monime charges the equivalent amount in SLE.
-            University partnership payments are arranged with the Lectrax team during onboarding.
-          </p>
+          <LandingReveal>
+            <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-slate-500">
+              Plan prices are shown in USD. At checkout, Monime charges the equivalent amount in SLE.
+              University partnership payments are arranged with the Lectrax team during onboarding.
+            </p>
+          </LandingReveal>
         </div>
       </section>
 
       <LandingCta />
-    </div>
+    </MarketingPageEnter>
   );
 }
