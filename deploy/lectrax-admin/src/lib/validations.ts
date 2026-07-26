@@ -328,7 +328,7 @@ export const adminToggleLecturerSchema = z.object({
 
 export const adminGrantFreeSchema = z.object({
   lecturerId: z.string().uuid("Invalid lecturer ID"),
-  days: z.coerce.number().int().min(1).max(3650).default(240),
+  days: z.coerce.number().int().min(1).max(3650).default(300),
 });
 
 export const adminExtendSubscriptionSchema = z

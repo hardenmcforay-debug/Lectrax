@@ -14,7 +14,7 @@ import {
 import { useAsyncAction } from "@/hooks/use-async-action";
 
 export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
-  const [days, setDays] = useState("240");
+  const [days, setDays] = useState("300");
   const { isPending, run } = useAsyncAction();
 
   return (
@@ -27,7 +27,7 @@ export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
           <SelectItem value="30">30 days</SelectItem>
           <SelectItem value="120">4 months</SelectItem>
           <SelectItem value="180">6 months</SelectItem>
-          <SelectItem value="240">8 months</SelectItem>
+          <SelectItem value="300">10 months</SelectItem>
         </SelectContent>
       </Select>
       <Button
@@ -97,7 +97,7 @@ export function AdminExtendSubscriptionButton({ subscriptionId }: { subscription
           <SelectItem value="30">+30d</SelectItem>
           <SelectItem value="90">+90d</SelectItem>
           <SelectItem value="180">+180d</SelectItem>
-          <SelectItem value="240">+240d</SelectItem>
+          <SelectItem value="300">+300d</SelectItem>
         </SelectContent>
       </Select>
       <Button

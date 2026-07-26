@@ -43,10 +43,10 @@ export const BILLING_PLANS = {
     description: "4 months of Premium",
   },
   annual: {
-    price: 35,
-    days: 240,
+    price: 45,
+    days: 300,
     label: "Academic year",
-    description: "8 months of Premium",
+    description: "10 months of Premium",
   },
 } as const;
 
@@ -54,15 +54,15 @@ export type BillingPlan = keyof typeof BILLING_PLANS;
 
 /**
  * Maps checkout billing plans to legacy `subscriptions.plan` enum values.
- * Annual billing maps to `8_months` (240 days).
+ * Annual billing maps to `10_months` (300 days).
  */
 export function billingPlanToSubscriptionPlan(
   billingPlan: BillingPlan
-): "1_month" | "3_months" | "8_months" {
+): "1_month" | "3_months" | "10_months" {
   const map = {
     monthly: "1_month",
     semester: "3_months",
-    annual: "8_months",
+    annual: "10_months",
   } as const;
   return map[billingPlan];
 }

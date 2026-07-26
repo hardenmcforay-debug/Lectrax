@@ -78,7 +78,7 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
           <HeroItem
             standalone
             delay={0.36}
-            className="order-1 hidden md:block lg:order-none"
+            className="order-1 hidden lg:block lg:order-none"
           >
             <HeroVisual imageUrl={heroImageUrl} />
           </HeroItem>

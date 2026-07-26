@@ -92,7 +92,7 @@ export function AdminSubscriptionActions({
           <SelectItem value="30">+30d</SelectItem>
           <SelectItem value="90">+90d</SelectItem>
           <SelectItem value="120">+120d</SelectItem>
-          <SelectItem value="240">+240d</SelectItem>
+          <SelectItem value="300">+300d</SelectItem>
         </SelectContent>
       </Select>
       <Button
