@@ -152,7 +152,7 @@ export function MarketingPageEnter({
       className={className}
       initial={reducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: EASE }}
+      transition={reducedMotion ? { duration: 0 } : { duration: 0.16, ease: EASE }}
     >
       {children}
     </motion.div>

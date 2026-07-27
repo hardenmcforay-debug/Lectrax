@@ -1,0 +1,60 @@
+/* Fast in-app page transitions (View Transitions API + CSS enter fallback). */
+
+:root {
+  --lectrax-page-exit-ms: 120ms;
+  --lectrax-page-enter-ms: 160ms;
+}
+
+::view-transition-old(root) {
+  animation: lectrax-vt-fade-out var(--lectrax-page-exit-ms) ease-out both;
+}
+
+::view-transition-new(root) {
+  animation: lectrax-vt-fade-in var(--lectrax-page-enter-ms) ease-out both;
+}
+
+@keyframes lectrax-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes lectrax-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lectrax-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lectrax-page-enter {
+  animation: lectrax-page-enter var(--lectrax-page-enter-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Avoid stacking CSS enter + View Transition when both run. */
+html:active-view-transition .lectrax-page-enter {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  .lectrax-page-enter {
+    animation: none !important;
+  }
+}

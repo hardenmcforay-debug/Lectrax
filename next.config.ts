@@ -4,6 +4,10 @@ import { getAppSecurityHeaderRoutes } from "./src/lib/security/headers";
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   serverExternalPackages: ["exceljs"],
+  experimental: {
+    // Enables React/Next route view transitions when the runtime supports them.
+    viewTransition: true,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86_400,
