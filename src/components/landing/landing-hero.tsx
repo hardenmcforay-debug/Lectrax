@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   BarChart3,
   ClipboardCheck,
@@ -9,10 +6,8 @@ import {
   ScanQrCode,
 } from "lucide-react";
 import { APP_TAGLINE } from "@/lib/constants";
-import { HeroVisual } from "@/components/landing/hero-visual";
-import { HeroItem, HeroStagger } from "@/components/landing/landing-motion";
-import { InstallAppButton } from "@/components/pwa/install-app-button";
-import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
+import { LandingHeroVisual } from "@/components/landing/landing-hero-visual";
+import { LandingHeroInstallButton } from "@/components/landing/landing-hero-install-button";
 
 const FEATURE_HIGHLIGHTS = [
   {
@@ -67,91 +62,79 @@ type LandingHeroProps = {
   heroImageUrl?: string | null;
 };
 
+/**
+ * Server-rendered hero — LCP heading is plain HTML (no opacity/transform animation)
+ * so it can paint in the first frame without waiting for Framer Motion or hydration.
+ */
 export function LandingHero({ heroImageUrl }: LandingHeroProps) {
-  const reducedMotion = useSafeReducedMotion();
-
   return (
     <section className="hero-section relative flex min-h-screen flex-col overflow-hidden">
+      {heroImageUrl ? (
+        <link
+          rel="preload"
+          as="image"
+          href={heroImageUrl}
+          media="(min-width: 1024px)"
+          fetchPriority="high"
+        />
+      ) : null}
+
       <HeroBackground />
 
       <div className="landing-hero-safe relative z-[1] mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pb-28 sm:px-6 sm:pb-32 lg:px-8">
         <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-          <HeroItem
-            standalone
-            delay={0.36}
-            className="order-1 hidden lg:block lg:order-none"
-          >
-            <HeroVisual imageUrl={heroImageUrl} />
-          </HeroItem>
+          <div className="order-1 hidden lg:block lg:order-none">
+            <LandingHeroVisual imageUrl={heroImageUrl} />
+          </div>
 
-          <HeroStagger className="order-2 text-center lg:text-left">
-            <HeroItem>
-              <p className="text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-4xl">
-                {APP_TAGLINE}
-              </p>
-            </HeroItem>
+          <div className="order-2 text-center lg:text-left">
+            <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-4xl">
+              {APP_TAGLINE}
+            </h1>
 
-            <HeroItem>
-              <p className="mx-auto mt-4 max-w-[600px] text-sm leading-relaxed text-blue-100/90 sm:text-base lg:mx-0">
-                Empower lecturers with a centralized platform for attendance tracking, assignments,
-                continuous assessment, and student performance management.
-              </p>
-            </HeroItem>
+            <p className="mx-auto mt-4 max-w-[600px] text-sm leading-relaxed text-blue-100/90 sm:text-base lg:mx-0">
+              Empower lecturers with a centralized platform for attendance tracking, assignments,
+              continuous assessment, and student performance management.
+            </p>
 
-            <HeroItem>
-              <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3">
-                {FEATURE_HIGHLIGHTS.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <motion.div
-                      key={item.title}
-                      className="hero-feature-card group min-w-0 rounded-lg p-2.5 text-center sm:rounded-xl sm:p-2.5 md:p-3.5"
-                      whileHover={reducedMotion ? undefined : { y: -4 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Icon
-                        aria-hidden
-                        strokeWidth={2}
-                        absoluteStrokeWidth
-                        className="mx-auto mb-1.5 h-6 w-6 text-emerald-400 transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-emerald-300 sm:mb-1.5 sm:h-7 sm:w-7 md:mb-2 md:h-8 md:w-8"
-                      />
-                      <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
-                        {item.title}
-                      </p>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </HeroItem>
-
-            <HeroItem>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-                <motion.div
-                  whileHover={reducedMotion ? undefined : { scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    href="/login"
-                    className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-7 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-colors hover:bg-emerald-400"
+            <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3">
+              {FEATURE_HIGHLIGHTS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.title}
+                    className="hero-feature-card group min-w-0 rounded-lg p-2.5 text-center transition-transform duration-200 ease-out hover:-translate-y-1 sm:rounded-xl sm:p-2.5 md:p-3.5"
                   >
-                    Get Started
-                  </Link>
-                </motion.div>
-                <motion.div
-                  whileHover={reducedMotion ? undefined : { scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    href="/contact"
-                    className="inline-flex h-11 items-center justify-center rounded-xl border border-white/40 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-white/60 hover:bg-white/10"
-                  >
-                    Contact Us
-                  </Link>
-                </motion.div>
-                <InstallAppButton variant="hero" />
-              </div>
-            </HeroItem>
-          </HeroStagger>
+                    <Icon
+                      aria-hidden
+                      strokeWidth={2}
+                      absoluteStrokeWidth
+                      className="mx-auto mb-1.5 h-6 w-6 text-emerald-400 transition-[color,transform] duration-200 ease-out group-hover:scale-[1.08] group-hover:text-emerald-300 sm:mb-1.5 sm:h-7 sm:w-7 md:mb-2 md:h-8 md:w-8"
+                    />
+                    <p className="text-[10px] font-semibold leading-tight text-white sm:text-[11px] md:text-sm">
+                      {item.title}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+              <Link
+                href="/login"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-7 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-emerald-400 active:scale-[0.98]"
+              >
+                Get Started
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-white/40 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/10 active:scale-[0.98]"
+              >
+                Contact Us
+              </Link>
+              <LandingHeroInstallButton />
+            </div>
+          </div>
         </div>
       </div>
 

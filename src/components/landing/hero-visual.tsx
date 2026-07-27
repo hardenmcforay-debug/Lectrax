@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
@@ -37,24 +37,25 @@ function FloatingBadge({
   icon: Icon,
   className,
   delay,
-  reducedMotion,
-}: FloatingIcon & { reducedMotion: boolean }) {
+  enableMotion,
+}: FloatingIcon & { enableMotion: boolean }) {
   return (
     <motion.div
       className={`absolute z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/25 bg-white/10 shadow-lg backdrop-blur-md sm:h-12 sm:w-12 ${className}`}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        y: reducedMotion ? 0 : [0, -10, 0],
-      }}
-      transition={{
-        opacity: { duration: 0.5, delay },
-        scale: { duration: 0.5, delay },
-        y: reducedMotion
-          ? undefined
-          : { duration: 4 + delay, repeat: Infinity, ease: "easeInOut", delay },
-      }}
+      // Visible immediately — float only after mount so hero paint is not delayed.
+      initial={false}
+      animate={
+        enableMotion
+          ? { opacity: 1, scale: 1, y: [0, -10, 0] }
+          : { opacity: 1, scale: 1, y: 0 }
+      }
+      transition={
+        enableMotion
+          ? {
+              y: { duration: 4 + delay, repeat: Infinity, ease: "easeInOut", delay },
+            }
+          : { duration: 0 }
+      }
     >
       <Icon className="h-5 w-5 text-cyan-200" />
     </motion.div>
@@ -67,73 +68,98 @@ type HeroVisualProps = {
 
 export function HeroVisual({ imageUrl }: HeroVisualProps) {
   const reducedMotion = useSafeReducedMotion();
+  const [motionReady, setMotionReady] = useState(false);
+
+  useEffect(() => {
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const enable = () => setMotionReady(true);
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(enable, { timeout: 1200 });
+    } else {
+      timeoutId = setTimeout(enable, 400);
+    }
+
+    return () => {
+      if (idleId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const enableMotion = motionReady && !reducedMotion;
 
   return (
     <div className="hero-portal-stage relative mx-auto flex w-full max-w-xl items-center justify-center lg:max-w-none">
       {FLOATING_ICONS.map((item) => (
-        <FloatingBadge key={item.className} {...item} reducedMotion={reducedMotion} />
+        <FloatingBadge key={item.className} {...item} enableMotion={enableMotion} />
       ))}
 
-      <motion.div
-        className="hero-portal relative aspect-[4/3] w-full max-w-[min(100%,32rem)]"
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="hero-portal relative aspect-[4/3] w-full max-w-[min(100%,32rem)]">
         <motion.div
           className="absolute inset-0"
-          animate={reducedMotion ? undefined : { y: [0, -14, 0] }}
+          animate={enableMotion ? { y: [0, -14, 0] } : { y: 0 }}
           transition={
-            reducedMotion
-              ? undefined
-              : { duration: 9, repeat: Infinity, ease: "easeInOut" }
+            enableMotion
+              ? { duration: 9, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0 }
           }
         >
-        <div className="hero-halo-ambient" aria-hidden />
-        <div className="hero-halo-ambient-secondary" aria-hidden />
+          <div className="hero-halo-ambient" aria-hidden />
+          <div className="hero-halo-ambient-secondary" aria-hidden />
 
-        <motion.div
-          className="hero-halo-pulse-wrap"
-          animate={
-            reducedMotion
-              ? undefined
-              : { opacity: [0.82, 0.95, 0.82], scale: [1, 1.015, 1] }
-          }
-          transition={
-            reducedMotion
-              ? undefined
-              : { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
-          }
-        >
-          <div className="hero-halo-glow-outer" aria-hidden />
-          <div className="hero-halo-glow-mid" aria-hidden />
-          <div className="hero-halo-glow-inner" aria-hidden />
+          <motion.div
+            className="hero-halo-pulse-wrap"
+            animate={
+              enableMotion
+                ? { opacity: [0.82, 0.95, 0.82], scale: [1, 1.015, 1] }
+                : { opacity: 1, scale: 1 }
+            }
+            transition={
+              enableMotion
+                ? { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0 }
+            }
+          >
+            <div className="hero-halo-glow-outer" aria-hidden />
+            <div className="hero-halo-glow-mid" aria-hidden />
+            <div className="hero-halo-glow-inner" aria-hidden />
 
-          <div className="hero-portal-frame">
-            <div className="hero-portal-ring-outer" aria-hidden />
-            <div className="hero-portal-ring-inner" aria-hidden />
+            <div className="hero-portal-frame">
+              <div className="hero-portal-ring-outer" aria-hidden />
+              <div className="hero-portal-ring-inner" aria-hidden />
 
-            <div className={imageUrl ? "hero-portal-core hero-portal-core--image" : "hero-portal-core"}>
-              <div className="hero-portal-core-inner">
-                {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt="Lectrax academic management platform"
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 90vw, 32rem"
-                    priority
-                  />
-                ) : (
-                  <DashboardMockup />
-                )}
+              <div
+                className={
+                  imageUrl ? "hero-portal-core hero-portal-core--image" : "hero-portal-core"
+                }
+              >
+                <div className="hero-portal-core-inner">
+                  {imageUrl ? (
+                    <Image
+                      src={imageUrl}
+                      alt="Lectrax academic management platform"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 32rem, 0px"
+                      // Desktop-only visual; preload is handled via media query in LandingHero.
+                      loading="eager"
+                      fetchPriority="low"
+                      decoding="async"
+                    />
+                  ) : (
+                    <DashboardMockup />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
-        </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 }

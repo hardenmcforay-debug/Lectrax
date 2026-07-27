@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, type Transition } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
@@ -52,9 +53,31 @@ export function LandingHowItWorksIcon({
   className,
 }: LandingHowItWorksIconProps) {
   const reducedMotion = useSafeReducedMotion();
+  const [motionReady, setMotionReady] = useState(false);
   const motionConfig = iconAnimations[step] ?? iconAnimations["01"];
   const isSmall = size === "sm";
   const Logo = howItWorksLogos[iconName];
+  const enableMotion = motionReady && !reducedMotion;
+
+  useEffect(() => {
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const enable = () => setMotionReady(true);
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(enable, { timeout: 2000 });
+    } else {
+      timeoutId = setTimeout(enable, 600);
+    }
+
+    return () => {
+      if (idleId !== undefined && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, []);
 
   return (
     <motion.div
@@ -63,8 +86,8 @@ export function LandingHowItWorksIcon({
         isSmall ? "h-8 w-8 sm:h-9 sm:w-9" : "h-12 w-12 sm:h-14 sm:w-14",
         className
       )}
-      animate={reducedMotion ? undefined : motionConfig.animate}
-      transition={reducedMotion ? undefined : motionConfig.transition}
+      animate={enableMotion ? motionConfig.animate : undefined}
+      transition={enableMotion ? motionConfig.transition : undefined}
     >
       <Logo className={cn("h-full w-full", isSmall ? "drop-shadow-sm" : "drop-shadow-md")} />
     </motion.div>

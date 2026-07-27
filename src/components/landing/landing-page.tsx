@@ -1,37 +1,56 @@
+import { Suspense } from "react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingFeatures } from "@/components/landing/landing-features";
-import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
-import { LandingBenefits } from "@/components/landing/landing-benefits";
-import { LandingPricing } from "@/components/landing/landing-pricing";
-import { LandingUniversityPartnerships } from "@/components/landing/landing-university-partnerships";
-import { LandingFaq } from "@/components/landing/landing-faq";
-import { LandingCta } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
-import { MarketingPageEnter } from "@/components/landing/landing-motion";
+import { LandingDeferredSections } from "@/components/landing/landing-deferred-sections";
+import { getLandingHeroImageUrl } from "@/lib/landing/hero-image";
+import { getLandingFeatureCardImageUrls } from "@/lib/landing/site-branding";
 
-type LandingPageProps = {
-  heroImageUrl?: string | null;
-  featureImages?: Record<string, string>;
-};
+/**
+ * Streams the hero immediately (LCP heading), then loads remote image URLs
+ * without blocking first paint.
+ */
+async function LandingHeroWithImage() {
+  let heroImageUrl: string | null = null;
+  try {
+    heroImageUrl = await getLandingHeroImageUrl();
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[LandingHeroWithImage] Failed to load hero image:", error);
+    }
+  }
+  return <LandingHero heroImageUrl={heroImageUrl} />;
+}
 
-export function LandingPage({ heroImageUrl, featureImages }: LandingPageProps) {
+async function LandingFeaturesWithImages() {
+  let featureImages: Record<string, string> = {};
+  try {
+    featureImages = await getLandingFeatureCardImageUrls();
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[LandingFeaturesWithImages] Failed to load feature images:", error);
+    }
+  }
+  return <LandingFeatures featureImages={featureImages} />;
+}
+
+export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <LandingNav />
-      <MarketingPageEnter>
-        <main>
-          <LandingHero heroImageUrl={heroImageUrl} />
-          <LandingFeatures featureImages={featureImages} />
-          <LandingHowItWorks />
-          <LandingBenefits />
-          <LandingPricing />
-          <LandingUniversityPartnerships />
-          <LandingFaq />
-          <LandingCta />
-        </main>
-        <LandingFooter />
-      </MarketingPageEnter>
+      <main>
+        <Suspense fallback={<LandingHero heroImageUrl={null} />}>
+          <LandingHeroWithImage />
+        </Suspense>
+
+        <Suspense fallback={<LandingFeatures featureImages={{}} />}>
+          <LandingFeaturesWithImages />
+        </Suspense>
+
+        <LandingDeferredSections />
+      </main>
+      <LandingFooter />
     </div>
   );
 }

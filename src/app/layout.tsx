@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
+import { plusJakartaSans } from "@/lib/fonts";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
@@ -80,11 +81,15 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className="low-data-mode" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`low-data-mode ${plusJakartaSans.variable}`}
+      suppressHydrationWarning
+    >
       <head suppressHydrationWarning>
         <PwaHeadLinks />
       </head>
-      <body className="antialiased" suppressHydrationWarning>
+      <body className={`${plusJakartaSans.className} antialiased`} suppressHydrationWarning>
         <PwaBootstrapScripts />
         <PwaProvider />
         <AuthSessionSync />

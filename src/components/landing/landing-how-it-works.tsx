@@ -1,12 +1,26 @@
+import dynamic from "next/dynamic";
 import {
   LandingReveal,
   LandingStaggerList,
   LandingStaggerListItem,
 } from "@/components/landing/landing-motion";
-import {
-  LandingHowItWorksIcon,
-  type HowItWorksIconName,
-} from "@/components/landing/landing-how-it-works-icon";
+import type { HowItWorksIconName } from "@/components/landing/landing-how-it-works-icon";
+
+const LandingHowItWorksIcon = dynamic(
+  () =>
+    import("@/components/landing/landing-how-it-works-icon").then(
+      (m) => m.LandingHowItWorksIcon
+    ),
+  {
+    ssr: true,
+    loading: () => (
+      <div
+        className="landing-how-icon-shell h-12 w-12 shrink-0 rounded-full bg-slate-200/80 sm:h-14 sm:w-14"
+        aria-hidden
+      />
+    ),
+  }
+);
 
 const steps: Array<{
   step: string;

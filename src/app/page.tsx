@@ -4,8 +4,6 @@ import { LoginFailedBanner } from "@/components/auth/login-failed-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { AuthLaunchGate } from "@/components/pwa/auth-launch-gate";
 import { getAuthenticatedHomeRedirect } from "@/lib/auth/resolve-authenticated-home";
-import { getLandingHeroImageUrl } from "@/lib/landing/hero-image";
-import { getLandingFeatureCardImageUrls } from "@/lib/landing/site-branding";
 import "./landing.css";
 
 export const dynamic = "force-dynamic";
@@ -37,24 +35,11 @@ export default async function HomePage({
   const showLoginFailed =
     readParam(params.login_failed) === "1" || readParam(params.error) === "auth";
 
-  let heroImageUrl: string | null = null;
-  let featureImages: Record<string, string> = {};
-  try {
-    [heroImageUrl, featureImages] = await Promise.all([
-      getLandingHeroImageUrl(),
-      getLandingFeatureCardImageUrls(),
-    ]);
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[HomePage] Failed to load hero image:", error);
-    }
-  }
-
   return (
     <AuthLaunchGate>
       <AccountDeletedBanner show={accountDeleted} />
       <LoginFailedBanner show={showLoginFailed && !accountDeleted} />
-      <LandingPage heroImageUrl={heroImageUrl} featureImages={featureImages} />
+      <LandingPage />
     </AuthLaunchGate>
   );
 }
