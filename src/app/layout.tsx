@@ -12,7 +12,6 @@ import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-rec
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
-import { PageTransitions } from "@/components/navigation/page-transitions";
 import { pwaIconUrl } from "@/lib/pwa/config";
 
 const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
@@ -98,9 +97,7 @@ export default async function RootLayout({
         <PortalChromeSync />
         <SiteBrandingProvider logoUrl={logoUrl}>
           <PlatformErrorProvider>
-            <PlatformErrorBoundary scope="root">
-              <PageTransitions>{children}</PageTransitions>
-            </PlatformErrorBoundary>
+            <PlatformErrorBoundary scope="root">{children}</PlatformErrorBoundary>
           </PlatformErrorProvider>
         </SiteBrandingProvider>
       </body>

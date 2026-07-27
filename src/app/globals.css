@@ -3,7 +3,6 @@
 @import "./lecturer-portal-animations.css";
 @import "./admin-portal-animations.css";
 @import "./mobile-layout.css";
-@import "./page-transitions.css";
 
 @theme inline {
   --color-background: #ffffff;
