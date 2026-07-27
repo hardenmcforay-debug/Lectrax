@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { useAsyncAction } from "@/hooks/use-async-action";
+import { ChevronDown } from "lucide-react";
 
-export function CreateSessionForm() {
+const SEMESTER_LABELS: Record<ClassSessionInput["semester"], string> = {
+  full_year: "Full Academic Year",
+  first_semester: "First Semester",
+  second_semester: "Second Semester",
+};
+
+type CreateSessionFormProps = {
+  defaultAcademicYear: string;
+};
+
+export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProps) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectReady, setSelectReady] = useState(false);
   const { isPending, run } = useAsyncAction();
   const {
     register,
@@ -28,10 +40,17 @@ export function CreateSessionForm() {
   } = useForm<ClassSessionInput>({
     resolver: zodResolver(classSessionSchema),
     defaultValues: {
+      courseCode: "",
       semester: "full_year",
-      academicYear: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+      academicYear: defaultAcademicYear,
     },
   });
+
+  const semester = watch("semester");
+
+  useEffect(() => {
+    setSelectReady(true);
+  }, []);
 
   function onSubmit(data: ClassSessionInput) {
     setSubmitError(null);
@@ -76,7 +95,7 @@ export function CreateSessionForm() {
               {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
             </div>
             <div>
-              <Label>Course Code</Label>
+              <Label>Course Code (optional)</Label>
               <Input {...register("courseCode")} placeholder="e.g. CSC 101" />
               {errors.courseCode && (
                 <p className="text-sm text-destructive">{errors.courseCode.message}</p>
@@ -84,20 +103,30 @@ export function CreateSessionForm() {
             </div>
             <div>
               <Label>Semester</Label>
-              <Select
-                value={watch("semester")}
-                onValueChange={(v) => setValue("semester", v as ClassSessionInput["semester"])}
-                disabled={isPending}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full_year">Full Academic Year</SelectItem>
-                  <SelectItem value="first_semester">First Semester</SelectItem>
-                  <SelectItem value="second_semester">Second Semester</SelectItem>
-                </SelectContent>
-              </Select>
+              {selectReady ? (
+                <Select
+                  value={semester}
+                  onValueChange={(v) => setValue("semester", v as ClassSessionInput["semester"])}
+                  disabled={isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_year">Full Academic Year</SelectItem>
+                    <SelectItem value="first_semester">First Semester</SelectItem>
+                    <SelectItem value="second_semester">Second Semester</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div
+                  aria-hidden
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground"
+                >
+                  <span>{SEMESTER_LABELS[semester ?? "full_year"]}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </div>
+              )}
             </div>
             <div>
               <Label>Academic Year</Label>

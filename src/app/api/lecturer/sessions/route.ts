@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       lecturer_id: user.id,
       class_name: data.className.trim(),
       title: data.title.trim(),
-      course_code: data.courseCode.trim(),
+      course_code: (data.courseCode ?? "").trim(),
       semester: data.semester,
       academic_year: data.academicYear.trim(),
     })

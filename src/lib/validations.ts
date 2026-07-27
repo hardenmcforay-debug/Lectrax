@@ -96,11 +96,10 @@ export const classSessionSchema = z.object({
     max: FIELD_LIMITS.TITLE,
     minMessage: "Course title is required",
   }),
-  courseCode: sanitizedRequiredString({
-    min: 2,
-    max: FIELD_LIMITS.COURSE_CODE,
-    minMessage: "Course code is required",
-  }),
+  courseCode: z
+    .string()
+    .transform((value) => sanitizeTextInput(value ?? ""))
+    .pipe(z.string().max(FIELD_LIMITS.COURSE_CODE, "Course code is too long")),
   semester: z.enum(["first_semester", "second_semester", "full_year"]),
   academicYear: sanitizedRequiredString({
     min: 4,

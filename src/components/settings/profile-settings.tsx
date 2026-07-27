@@ -27,6 +27,15 @@ import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboar
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { DeleteAccountSection } from "@/components/settings/delete-account-section";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+const profileOnlySchema = profileUpdateSchema.omit({ recoveryEmail: true });
+type ProfileOnlyInput = z.infer<typeof profileOnlySchema>;
+
+const recoveryEmailOnlySchema = z.object({
+  recoveryEmail: profileUpdateSchema.shape.recoveryEmail,
+});
+type RecoveryEmailOnlyInput = z.infer<typeof recoveryEmailOnlySchema>;
 
 export function ProfileSettings({
   role,
@@ -39,6 +48,8 @@ export function ProfileSettings({
   const [profile, setProfile] = useState(initialProfile);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [recoverySaved, setRecoverySaved] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -47,12 +58,23 @@ export function ProfileSettings({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ProfileUpdateInput>({
-    resolver: zodResolver(profileUpdateSchema),
+  } = useForm<ProfileOnlyInput>({
+    resolver: zodResolver(profileOnlySchema),
     defaultValues: {
       fullName: initialProfile.full_name,
       phone: initialProfile.phone ?? "",
       collegeId: initialProfile.college_id ?? "",
+    },
+  });
+
+  const {
+    register: registerRecovery,
+    handleSubmit: handleSubmitRecovery,
+    reset: resetRecovery,
+    formState: { errors: recoveryErrors, isSubmitting: recoverySubmitting },
+  } = useForm<RecoveryEmailOnlyInput>({
+    resolver: zodResolver(recoveryEmailOnlySchema),
+    defaultValues: {
       recoveryEmail: initialProfile.recoveryEmail,
     },
   });
@@ -66,7 +88,19 @@ export function ProfileSettings({
     resolver: zodResolver(passwordChangeSchema),
   });
 
-  async function onSaveProfile(data: ProfileUpdateInput) {
+  function applySavedProfile(saved: ProfileSettingsInitial) {
+    setProfile(saved);
+    reset({
+      fullName: saved.full_name,
+      phone: saved.phone ?? "",
+      collegeId: saved.college_id ?? "",
+    });
+    resetRecovery({
+      recoveryEmail: saved.recoveryEmail,
+    });
+  }
+
+  async function onSaveProfile(data: ProfileOnlyInput) {
     setProfileError(null);
     setProfileSaved(false);
 
@@ -78,7 +112,6 @@ export function ProfileSettings({
         fullName: data.fullName,
         phone: data.phone,
         collegeId: role === "student" ? data.collegeId : undefined,
-        recoveryEmail: data.recoveryEmail,
       }),
     });
 
@@ -95,17 +128,45 @@ export function ProfileSettings({
       return;
     }
 
-    setProfile(result.profile);
-    reset({
-      fullName: result.profile.full_name,
-      phone: result.profile.phone ?? "",
-      collegeId: result.profile.college_id ?? "",
-      recoveryEmail: result.profile.recoveryEmail,
-    });
-
+    applySavedProfile(result.profile);
     router.refresh();
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
+  }
+
+  async function onSaveRecoveryEmail(data: RecoveryEmailOnlyInput) {
+    setRecoveryError(null);
+    setRecoverySaved(false);
+
+    const res = await appFetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        fullName: profile.full_name,
+        phone: profile.phone ?? "",
+        collegeId: role === "student" ? (profile.college_id ?? "") : undefined,
+        recoveryEmail: data.recoveryEmail,
+      } satisfies Partial<ProfileUpdateInput>),
+    });
+
+    const result = (await res.json()) as {
+      error?: string;
+      message?: string;
+      profile?: ProfileSettingsInitial;
+    };
+
+    if (!res.ok || !result.profile) {
+      setRecoveryError(
+        result.message ?? result.error ?? "Could not save recovery email. Please try again."
+      );
+      return;
+    }
+
+    applySavedProfile(result.profile);
+    router.refresh();
+    setRecoverySaved(true);
+    setTimeout(() => setRecoverySaved(false), 3000);
   }
 
   async function onChangePassword(data: { password: string; confirmPassword: string }) {
@@ -131,7 +192,7 @@ export function ProfileSettings({
         role === "lecturer" && "lecturer-stagger"
       )}
     >
-      <form onSubmit={handleSubmit(onSaveProfile)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSaveProfile)}>
         <Card className={portalCardClass}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -181,9 +242,20 @@ export function ProfileSettings({
                 </p>
               </div>
             )}
+
+            {profileError && <p className="text-sm text-destructive">{profileError}</p>}
+            {profileSaved && (
+              <p className="text-sm font-medium text-accent">Profile saved successfully.</p>
+            )}
+
+            <Button type="submit" variant="accent" loading={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
           </CardContent>
         </Card>
+      </form>
 
+      <form onSubmit={handleSubmitRecovery(onSaveRecoveryEmail)}>
         <Card className={portalCardClass}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -204,10 +276,10 @@ export function ProfileSettings({
                     type="email"
                     autoComplete="email"
                     placeholder="you@example.com"
-                    {...register("recoveryEmail")}
+                    {...registerRecovery("recoveryEmail")}
                   />
-                  {errors.recoveryEmail && (
-                    <p className="text-sm text-destructive">{errors.recoveryEmail.message}</p>
+                  {recoveryErrors.recoveryEmail && (
+                    <p className="text-sm text-destructive">{recoveryErrors.recoveryEmail.message}</p>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {profile.recoveryEmail
@@ -231,14 +303,17 @@ export function ProfileSettings({
               )}
             </div>
 
-            {profileError && <p className="text-sm text-destructive">{profileError}</p>}
-            {profileSaved && (
-              <p className="text-sm font-medium text-accent">Settings saved successfully.</p>
-            )}
-
-            <Button type="submit" variant="accent" loading={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save settings"}
-            </Button>
+            {profile.recoveryEmailEditable ? (
+              <>
+                {recoveryError && <p className="text-sm text-destructive">{recoveryError}</p>}
+                {recoverySaved && (
+                  <p className="text-sm font-medium text-accent">Recovery email saved successfully.</p>
+                )}
+                <Button type="submit" variant="accent" loading={recoverySubmitting}>
+                  {recoverySubmitting ? "Saving..." : "Save settings"}
+                </Button>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </form>
@@ -253,7 +328,7 @@ export function ProfileSettings({
             <CardDescription>Manage your Lectrax Premium plan and billing.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" asChild>
+            <Button variant="accent" asChild>
               <Link href="/lecturer/subscription">Go to subscription</Link>
             </Button>
           </CardContent>
@@ -288,7 +363,7 @@ export function ProfileSettings({
             {passwordSaved && (
               <p className="text-sm font-medium text-accent">Password updated successfully.</p>
             )}
-            <Button type="submit" variant="outline" loading={pwSubmitting}>
+            <Button type="submit" variant="accent" loading={pwSubmitting}>
               {pwSubmitting ? "Updating..." : "Update password"}
             </Button>
           </form>
