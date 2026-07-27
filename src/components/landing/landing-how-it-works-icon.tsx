@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion, type Transition } from "framer-motion";
+import { motion, type Transition } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 import {
   howItWorksLogos,
   type HowItWorksIconName,
@@ -50,7 +51,7 @@ export function LandingHowItWorksIcon({
   size = "lg",
   className,
 }: LandingHowItWorksIconProps) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
   const motionConfig = iconAnimations[step] ?? iconAnimations["01"];
   const isSmall = size === "sm";
   const Logo = howItWorksLogos[iconName];

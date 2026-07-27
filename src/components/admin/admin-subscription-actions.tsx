@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import type { BillingPlan } from "@/types/database";
 import { useKeyedAsyncAction } from "@/hooks/use-async-action";
+import { DeferredSelect } from "@/components/shared/deferred-select";
 
 function hasActiveSubscriptionPeriod(
   plan: string,
@@ -26,6 +27,19 @@ function hasActiveSubscriptionPeriod(
     new Date(subscriptionEndDate) > new Date()
   );
 }
+
+const BILLING_LABELS: Record<BillingPlan, string> = {
+  monthly: "Monthly",
+  semester: "Semester",
+  annual: "Academic year",
+};
+
+const EXTEND_LABELS: Record<string, string> = {
+  "30": "+30d",
+  "90": "+90d",
+  "120": "+120d",
+  "300": "+300d",
+};
 
 export function AdminSubscriptionActions({
   lecturerId,
@@ -49,16 +63,22 @@ export function AdminSubscriptionActions({
 
   return (
     <div className="flex min-w-[280px] flex-wrap items-center gap-2">
-      <Select value={billingPlan} onValueChange={(v) => setBillingPlan(v as BillingPlan)}>
-        <SelectTrigger className="h-8 w-28">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="monthly">Monthly</SelectItem>
-          <SelectItem value="semester">Semester</SelectItem>
-          <SelectItem value="annual">Academic year</SelectItem>
-        </SelectContent>
-      </Select>
+      <DeferredSelect
+        placeholderLabel={BILLING_LABELS[billingPlan]}
+        triggerClassName="h-8 w-28"
+        className="w-28"
+      >
+        <Select value={billingPlan} onValueChange={(v) => setBillingPlan(v as BillingPlan)}>
+          <SelectTrigger className="h-8 w-28">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="semester">Semester</SelectItem>
+            <SelectItem value="annual">Academic year</SelectItem>
+          </SelectContent>
+        </Select>
+      </DeferredSelect>
       <Button
         size="sm"
         variant="accent"
@@ -84,17 +104,23 @@ export function AdminSubscriptionActions({
       >
         Activate
       </Button>
-      <Select value={days} onValueChange={setDays}>
-        <SelectTrigger className="h-8 w-20">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="30">+30d</SelectItem>
-          <SelectItem value="90">+90d</SelectItem>
-          <SelectItem value="120">+120d</SelectItem>
-          <SelectItem value="300">+300d</SelectItem>
-        </SelectContent>
-      </Select>
+      <DeferredSelect
+        placeholderLabel={EXTEND_LABELS[days] ?? "+30d"}
+        triggerClassName="h-8 w-20"
+        className="w-20"
+      >
+        <Select value={days} onValueChange={setDays}>
+          <SelectTrigger className="h-8 w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">+30d</SelectItem>
+            <SelectItem value="90">+90d</SelectItem>
+            <SelectItem value="120">+120d</SelectItem>
+            <SelectItem value="300">+300d</SelectItem>
+          </SelectContent>
+        </Select>
+      </DeferredSelect>
       <Button
         size="sm"
         variant="outline"

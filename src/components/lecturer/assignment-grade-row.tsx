@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { ClientDateText } from "@/components/shared/client-date-text";
 
 export const AssignmentGradeRow = memo(function AssignmentGradeRow({
   enrollmentId,
@@ -88,7 +89,11 @@ export const AssignmentGradeRow = memo(function AssignmentGradeRow({
       </TableCell>
 
       <TableCell className="text-sm">
-        {submittedAt ? new Date(submittedAt).toLocaleString() : <span className="text-muted-foreground">-</span>}
+        {submittedAt ? (
+          <ClientDateText value={submittedAt} mode="datetime" />
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
       </TableCell>
 
       <TableCell className="text-sm">

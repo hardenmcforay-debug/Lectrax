@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -23,6 +24,11 @@ const heroItemVariants: Variants = {
     scale: 1,
     transition: { duration: 0.55, ease: EASE },
   },
+};
+
+const reducedHeroItemVariants: Variants = {
+  hidden: { opacity: 1, y: 0, scale: 1 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0 } },
 };
 
 type MotionWrapProps = {
@@ -77,21 +83,17 @@ export function LandingStaggerListItem({
 }
 
 /**
- * Hero / page-load stagger — animates on mount (not scroll),
- * so the first viewport reveals in sequence.
+ * Hero / page-load stagger — always the same DOM node on server and client.
+ * Reduced-motion users get instant (non-animated) variants.
  */
 export function HeroStagger({ children, className }: LandingStaggerProps) {
-  const reducedMotion = useReducedMotion();
-
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  const reducedMotion = useSafeReducedMotion();
 
   return (
     <motion.div
       className={className}
       variants={heroContainerVariants}
-      initial="hidden"
+      initial={reducedMotion ? false : "hidden"}
       animate="show"
     >
       {children}
@@ -111,20 +113,17 @@ export function HeroItem({
   standalone?: boolean;
   delay?: number;
 }) {
-  const reducedMotion = useReducedMotion();
-
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  const reducedMotion = useSafeReducedMotion();
+  const variants = reducedMotion ? reducedHeroItemVariants : heroItemVariants;
 
   if (standalone) {
     return (
       <motion.div
         className={className}
-        variants={heroItemVariants}
-        initial="hidden"
+        variants={variants}
+        initial={reducedMotion ? false : "hidden"}
         animate="show"
-        transition={{ delay }}
+        transition={reducedMotion ? { duration: 0 } : { delay }}
       >
         {children}
       </motion.div>
@@ -132,13 +131,13 @@ export function HeroItem({
   }
 
   return (
-    <motion.div className={className} variants={heroItemVariants}>
+    <motion.div className={className} variants={variants}>
       {children}
     </motion.div>
   );
 }
 
-/** Soft page-enter fade for marketing shells (no layout shift). */
+/** Soft page-enter fade for marketing shells (same DOM node with/without reduced motion). */
 export function MarketingPageEnter({
   children,
   className,
@@ -146,18 +145,14 @@ export function MarketingPageEnter({
   children: ReactNode;
   className?: string;
 }) {
-  const reducedMotion = useReducedMotion();
-
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  const reducedMotion = useSafeReducedMotion();
 
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0 }}
+      initial={reducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.35, ease: EASE }}
+      transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: EASE }}
     >
       {children}
     </motion.div>

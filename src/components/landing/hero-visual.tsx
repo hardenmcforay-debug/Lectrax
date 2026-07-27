@@ -2,7 +2,8 @@
 
 import type { ComponentType, ReactNode } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 import {
   BarChart3,
   Bell,
@@ -65,12 +66,12 @@ type HeroVisualProps = {
 };
 
 export function HeroVisual({ imageUrl }: HeroVisualProps) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
 
   return (
     <div className="hero-portal-stage relative mx-auto flex w-full max-w-xl items-center justify-center lg:max-w-none">
       {FLOATING_ICONS.map((item) => (
-        <FloatingBadge key={item.className} {...item} reducedMotion={!!reducedMotion} />
+        <FloatingBadge key={item.className} {...item} reducedMotion={reducedMotion} />
       ))}
 
       <motion.div

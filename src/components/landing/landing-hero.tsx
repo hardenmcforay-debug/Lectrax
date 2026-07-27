@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BarChart3,
   ClipboardCheck,
@@ -12,6 +12,7 @@ import { APP_TAGLINE } from "@/lib/constants";
 import { HeroVisual } from "@/components/landing/hero-visual";
 import { HeroItem, HeroStagger } from "@/components/landing/landing-motion";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 const FEATURE_HIGHLIGHTS = [
   {
@@ -67,7 +68,7 @@ type LandingHeroProps = {
 };
 
 export function LandingHero({ heroImageUrl }: LandingHeroProps) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
 
   return (
     <section className="hero-section relative flex min-h-screen flex-col overflow-hidden">

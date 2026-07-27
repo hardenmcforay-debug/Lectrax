@@ -23,12 +23,12 @@ export function localDateTimeInputToIso(value: string): string {
   return date.toISOString();
 }
 
-/** Format a stored assignment deadline in the viewer's local timezone. */
+/** Format a stored assignment deadline in the viewer's local timezone (client-only use). */
 export function formatAssignmentDeadline(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);

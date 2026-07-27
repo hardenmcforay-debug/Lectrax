@@ -14,11 +14,11 @@ export function getPartnershipDefaultSleAmount(packageId: PartnershipPackageId):
 
 export function formatPartnershipUsdPrice(packageId: PartnershipPackageId): string {
   const amount = getPartnershipDisplayUsdAmount(packageId);
-  return `$${amount.toLocaleString()}`;
+  return `$${amount.toLocaleString("en-US")}`;
 }
 
 export function formatPartnershipSleAmount(amountMajor: number): string {
-  return `Le ${amountMajor.toLocaleString()}`;
+  return `Le ${amountMajor.toLocaleString("en-US")}`;
 }
 
 /** Local mobile-money methods are charged in SLE via Monime USSD. */

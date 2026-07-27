@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import { getActiveStudentNavHref, STUDENT_NAV_ITEMS } from "@/lib/student/navigation";
 import { NavNotificationBadge } from "@/components/student/nav-notification-badge";
 import { useStudentNotifications } from "@/components/student/student-notifications-provider";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 export function StudentBottomNav() {
   const pathname = usePathname();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
   const activeHref = getActiveStudentNavHref(pathname);
   const { counts } = useStudentNotifications();
 

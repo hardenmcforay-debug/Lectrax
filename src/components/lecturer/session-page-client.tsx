@@ -789,7 +789,9 @@ export function SessionPageClient({
           ) : (
             <ul className="space-y-3">
               {assignments.map((assignment) => {
-                const assignmentOpen = !isPastDeadline(assignment.deadline);
+                const assignmentOpen = hydrated
+                  ? !isPastDeadline(assignment.deadline)
+                  : true;
                 return (
                 <li key={assignment.id} className="rounded-lg border bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">

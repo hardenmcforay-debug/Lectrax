@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DeferredSelect } from "@/components/shared/deferred-select";
 import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_SESSION_DURATION_MINUTES,
@@ -736,18 +737,22 @@ export function AttendanceSessionPanel({
               <>
               <div className="space-y-2">
                 <Label htmlFor="attendance-duration">Session duration</Label>
-                <Select value={durationMinutes} onValueChange={setDurationMinutes}>
-                  <SelectTrigger id="attendance-duration">
-                    <SelectValue placeholder="Select duration (5–60 min)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SESSION_DURATION_OPTIONS.map((minutes) => (
-                      <SelectItem key={minutes} value={String(minutes)}>
-                        {formatSessionDurationLabel(minutes)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <DeferredSelect
+                  placeholderLabel={formatSessionDurationLabel(Number(durationMinutes))}
+                >
+                  <Select value={durationMinutes} onValueChange={setDurationMinutes}>
+                    <SelectTrigger id="attendance-duration">
+                      <SelectValue placeholder="Select duration (5–60 min)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SESSION_DURATION_OPTIONS.map((minutes) => (
+                        <SelectItem key={minutes} value={String(minutes)}>
+                          {formatSessionDurationLabel(minutes)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </DeferredSelect>
                 <p className="text-xs text-muted-foreground">
                   Choose how long students can check in. Default is 10 minutes.
                 </p>

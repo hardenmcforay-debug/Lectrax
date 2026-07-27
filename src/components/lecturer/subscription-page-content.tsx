@@ -25,6 +25,7 @@ import {
 } from "@/lib/subscription/constants";
 import type { SubscriptionPageInitialData } from "@/lib/subscription/subscription-page-data";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
+import { ClientDateText } from "@/components/shared/client-date-text";
 import { cn } from "@/lib/utils";
 import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/payment-currency";
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
@@ -259,10 +260,16 @@ export function SubscriptionPageContent({
             <CardDescription>
               {isPremium ? "Premium" : "Free"} — {status.replace("_", " ")}
               {isPremium && profile?.subscription_end_date && status === "active" && (
-                <> — expires {new Date(profile.subscription_end_date).toLocaleDateString()}</>
+                <>
+                  {" "}
+                  — expires <ClientDateText value={profile.subscription_end_date} mode="date" />
+                </>
               )}
               {status === "grace_period" && profile?.grace_period_end_date && (
-                <> — grace until {new Date(profile.grace_period_end_date).toLocaleDateString()}</>
+                <>
+                  {" "}
+                  — grace until <ClientDateText value={profile.grace_period_end_date} mode="date" />
+                </>
               )}
             </CardDescription>
           </CardHeader>

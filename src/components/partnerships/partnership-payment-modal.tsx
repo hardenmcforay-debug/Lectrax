@@ -120,8 +120,8 @@ function PaymentMethodIcon({
 
 function downloadReceipt(receipt: PaymentReceipt) {
   const paidAt = receipt.paidAt
-    ? new Date(receipt.paidAt).toLocaleString()
-    : new Date().toLocaleString();
+    ? new Date(receipt.paidAt).toLocaleString("en-US")
+    : new Date().toLocaleString("en-US");
 
   const lines = [
     "LECTRAX — UNIVERSITY PARTNERSHIP RECEIPT",
@@ -137,9 +137,9 @@ function downloadReceipt(receipt: PaymentReceipt) {
         ? "Academic Year"
         : receipt.billingCycle
     }`,
-    `  Amount: $${Number(receipt.displayAmountUsd).toLocaleString()} USD / Academic Year`,
+    `  Amount: $${Number(receipt.displayAmountUsd).toLocaleString("en-US")} USD / Academic Year`,
     `  Processing fee: $0`,
-    `  Total: $${Number(receipt.displayAmountUsd).toLocaleString()} USD`,
+    `  Total: $${Number(receipt.displayAmountUsd).toLocaleString("en-US")} USD`,
     "",
     "INSTITUTION",
     `  University: ${receipt.universityName}`,
@@ -269,13 +269,13 @@ export function PartnershipPaymentModal({
       ? "—"
       : isLocalUssdMethod
         ? formatPartnershipLocalCheckoutSummary(selectedPackage.id, sleAmount)
-        : `$${selectedPackage.price.toLocaleString()}`;
+        : `$${selectedPackage.price.toLocaleString("en-US")}`;
 
     const totalValue = !selectedPackage
       ? "—"
       : isLocalUssdMethod
         ? formatPartnershipSleAmount(sleAmount)
-        : `$${total.toLocaleString()}`;
+        : `$${total.toLocaleString("en-US")}`;
 
     return [
       { label: "Selected Package", value: selectedPackage?.name ?? "—" },
@@ -407,7 +407,7 @@ export function PartnershipPaymentModal({
                       <p className="text-sm text-slate-600">Billing Cycle: Academic Year</p>
                     </div>
                     <p className="text-2xl font-bold text-primary">
-                      ${selectedPackage.price.toLocaleString()}
+                      ${selectedPackage.price.toLocaleString("en-US")}
                       <span className="text-sm font-normal text-slate-500"> / Academic Year</span>
                     </p>
                   </div>
@@ -725,7 +725,7 @@ export function PartnershipPaymentModal({
                     $
                     {Number(
                       receipt?.displayAmountUsd ?? selectedPackage?.price ?? 0
-                    ).toLocaleString()}{" "}
+                    ).toLocaleString("en-US")}{" "}
                     / Academic Year
                   </p>
                 </div>

@@ -13,6 +13,7 @@ import type { StudentAssignmentDetailData } from "@/lib/student/assignment-queri
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
 import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
+import { ClientDateText } from "@/components/shared/client-date-text";
 import { useAssignmentPastDeadline } from "@/lib/assignments/use-assignment-past-deadline";
 import {
   ASSIGNMENT_CLOSED_MESSAGE,
@@ -300,7 +301,7 @@ export function StudentAssignmentDetailClient({
               <div>
                 <dt className="inline font-medium">Submitted: </dt>
                 <dd className="inline text-muted-foreground">
-                  {new Date(submission.submitted_at).toLocaleString()}
+                  <ClientDateText value={submission.submitted_at} mode="datetime" />
                 </dd>
               </div>
               {submission.file_size > 0 && (

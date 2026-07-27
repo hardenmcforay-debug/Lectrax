@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DeferredSelect } from "@/components/shared/deferred-select";
 import { partnershipInquirySchema, type PartnershipInquiryInput } from "@/lib/validations";
 import { PARTNERSHIP_PACKAGES, PARTNERSHIP_SUCCESS_MESSAGE } from "@/lib/partnerships/constants";
 import { UniversityPartnershipsLogo } from "@/components/contact/university-partnerships-logo";
@@ -220,18 +221,26 @@ export function PartnershipInquiryForm({
 
           <div className="space-y-1.5">
             <Label className={formLabelClass}>Selected Package</Label>
-            <Select value={selectedPackage} onValueChange={handlePackageSelect}>
-              <SelectTrigger className={formInputClass}>
-                <SelectValue placeholder="Select a package" />
-              </SelectTrigger>
-              <SelectContent>
-                {PARTNERSHIP_PACKAGES.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id}>
-                    {pkg.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <DeferredSelect
+              placeholderLabel={
+                PARTNERSHIP_PACKAGES.find((pkg) => pkg.id === selectedPackage)?.name ??
+                "Select a package"
+              }
+              triggerClassName={formInputClass}
+            >
+              <Select value={selectedPackage} onValueChange={handlePackageSelect}>
+                <SelectTrigger className={formInputClass}>
+                  <SelectValue placeholder="Select a package" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PARTNERSHIP_PACKAGES.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </DeferredSelect>
             {errors.selectedPackage && (
               <p className="text-sm text-destructive">{errors.selectedPackage.message}</p>
             )}

@@ -26,6 +26,7 @@ import { User, Phone, GraduationCap, CreditCard, Lock, Mail } from "lucide-react
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { DeleteAccountSection } from "@/components/settings/delete-account-section";
+import { ClientDateText } from "@/components/shared/client-date-text";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
@@ -378,7 +379,14 @@ export function ProfileSettings({
 
       <Card className={cn("border-muted bg-slate-50", portalCardClass)}>
         <CardContent className="pt-6 text-sm text-muted-foreground">
-          <p>Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "—"}</p>
+          <p>
+            Member since{" "}
+            {profile?.created_at ? (
+              <ClientDateText value={profile.created_at} mode="date" />
+            ) : (
+              "—"
+            )}
+          </p>
         </CardContent>
       </Card>
 

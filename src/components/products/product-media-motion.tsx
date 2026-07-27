@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 type ProductMediaMotionProps = {
   children: ReactNode;
@@ -17,7 +18,7 @@ type ProductMediaMotionProps = {
 
 /**
  * Entrance + optional float for product page images/illustrations.
- * Respects prefers-reduced-motion.
+ * Always the same DOM node on server and client (no div vs motion.div branch).
  */
 export function ProductMediaMotion({
   children,
@@ -26,26 +27,26 @@ export function ProductMediaMotion({
   float = true,
   intensity = "soft",
 }: ProductMediaMotionProps) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
   const floatDistance = intensity === "hero" ? -10 : -6;
   const floatDuration = intensity === "hero" ? 4.5 : 3.8;
-
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
 
   return (
     <motion.div
       className={cn("will-change-transform", className)}
-      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 14, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{
-        duration: 0.55,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-      }}
+      transition={
+        reducedMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.55,
+              delay,
+              ease: [0.22, 1, 0.36, 1],
+            }
+      }
     >
-      {float ? (
+      {float && !reducedMotion ? (
         <motion.div
           className="h-full w-full"
           animate={{ y: [0, floatDistance, 0] }}

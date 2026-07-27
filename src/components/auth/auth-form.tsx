@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DeferredSelect } from "@/components/shared/deferred-select";
 import {
   getPlatformAdminMainAppLoginDeniedMessage,
 } from "@/lib/auth/admin-deployment";
@@ -535,21 +536,26 @@ export function SignupForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
         <div className="space-y-1.5">
           <Label className={authLabelClass}>Account type</Label>
-          <Select
-            value={role}
-            onValueChange={(v) => {
-              setRole(v as "lecturer" | "student");
-              setValue("role", v as "lecturer" | "student");
-            }}
+          <DeferredSelect
+            placeholderLabel={role === "student" ? "Student" : "Lecturer / Teacher"}
+            triggerClassName={authInputClass}
           >
-            <SelectTrigger className={authInputClass}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="lecturer">Lecturer / Teacher</SelectItem>
-              <SelectItem value="student">Student</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select
+              value={role}
+              onValueChange={(v) => {
+                setRole(v as "lecturer" | "student");
+                setValue("role", v as "lecturer" | "student");
+              }}
+            >
+              <SelectTrigger className={authInputClass}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lecturer">Lecturer / Teacher</SelectItem>
+                <SelectItem value="student">Student</SelectItem>
+              </SelectContent>
+            </Select>
+          </DeferredSelect>
           <input type="hidden" {...register("role")} />
         </div>
 

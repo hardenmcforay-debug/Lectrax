@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { useAsyncAction } from "@/hooks/use-async-action";
-import { ChevronDown } from "lucide-react";
+import { DeferredSelect } from "@/components/shared/deferred-select";
 
 const SEMESTER_LABELS: Record<ClassSessionInput["semester"], string> = {
   full_year: "Full Academic Year",
@@ -29,7 +29,6 @@ type CreateSessionFormProps = {
 export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProps) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [selectReady, setSelectReady] = useState(false);
   const { isPending, run } = useAsyncAction();
   const {
     register,
@@ -47,10 +46,6 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
   });
 
   const semester = watch("semester");
-
-  useEffect(() => {
-    setSelectReady(true);
-  }, []);
 
   function onSubmit(data: ClassSessionInput) {
     setSubmitError(null);
@@ -103,7 +98,7 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
             </div>
             <div>
               <Label>Semester</Label>
-              {selectReady ? (
+              <DeferredSelect placeholderLabel={SEMESTER_LABELS[semester ?? "full_year"]}>
                 <Select
                   value={semester}
                   onValueChange={(v) => setValue("semester", v as ClassSessionInput["semester"])}
@@ -118,15 +113,7 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
                     <SelectItem value="second_semester">Second Semester</SelectItem>
                   </SelectContent>
                 </Select>
-              ) : (
-                <div
-                  aria-hidden
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground"
-                >
-                  <span>{SEMESTER_LABELS[semester ?? "full_year"]}</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </div>
-              )}
+              </DeferredSelect>
             </div>
             <div>
               <Label>Academic Year</Label>

@@ -57,7 +57,9 @@ export function useAssignmentPastDeadline(
   const serverOffsetRef = useRef(0);
 
   const [pastDeadline, setPastDeadline] = useState(() => {
-    if (options?.initialPastDeadline) return true;
+    if (typeof options?.initialPastDeadline === "boolean") {
+      return options.initialPastDeadline;
+    }
     return isPastDeadlineWithOffset(deadline, 0);
   });
 

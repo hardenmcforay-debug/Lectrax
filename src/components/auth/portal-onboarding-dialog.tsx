@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { appFetch } from "@/lib/api/client-fetch";
 import { APP_NAME } from "@/lib/constants";
 import { getPortalSettingsPath } from "@/lib/auth/signup-method";
 import { useAsyncAction } from "@/hooks/use-async-action";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +24,15 @@ export function PortalOnboardingDialog({
   role: "student" | "lecturer";
   showRecoveryEmailNotice: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const hydrated = useHydrated();
+  const [open, setOpen] = useState(false);
   const { isPending, run } = useAsyncAction();
 
   const settingsPath = getPortalSettingsPath(role);
+
+  useEffect(() => {
+    if (hydrated) setOpen(true);
+  }, [hydrated]);
 
   function handleAcknowledge() {
     void run(async () => {
@@ -41,6 +47,8 @@ export function PortalOnboardingDialog({
       }
     });
   }
+
+  if (!hydrated) return null;
 
   return (
     <Dialog open={open} onOpenChange={() => undefined}>

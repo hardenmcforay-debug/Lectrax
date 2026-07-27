@@ -153,7 +153,7 @@ function FeatureCardImageUpload({
         <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
         {state.updatedAt && (
           <p className="text-xs text-muted-foreground">
-            Updated: {new Date(state.updatedAt).toLocaleString()}
+            Updated: {new Date(state.updatedAt).toLocaleString("en-US", { timeZone: "UTC" })}
           </p>
         )}
         {message && <p className="text-xs text-emerald-600">{message}</p>}

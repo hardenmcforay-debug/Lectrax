@@ -276,7 +276,7 @@ export function PricingPageContent({
                   Up to {pkg.lecturerLimit} Lecturers
                 </p>
                 <p className="mt-6 text-4xl font-bold text-slate-900">
-                  ${pkg.price.toLocaleString()}
+                  ${pkg.price.toLocaleString("en-US")}
                   <span className="text-base font-normal text-slate-500"> / Year</span>
                 </p>
               </LandingStaggerItem>

@@ -231,7 +231,7 @@ export function PartnershipPaymentSection({
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-slate-900">{pkg.name}</h3>
                 <p className="mt-6 text-4xl font-bold tracking-tight text-slate-900">
-                  ${pkg.price.toLocaleString()}
+                  ${pkg.price.toLocaleString("en-US")}
                   <span className="text-base font-normal text-slate-500"> / Academic Year</span>
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600">{pkg.description}</p>

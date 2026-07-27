@@ -65,7 +65,7 @@ export function AdminPartnershipPaymentsTable({
               </TableCell>
               <TableCell>{payment.package_name}</TableCell>
               <TableCell>
-                ${Number(payment.display_amount_usd).toLocaleString()}/yr
+                ${Number(payment.display_amount_usd).toLocaleString("en-US")}/yr
               </TableCell>
               <TableCell>
                 {payment.paid_at ? formatDate(payment.paid_at) : formatDate(payment.created_at)}

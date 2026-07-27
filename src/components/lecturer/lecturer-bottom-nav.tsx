@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getActiveLecturerNavHref, LECTURER_NAV_ITEMS } from "@/lib/lecturer/navigation";
 import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 export function LecturerBottomNav() {
   const pathname = usePathname();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
   const activeHref = getActiveLecturerNavHref(pathname);
 
   return (

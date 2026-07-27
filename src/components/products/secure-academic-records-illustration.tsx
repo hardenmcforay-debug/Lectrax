@@ -1,13 +1,14 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 
 /**
  * Isometric hero illustration for Secure Academic Records —
  * vault, protected documents, and role-based access.
  */
 export function SecureAcademicRecordsIllustration() {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSafeReducedMotion();
   const uid = "sar";
 
   return (
