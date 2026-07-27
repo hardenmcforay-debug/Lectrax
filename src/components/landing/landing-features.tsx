@@ -52,6 +52,7 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
         <LandingStagger className="mt-10 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {LANDING_FEATURE_CARDS.map((feature, index) => {
             const image = featureImages?.[feature.id] ?? feature.defaultImage;
+            const prioritize = index < 3;
 
             return (
               <LandingStaggerItem key={feature.id}>
@@ -66,7 +67,11 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
                       alt=""
                       fill
                       unoptimized
-                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      priority={prioritize}
+                      fetchPriority={prioritize ? "high" : "auto"}
+                      loading="eager"
+                      decoding="async"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="landing-feature-card-image object-cover"
                     />
                     <div className="landing-feature-card-overlay" aria-hidden />

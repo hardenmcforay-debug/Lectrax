@@ -19,6 +19,7 @@ const companyLinks = [
 const legalLinks = [
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
+  { href: "/cookies", label: "Cookies" },
 ];
 
 const socialIcons = {
@@ -130,10 +131,6 @@ export function LandingFooter() {
               })}
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 text-center text-sm text-white/45">
-          © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
         </div>
       </div>
     </footer>
