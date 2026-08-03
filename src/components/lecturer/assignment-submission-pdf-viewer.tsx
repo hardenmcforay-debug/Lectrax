@@ -65,19 +65,20 @@ const MAX_SCALE = 2.5;
 const SCALE_STEP = 0.25;
 /** Large desktop fallback before the document/container can be measured */
 const DEFAULT_SCALE_DESKTOP = 1.5;
-/** Phones / tablets / iPads: prefer fit-to-width once measured */
+/** Phones / tablets / iPads: open at 100% by default */
+const DEFAULT_SCALE_SMALL = 1;
 const FIT_WIDTH_MAX_WIDTH = 1180;
 const VIEWER_PAGE_GUTTER_PX = 16;
 const MAX_RENDER_DPR = 2;
 const LAZY_PAGE_ROOT_MARGIN = "320px 0px";
 
-function prefersFitWidthScale(): boolean {
+function prefersSmallScreenScale(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia(`(max-width: ${FIT_WIDTH_MAX_WIDTH}px)`).matches;
 }
 
 function getFallbackPdfScale(): number {
-  return prefersFitWidthScale() ? 0.75 : DEFAULT_SCALE_DESKTOP;
+  return prefersSmallScreenScale() ? DEFAULT_SCALE_SMALL : DEFAULT_SCALE_DESKTOP;
 }
 
 function computeFitWidthScale(pageWidthAtScale1: number, containerWidth: number): number {
@@ -266,28 +267,46 @@ export function AssignmentSubmissionPdfViewer({
     }
   }
 
+  const readPageWidth = useCallback(async (doc: PDFDocumentProxy) => {
+    if (pageWidthRef.current !== null) return pageWidthRef.current;
+    try {
+      const page = await doc.getPage(1);
+      const pageWidth = page.getViewport({ scale: 1 }).width;
+      pageWidthRef.current = pageWidth;
+      return pageWidth;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const applyDefaultScale = useCallback(async (doc: PDFDocumentProxy) => {
+    const root = scrollRef.current;
+    if (!root) return;
+
+    // Small screens: always open at 100%. Desktop: comfortable default, capped to fit.
+    if (prefersSmallScreenScale()) {
+      setScale((prev) => (Math.abs(prev - DEFAULT_SCALE_SMALL) < 0.01 ? prev : DEFAULT_SCALE_SMALL));
+      return;
+    }
+
+    const pageWidth = await readPageWidth(doc);
+    if (pageWidth === null) return;
+
+    const fitScale = computeFitWidthScale(pageWidth, root.clientWidth);
+    const nextScale = Math.min(DEFAULT_SCALE_DESKTOP, fitScale);
+    setScale((prev) => (Math.abs(prev - nextScale) < 0.01 ? prev : nextScale));
+  }, [readPageWidth]);
+
   const applyFitWidthScale = useCallback(async (doc: PDFDocumentProxy) => {
     const root = scrollRef.current;
     if (!root) return;
 
-    let pageWidth = pageWidthRef.current;
-    if (pageWidth === null) {
-      try {
-        const page = await doc.getPage(1);
-        pageWidth = page.getViewport({ scale: 1 }).width;
-        pageWidthRef.current = pageWidth;
-      } catch {
-        return;
-      }
-    }
+    const pageWidth = await readPageWidth(doc);
+    if (pageWidth === null) return;
 
-    const fitScale = computeFitWidthScale(pageWidth, root.clientWidth);
-    // Phones/tablets/iPads: always fit width. Large desktops: fit only when needed.
-    const nextScale = prefersFitWidthScale()
-      ? fitScale
-      : Math.min(DEFAULT_SCALE_DESKTOP, fitScale);
+    const nextScale = computeFitWidthScale(pageWidth, root.clientWidth);
     setScale((prev) => (Math.abs(prev - nextScale) < 0.01 ? prev : nextScale));
-  }, []);
+  }, [readPageWidth]);
 
   const loadDocument = useCallback(async (fetchUrl: string) => {
     setLoading(true);
@@ -397,10 +416,10 @@ export function AssignmentSubmissionPdfViewer({
     if (userZoomedRef.current) return;
 
     const frame = window.requestAnimationFrame(() => {
-      void applyFitWidthScale(pdfDoc);
+      void applyDefaultScale(pdfDoc);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [open, pdfDoc, loading, loadError, applyFitWidthScale]);
+  }, [open, pdfDoc, loading, loadError, applyDefaultScale]);
 
   useEffect(() => {
     if (!open || !pdfDoc || loading || loadError) return;
@@ -410,12 +429,12 @@ export function AssignmentSubmissionPdfViewer({
 
     const observer = new ResizeObserver(() => {
       if (userZoomedRef.current) return;
-      void applyFitWidthScale(pdfDoc);
+      void applyDefaultScale(pdfDoc);
     });
 
     observer.observe(root);
     return () => observer.disconnect();
-  }, [open, pdfDoc, loading, loadError, applyFitWidthScale]);
+  }, [open, pdfDoc, loading, loadError, applyDefaultScale]);
 
   useEffect(() => {
     if (!open) return;
@@ -507,7 +526,8 @@ export function AssignmentSubmissionPdfViewer({
 
   const fitToWidth = useCallback(() => {
     if (!pdfDoc) return;
-    userZoomedRef.current = false;
+    // Treat as a manual zoom choice so resize does not reset back to 100%.
+    userZoomedRef.current = true;
     void applyFitWidthScale(pdfDoc);
   }, [pdfDoc, applyFitWidthScale]);
 
@@ -580,21 +600,21 @@ export function AssignmentSubmissionPdfViewer({
           />
 
           <motion.div
-            className="relative z-[201] flex h-[100dvh] w-full max-w-[1400px] flex-col overflow-hidden border border-border/60 bg-background shadow-2xl max-md:pb-[env(safe-area-inset-bottom)] max-md:pt-[env(safe-area-inset-top)] md:h-[calc(100dvh-2rem)] md:rounded-xl"
+            className="relative z-[201] flex h-[100dvh] w-full max-w-[1400px] flex-col overflow-hidden border border-border/60 bg-background shadow-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[calc(100dvh-2rem)] md:rounded-xl"
             initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
-            <header className="sticky top-0 z-10 shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-              <div className="flex items-start justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 md:px-6 md:py-3">
-                <div className="min-w-0 flex-1 space-y-1 pr-1">
+            <header className="sticky top-0 z-10 shrink-0 border-b bg-background/95 pt-[max(0.875rem,env(safe-area-inset-top,0px))] backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-1 sm:gap-4 sm:px-5 sm:pb-3.5 md:px-6 md:pb-4 md:pt-2">
+                <div className="min-w-0 flex-1 space-y-2 pr-2">
                   <p id={titleId} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">
                     {headerTitle}
                   </p>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-5 md:gap-8">
+                  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:gap-5 md:gap-8">
                     {showStudentInfo ? (
-                      <div className="space-y-0.5 text-xs sm:text-sm">
+                      <div className="space-y-1 text-xs sm:text-sm">
                         <p className="truncate">
                           <span className="font-medium text-foreground">Student Name:</span>{" "}
                           <span className="text-muted-foreground">{data.studentName}</span>
@@ -605,7 +625,7 @@ export function AssignmentSubmissionPdfViewer({
                         </p>
                       </div>
                     ) : null}
-                    <div className="space-y-0.5 text-xs sm:text-sm">
+                    <div className="min-w-0 space-y-1 text-xs sm:text-sm">
                       <p className="line-clamp-2 break-words">
                         <span className="font-medium text-foreground">Assignment:</span>{" "}
                         <span className="text-muted-foreground">{data.assignmentTitle}</span>
@@ -668,12 +688,12 @@ export function AssignmentSubmissionPdfViewer({
                   </div>
                 </div>
 
-                <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+                <div className="flex shrink-0 items-start justify-end gap-1.5 pt-0.5 sm:gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 sm:h-9 sm:px-3"
+                    className="h-9 px-2.5 sm:px-3"
                     onClick={onClose}
                   >
                     <X className="h-4 w-4 sm:mr-1.5" />
@@ -683,7 +703,7 @@ export function AssignmentSubmissionPdfViewer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 sm:h-9 sm:px-3"
+                    className="h-9 px-2.5 sm:px-3"
                     onClick={() => handleDownload()}
                     disabled={!pdfDoc || loading || loadError}
                   >
@@ -694,7 +714,7 @@ export function AssignmentSubmissionPdfViewer({
               </div>
 
               {!loading && !loadError && pdfDoc && pageCount > 0 ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2 sm:px-4 md:px-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2.5 sm:px-5 md:px-6">
                   <div className="flex items-center gap-1">
                     <Button
                       type="button"
