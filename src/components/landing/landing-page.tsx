@@ -15,7 +15,7 @@ export function LandingPage({
   featureImages = {},
 }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div data-landing-root className="min-h-screen bg-white text-slate-900">
       <LandingNav />
       <main>
         <LandingHero heroImageUrl={heroImageUrl} />

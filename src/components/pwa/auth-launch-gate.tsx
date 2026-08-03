@@ -14,6 +14,13 @@ type LaunchState = "idle" | "checking" | "guest" | "redirecting";
 
 const PWA_AUTH_ENTRY = "/login";
 
+function clearDomBootSplash() {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.remove("pwa-booting");
+  document.documentElement.dataset.pwaReady = "true";
+  document.getElementById("lectrax-pwa-boot-splash")?.remove();
+}
+
 export function AuthLaunchGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const hydrated = useHydrated();
@@ -38,6 +45,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
 
     // Normal browser visit with no session cookies → keep the marketing site.
     if (!standalone && !cookies) {
+      clearDomBootSplash();
       return;
     }
 
@@ -66,6 +74,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
 
             if (networkFailure && !standalone) {
               setState("guest");
+              clearDomBootSplash();
               return;
             }
           }
@@ -78,6 +87,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
         }
 
         setState("guest");
+        clearDomBootSplash();
       } catch {
         if (cancelled) return;
 
@@ -88,6 +98,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
         }
 
         setState("guest");
+        clearDomBootSplash();
       }
     }
 
@@ -102,6 +113,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
     return children;
   }
 
+  // Installed PWA / session restore: keep the app splash (CSS already hides landing).
   if (state === "checking" || state === "redirecting" || pwaStandalone) {
     return <AppLaunchSplash />;
   }

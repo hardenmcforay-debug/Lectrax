@@ -11,6 +11,7 @@ import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-rec
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
+import { PWA_BOOT_CRITICAL_CSS } from "@/lib/pwa/boot-critical-css";
 import { pwaIconUrl } from "@/lib/pwa/config";
 
 const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
@@ -82,10 +83,15 @@ export default async function RootLayout({
   return (
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
       <head suppressHydrationWarning>
+        <style
+          id="lectrax-pwa-boot-critical"
+          dangerouslySetInnerHTML={{ __html: PWA_BOOT_CRITICAL_CSS }}
+        />
         <PwaHeadLinks />
+        {/* beforeInteractive scripts must live under the initial document head. */}
+        <PwaBootstrapScripts />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        <PwaBootstrapScripts />
         <PwaProvider />
         <AuthSessionSync />
         <PasswordRecoverySessionBootstrap />

@@ -1,8 +1,18 @@
+"use client";
+
 import Image from "next/image";
+import { useLayoutEffect } from "react";
 import { APP_NAME } from "@/lib/constants";
 import { pwaIconUrl } from "@/lib/pwa/config";
 
 export function AppLaunchSplash() {
+  useLayoutEffect(() => {
+    // Hand off from the pre-React boot cover to this splash without a site flash.
+    document.documentElement.classList.remove("pwa-booting");
+    document.documentElement.dataset.pwaReady = "true";
+    document.getElementById("lectrax-pwa-boot-splash")?.remove();
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white px-6 text-center"

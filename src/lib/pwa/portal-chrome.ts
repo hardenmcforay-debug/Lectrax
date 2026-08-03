@@ -1,4 +1,4 @@
-import { isMobileDevice, isStandaloneMode, markPwaInstalled } from "@/lib/pwa/detect";
+import { isMobileDevice, isRunningAsInstalledPwa, markPwaInstalled } from "@/lib/pwa/detect";
 
 const MOBILE_LAYOUT_MAX_WIDTH = 1023;
 
@@ -32,7 +32,8 @@ export function applyPortalChromeMarks() {
   if (typeof document === "undefined" || typeof window === "undefined") return;
 
   const root = document.documentElement;
-  const standalone = isStandaloneMode();
+  // Only real installed display modes — never treat a normal browser tab as the PWA.
+  const standalone = isRunningAsInstalledPwa();
   const mobile = standalone || isMobileLayoutViewport();
 
   if (standalone) {
@@ -44,6 +45,10 @@ export function applyPortalChromeMarks() {
       root.dataset.portalMobile = "true";
     }
     return;
+  }
+
+  if (root.dataset.pwaStandalone !== undefined) {
+    delete root.dataset.pwaStandalone;
   }
 
   if (mobile) {
