@@ -164,7 +164,8 @@ async function generateIcons() {
     manifest = {
       name: "Lectrax",
       short_name: "Lectrax",
-      start_url: "/",
+      start_url: "/login",
+      id: "/",
       display: "standalone",
       background_color: "#FFFFFF",
       theme_color: "#0B3D91",

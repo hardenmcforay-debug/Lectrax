@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-v9";
+const CACHE_VERSION = "lectrax-v10";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 

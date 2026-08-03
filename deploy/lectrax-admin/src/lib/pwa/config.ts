@@ -9,8 +9,9 @@ export function getPwaShortName(): string {
   return isAdminDeployment() ? "Lectrax Admin" : APP_NAME;
 }
 
+/** Installed PWA entry — auth/app shell, never the marketing landing page. */
 export function getPwaStartUrl(): string {
-  return isAdminDeployment() ? "/admin" : "/";
+  return isAdminDeployment() ? "/admin" : "/login";
 }
 
 export const PWA_MANIFEST_PATH = "/manifest.json";
