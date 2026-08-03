@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,17 @@ export function SessionActivityLogList({
 }) {
   const router = useRouter();
   const [logs, setLogs] = useState(initialLogs);
+  const [prevInitialLogs, setPrevInitialLogs] = useState(initialLogs);
   const [deleteTarget, setDeleteTarget] = useState<ActivityLog | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (initialLogs !== prevInitialLogs) {
+    setPrevInitialLogs(initialLogs);
     setLogs(initialLogs);
-  }, [initialLogs]);
+  }
 
   async function handleDelete() {
     if (!deleteTarget || deleting) return;

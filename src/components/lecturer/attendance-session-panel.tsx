@@ -172,15 +172,16 @@ export function AttendanceSessionPanel({
     };
   }, [activeSessionId]);
 
-  useEffect(() => {
-    if (!activeSession || activeSessionDurationMinutes) return;
-    const start = new Date(activeSession.created_at).getTime();
-    const end = new Date(activeSession.session_expires_at).getTime();
-    const minutes = Math.round((end - start) / 60_000);
-    if (minutes > 0) {
-      setActiveSessionDurationMinutes(minutes);
-    }
-  }, [activeSession, activeSessionDurationMinutes]);
+  const derivedActiveSessionDurationMinutes = activeSession
+    ? (() => {
+        const start = new Date(activeSession.created_at).getTime();
+        const end = new Date(activeSession.session_expires_at).getTime();
+        const minutes = Math.round((end - start) / 60_000);
+        return minutes > 0 ? minutes : null;
+      })()
+    : null;
+  const displayedSessionDurationMinutes =
+    activeSessionDurationMinutes ?? derivedActiveSessionDurationMinutes;
 
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
     try {
@@ -214,7 +215,9 @@ export function AttendanceSessionPanel({
     [fetchPresentRecords]
   );
 
-  syncPresentRecordsRef.current = syncPresentRecords;
+  useEffect(() => {
+    syncPresentRecordsRef.current = syncPresentRecords;
+  });
 
   const renderQr = useCallback(async (qrPayload: string) => {
     setQrRendering(true);
@@ -301,7 +304,9 @@ export function AttendanceSessionPanel({
     [renderQr, router]
   );
 
-  refreshQrRef.current = refreshQr;
+  useEffect(() => {
+    refreshQrRef.current = refreshQr;
+  });
 
   const clearRefreshTimer = useCallback(() => {
     if (refreshTimerRef.current !== null) {
@@ -808,7 +813,7 @@ export function AttendanceSessionPanel({
                   />
                   <p className="mt-3 max-w-[400px] text-center text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">Attendance Window:</span>{" "}
-                    {activeSessionDurationMinutes ?? durationMinutes} Minutes
+                    {activeSessionDurationMinutes ?? displayedSessionDurationMinutes ?? durationMinutes} Minutes
                   </p>
                 </div>
               )}

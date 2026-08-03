@@ -6,9 +6,12 @@ import { PORTAL_CHROME_BOOTSTRAP_SCRIPT } from "@/lib/pwa/portal-chrome-bootstra
 export function PwaBootstrapScripts() {
   return (
     <>
+      {/* App Router root-layout equivalent of pages/_document beforeInteractive. */}
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
       <Script id="lectrax-portal-chrome-bootstrap" strategy="beforeInteractive">
         {PORTAL_CHROME_BOOTSTRAP_SCRIPT}
       </Script>
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
       <Script id="lectrax-pwa-install-bootstrap" strategy="beforeInteractive">
         {PWA_INSTALL_BOOTSTRAP_SCRIPT}
       </Script>

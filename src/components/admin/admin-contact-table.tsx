@@ -2,7 +2,8 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
@@ -29,11 +30,7 @@ export function AdminContactTable({ inquiries: initialInquiries }: { inquiries: 
   const [query, setQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   const filteredInquiries = useMemo(() => {
     const search = query.trim().toLowerCase();

@@ -4,9 +4,10 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { persistAttendanceSessionClosed } from "@/lib/attendance/close-session";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 const endSchema = z.object({
-  attendanceSessionId: z.string().uuid(),
+  attendanceSessionId: uuidField(),
 });
 
 async function parseEndBody(request: Request): Promise<unknown> {

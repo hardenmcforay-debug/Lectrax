@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
+import { TriangleAlert, ArrowLeft, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ErrorCategory } from "@/lib/errors/types";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
@@ -32,7 +32,7 @@ export function ErrorFallback({
 }: ErrorFallbackProps) {
   const router = useRouter();
   const defaults = ERROR_MESSAGES[category];
-  const Icon = category === "network" ? WifiOff : AlertTriangle;
+  const Icon = category === "network" ? WifiOff : TriangleAlert;
 
   const handleReload = () => {
     if (typeof window !== "undefined") {
@@ -74,8 +74,15 @@ export function ErrorFallback({
               </Button>
             )}
             {showGoBack && (
-              <Button type="button" variant="outline" onClick={() => router.back()}>
-                Go Back
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                aria-label="Go back"
+                onClick={() => router.back()}
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
               </Button>
             )}
             {showReload && (

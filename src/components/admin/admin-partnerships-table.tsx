@@ -2,7 +2,8 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { Search, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminTableScroll } from "@/components/admin/admin-table-scroll";
@@ -36,7 +37,7 @@ export function AdminPartnershipsTable({
   const [emailQuery, setEmailQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const paidIds = useMemo(() => new Set(paidInquiryIds), [paidInquiryIds]);
 
   function isPaidInquiry(inquiry: UniversityPartnershipInquiry) {
@@ -44,10 +45,6 @@ export function AdminPartnershipsTable({
       paidIds.has(inquiry.id) || inquiry.position_role === "Partnership Payment"
     );
   }
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const filteredInquiries = useMemo(() => {
     const query = emailQuery.trim().toLowerCase();

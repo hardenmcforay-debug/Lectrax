@@ -4,7 +4,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { CircleAlert, CircleCheckBig, Loader2 } from "lucide-react";
 import {
   ATTENDANCE_ALREADY_RECORDED_MESSAGE,
   ATTENDANCE_ALREADY_RECORDED_TITLE,
@@ -91,7 +91,7 @@ function ScanResultNotice({ status }: { status: ScanStatus }) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
         <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
+          <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
           <div className="space-y-2">
             <div className="space-y-1">
               <p className="text-sm font-semibold text-red-800">{status.title}</p>
@@ -120,7 +120,7 @@ function ScanResultNotice({ status }: { status: ScanStatus }) {
   return (
     <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden />
+        <CircleCheckBig className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden />
         <div className="space-y-2">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-green-800">{status.title}</p>
@@ -168,74 +168,6 @@ export function QRScanner() {
   /** After a successful mark, block further camera submits until the user opens the scanner again. */
   const attendanceLockedRef = useRef(false);
   const urlTokenHandledRef = useRef<string | null>(null);
-
-  const stopScannerInstance = useCallback(async () => {
-    const scanner = scannerRef.current;
-    if (!scanner) {
-      setScanning(false);
-      return;
-    }
-
-    try {
-      const state = scanner.getState?.();
-      // 2 = SCANNING in html5-qrcode Html5QrcodeScannerState
-      if (state === 2 || state === undefined) {
-        await scanner.stop().catch(() => {});
-      }
-      // clear() is synchronous in html5-qrcode
-      scanner.clear();
-    } catch {
-      // Best-effort cleanup
-    } finally {
-      scannerRef.current = null;
-      setScanning(false);
-    }
-  }, []);
-
-  const startScanner = useCallback(async () => {
-    if (startingScannerRef.current) return;
-    startingScannerRef.current = true;
-
-    try {
-      await stopScannerInstance();
-
-      // New scan attempt — clear sticky expired/error UI and unlock retries.
-      attendanceLockedRef.current = false;
-      inFlightTokenRef.current = null;
-      setStatus(READY_STATUS);
-
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode("qr-reader");
-      scannerRef.current = scanner;
-      setScanning(true);
-
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decoded) => {
-          void (async () => {
-            await stopScannerInstance();
-            // submitToken is defined below; call through ref to avoid circular deps.
-            await submitTokenRef.current?.(decoded);
-          })();
-        },
-        () => {}
-      );
-    } catch {
-      setScanning(false);
-      setStatus({
-        title: "Could not open camera",
-        description: "Check camera permission and try again.",
-        variant: "error",
-      });
-    } finally {
-      startingScannerRef.current = false;
-    }
-  }, [stopScannerInstance]);
-
-  const submitTokenRef = useRef<
-    ((token: string, options?: { afterTransfer?: boolean }) => Promise<void>) | null
-  >(null);
 
   const submitToken = useCallback(
     async (token: string, options?: { afterTransfer?: boolean }) => {
@@ -378,7 +310,68 @@ export function QRScanner() {
     []
   );
 
-  submitTokenRef.current = submitToken;
+  const stopScannerInstance = useCallback(async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) {
+      setScanning(false);
+      return;
+    }
+
+    try {
+      const state = scanner.getState?.();
+      // 2 = SCANNING in html5-qrcode Html5QrcodeScannerState
+      if (state === 2 || state === undefined) {
+        await scanner.stop().catch(() => {});
+      }
+      // clear() is synchronous in html5-qrcode
+      scanner.clear();
+    } catch {
+      // Best-effort cleanup
+    } finally {
+      scannerRef.current = null;
+      setScanning(false);
+    }
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    if (startingScannerRef.current) return;
+    startingScannerRef.current = true;
+
+    try {
+      await stopScannerInstance();
+
+      // New scan attempt — clear sticky expired/error UI and unlock retries.
+      attendanceLockedRef.current = false;
+      inFlightTokenRef.current = null;
+      setStatus(READY_STATUS);
+
+      const { Html5Qrcode } = await import("html5-qrcode");
+      const scanner = new Html5Qrcode("qr-reader");
+      scannerRef.current = scanner;
+      setScanning(true);
+
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decoded) => {
+          void (async () => {
+            await stopScannerInstance();
+            await submitToken(decoded);
+          })();
+        },
+        () => {}
+      );
+    } catch {
+      setScanning(false);
+      setStatus({
+        title: "Could not open camera",
+        description: "Check camera permission and try again.",
+        variant: "error",
+      });
+    } finally {
+      startingScannerRef.current = false;
+    }
+  }, [stopScannerInstance, submitToken]);
 
   async function handleTransferDevice() {
     if (transferring) return;

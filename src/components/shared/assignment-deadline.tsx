@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { formatAssignmentDeadline } from "@/lib/assignments/deadline";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 export function AssignmentDeadline({
   value,
@@ -10,11 +10,8 @@ export function AssignmentDeadline({
   value: string;
   prefix?: string;
 }) {
-  const [text, setText] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(formatAssignmentDeadline(value));
-  }, [value]);
+  const hydrated = useHydrated();
+  const text = hydrated ? formatAssignmentDeadline(value) : null;
 
   if (!text) {
     return (

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const parsed = resolveLoginSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid phone number or email address" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid phone number or email address" },
         { status: 400 }
       );
     }

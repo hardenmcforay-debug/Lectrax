@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 export type AssignmentSubmissionViewerGrading = {
   value: string;
@@ -215,6 +216,7 @@ export function AssignmentSubmissionPdfViewer({
 }) {
   const titleId = useId();
   const reduceMotion = useReducedMotion();
+  const hydrated = useHydrated();
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -226,22 +228,30 @@ export function AssignmentSubmissionPdfViewer({
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  const resetViewer = useCallback(() => {
-    setPdfDoc((prev) => {
-      void prev?.cleanup();
-      return null;
-    });
-    setPageCount(0);
-    setCurrentPage(1);
-    setScale(getDefaultPdfScale());
-    setLoading(false);
-    setLoadProgress(null);
-    setLoadError(false);
-    setPdfSourceUrl(null);
-    pageRefs.current.clear();
-  }, []);
+  const activeViewUrl = open && data?.viewUrl ? data.viewUrl : null;
+  const [prevActiveViewUrl, setPrevActiveViewUrl] = useState<string | null>(null);
+
+  if (activeViewUrl !== prevActiveViewUrl) {
+    setPrevActiveViewUrl(activeViewUrl);
+    if (activeViewUrl === null) {
+      setPageCount(0);
+      setCurrentPage(1);
+      setScale(getDefaultPdfScale());
+      setLoading(false);
+      setLoadProgress(null);
+      setLoadError(false);
+      setPdfSourceUrl(null);
+      if (pdfDoc !== null) {
+        setPdfDoc((prev) => {
+          void prev?.cleanup();
+          return null;
+        });
+      }
+    } else {
+      setScale(getDefaultPdfScale());
+    }
+  }
 
   const loadDocument = useCallback(async (fetchUrl: string) => {
     setLoading(true);
@@ -329,20 +339,22 @@ export function AssignmentSubmissionPdfViewer({
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     void prefetchPdfEngine();
   }, []);
 
   useEffect(() => {
-    if (!open || !data?.viewUrl) {
-      resetViewer();
-      return;
-    }
+    if (activeViewUrl !== null) return;
+    pageRefs.current.clear();
+  }, [activeViewUrl]);
 
-    // Reset zoom for the current viewport whenever the viewer opens.
-    setScale(getDefaultPdfScale());
-    void loadDocument(data.viewUrl);
-  }, [open, data?.viewUrl, loadDocument, resetViewer]);
+  useEffect(() => {
+    if (!activeViewUrl) return;
+    const viewUrl = activeViewUrl;
+    const frame = window.requestAnimationFrame(() => {
+      void loadDocument(viewUrl);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeViewUrl, loadDocument]);
 
   useEffect(() => {
     if (!open) return;
@@ -463,9 +475,9 @@ export function AssignmentSubmissionPdfViewer({
   const handleRetry = useCallback(() => {
     if (!data?.viewUrl) return;
     void loadDocument(data.viewUrl);
-  }, [data?.viewUrl, loadDocument]);
+  }, [data, loadDocument]);
 
-  if (!mounted) return null;
+  if (!hydrated) return null;
 
   const showStudentInfo = Boolean(data?.studentName?.trim());
   const headerTitle = data?.viewerTitle ?? (showStudentInfo ? "Student Assignment" : "Your Submission");

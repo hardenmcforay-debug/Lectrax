@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
 import { AdminSubscriptionsTable } from "@/components/admin/admin-subscriptions-table";
-import { CreditCard, Gift, Clock, AlertTriangle } from "lucide-react";
+import { CreditCard, Gift, Clock, TriangleAlert } from "@/components/lucide-icons";
 
 export default async function AdminSubscriptionsPage() {
   const supabase = await createClient();
@@ -32,7 +32,7 @@ export default async function AdminSubscriptionsPage() {
       <div className="mb-6 admin-stat-grid admin-stat-grid--cols-4">
         <StatCard title="Active Premium" value={activePremium.length} icon={CreditCard} />
         <StatCard title="Free Plan" value={freePlan.length} icon={Gift} />
-        <StatCard title="Grace Period" value={gracePeriod.length} icon={AlertTriangle} />
+        <StatCard title="Grace Period" value={gracePeriod.length} icon={TriangleAlert} />
         <StatCard title="Expired" value={expired.length} icon={Clock} />
       </div>
 

@@ -1,6 +1,8 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
 import {
-  CheckCircle2,
+  CircleCheckBig,
   ClipboardCheck,
   Clock,
   ShieldCheck,
@@ -26,7 +28,7 @@ const benefits: Array<{
     statLabel: "faster record keeping",
   },
   {
-    icon: CheckCircle2,
+    icon: CircleCheckBig,
     title: "Improves Record Accuracy",
     stat: "99%",
     statLabel: "attendance traceability",

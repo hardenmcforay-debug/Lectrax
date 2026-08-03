@@ -28,7 +28,7 @@ export default function JoinClassPage() {
 
     const parsed = joinSessionSchema.safeParse({ sessionCode: code });
     if (!parsed.success) {
-      setError(parsed.error.errors[0]?.message ?? "Enter a valid session code.");
+      setError(parsed.error.issues[0]?.message ?? "Enter a valid session code.");
       return;
     }
 

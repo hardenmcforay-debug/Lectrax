@@ -9,7 +9,7 @@ import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
 import { parseJsonBody } from "@/lib/security/parse-request";
 
 const deleteAccountBodySchema = z.object({
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, { error: "Password is required" }),
   confirmationPhrase: z
     .string()
     .trim()
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
   const parsed = deleteAccountBodySchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid request" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid request" },
       { status: 400 }
     );
   }

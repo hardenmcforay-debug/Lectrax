@@ -69,16 +69,18 @@ export function isLecturerAttendancePresenceStale(session: {
 }
 
 export function formatAttendanceTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, {
+  return new Date(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 }
 
 export function formatAttendanceDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "UTC",
   });
 }

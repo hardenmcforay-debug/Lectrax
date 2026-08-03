@@ -17,17 +17,18 @@ export const ACTIVE_SUBSCRIPTION_SUBSCRIBE_BLOCKED_MESSAGE =
 
 export function getAdminActivateBlockedMessage(endDate: string | null): string {
   const formatted = endDate
-    ? new Date(endDate).toLocaleDateString(undefined, {
+    ? new Date(endDate).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
+        timeZone: "UTC",
       })
     : "the end of the current period";
   return `This lecturer has an active subscription until ${formatted}. A free premium plan cannot be activated until the current subscription period ends.`;
 }
 
 export const STUDENT_SUBMISSIONS_DISABLED_MESSAGE =
-  "Assignment submissions are not enabled for this class session.\n\nPlease contact your lecturer for submission instructions.";
+  "Online assignment submission is not available for this class.";
 
 export const BILLING_PLANS = {
   monthly: {

@@ -6,7 +6,7 @@ import { getDisplayName } from "@/lib/auth/display-name";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Users } from "lucide-react";
+import { BookOpen, Users } from "@/components/lucide-icons";
 import {
   buildSubscriptionDisplay,
   getSubscriptionDisplayForLecturer,

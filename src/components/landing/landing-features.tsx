@@ -15,6 +15,9 @@ const FEATURE_ACCENTS = [
   { dot: "bg-accent", line: "from-accent/70 to-accent/15" },
 ] as const;
 
+/** First row is usually on-screen soon after the hero; prioritize those fetches. */
+const FEATURE_PRIORITY_COUNT = 3;
+
 function FeatureCardAccent({ index }: { index: number }) {
   const accent = FEATURE_ACCENTS[index % FEATURE_ACCENTS.length];
 
@@ -31,13 +34,56 @@ function FeatureCardAccent({ index }: { index: number }) {
   );
 }
 
+function resolveFeatureImage(
+  featureId: FeatureCardId,
+  featureImages?: Partial<Record<FeatureCardId, string>>
+) {
+  return (
+    featureImages?.[featureId] ??
+    LANDING_FEATURE_CARDS.find((card) => card.id === featureId)!.defaultImage
+  );
+}
+
 type LandingFeaturesProps = {
   featureImages?: Partial<Record<FeatureCardId, string>>;
 };
 
 export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
+  const resolvedImages = LANDING_FEATURE_CARDS.map((feature) =>
+    resolveFeatureImage(feature.id, featureImages)
+  );
+
+  const remoteOrigins = Array.from(
+    new Set(
+      resolvedImages
+        .map((src) => {
+          try {
+            return /^https?:\/\//i.test(src) ? new URL(src).origin : null;
+          } catch {
+            return null;
+          }
+        })
+        .filter((origin): origin is string => Boolean(origin))
+    )
+  );
+
   return (
     <section id="features" className="relative -mt-px scroll-mt-20 bg-white py-20 sm:py-24">
+      {/* Warm the CDN connection and start downloads while the hero is still on screen. */}
+      {remoteOrigins.map((origin) => (
+        <link key={`preconnect-${origin}`} rel="preconnect" href={origin} crossOrigin="anonymous" />
+      ))}
+      {resolvedImages.map((src) => (
+        <link
+          key={`preload-${src}`}
+          rel="preload"
+          as="image"
+          href={src}
+          // Keep below hero LCP so the first paint stays fast while these warm the cache.
+          fetchPriority="low"
+        />
+      ))}
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <LandingReveal className="mx-auto max-w-2xl px-1 text-center sm:px-0">
           <h2 className="text-balance text-2xl font-bold leading-snug tracking-tight text-slate-900 min-[400px]:text-3xl sm:text-3xl sm:leading-tight lg:text-4xl">
@@ -51,7 +97,8 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
 
         <LandingStagger className="mt-10 grid grid-cols-1 gap-6 sm:mt-14 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {LANDING_FEATURE_CARDS.map((feature, index) => {
-            const image = featureImages?.[feature.id] ?? feature.defaultImage;
+            const image = resolvedImages[index];
+            const prioritize = index < FEATURE_PRIORITY_COUNT;
 
             return (
               <LandingStaggerItem key={feature.id}>
@@ -66,7 +113,8 @@ export function LandingFeatures({ featureImages }: LandingFeaturesProps) {
                       alt=""
                       fill
                       unoptimized
-                      loading="lazy"
+                      loading={prioritize ? "eager" : "lazy"}
+                      fetchPriority={prioritize ? "high" : "low"}
                       decoding="async"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="landing-feature-card-image object-cover"

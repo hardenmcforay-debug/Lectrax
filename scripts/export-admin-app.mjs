@@ -37,6 +37,7 @@ const COPY_DIRS = [
   "src/lib/api",
   "src/lib/attendance",
   "src/lib/auth",
+  "src/lib/charts",
   "src/lib/contact",
   "src/lib/concurrency",
   "src/lib/errors",
@@ -58,6 +59,7 @@ const COPY_DIRS = [
 ];
 
 const COPY_SHARED_FILES = [
+  "src/components/shared/deferred-select.tsx",
   "src/components/shared/stat-card.tsx",
   "src/components/shared/table-pagination.tsx",
 ];
@@ -113,7 +115,7 @@ const COPY_FILES = [
   "src/app/globals.css",
   "src/app/admin-portal-animations.css",
   "src/app/mobile-layout.css",
-  "src/middleware.ts",
+  "src/proxy.ts",
   "src/instrumentation.ts",
   "public/favicon.ico",
   "postcss.config.mjs",
@@ -138,10 +140,10 @@ function writeAdminPackageJson() {
     version: rootPkg.version,
     private: true,
     scripts: {
-      dev: "next dev --turbopack -p 3001",
+      dev: "next dev -p 3001",
       build: "next build",
       start: "next start -p 3001",
-      lint: "next lint",
+      lint: "eslint . --max-warnings 0",
       typecheck: "tsc --noEmit",
     },
     dependencies: {
@@ -165,16 +167,17 @@ function writeAdminPackageJson() {
       "react-dom": rootPkg.dependencies["react-dom"],
       "react-hook-form": rootPkg.dependencies["react-hook-form"],
       recharts: rootPkg.dependencies.recharts,
+      "react-is": rootPkg.dependencies["react-is"],
       "tailwind-merge": rootPkg.dependencies["tailwind-merge"],
       zod: rootPkg.dependencies.zod,
       zustand: rootPkg.dependencies.zustand,
     },
     devDependencies: {
-      "@eslint/eslintrc": rootPkg.devDependencies["@eslint/eslintrc"],
       "@tailwindcss/postcss": rootPkg.devDependencies["@tailwindcss/postcss"],
       "@types/node": rootPkg.devDependencies["@types/node"],
       "@types/react": rootPkg.devDependencies["@types/react"],
       "@types/react-dom": rootPkg.devDependencies["@types/react-dom"],
+      "@typescript-eslint/parser": rootPkg.devDependencies["@typescript-eslint/parser"],
       eslint: rootPkg.devDependencies.eslint,
       "eslint-config-next": rootPkg.devDependencies["eslint-config-next"],
       tailwindcss: rootPkg.devDependencies.tailwindcss,
@@ -230,12 +233,18 @@ export default nextConfig;
           moduleResolution: "bundler",
           resolveJsonModule: true,
           isolatedModules: true,
-          jsx: "preserve",
+          jsx: "react-jsx",
           incremental: true,
           plugins: [{ name: "next" }],
           paths: { "@/*": ["./src/*"] },
         },
-        include: ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+        include: [
+          "next-env.d.ts",
+          "**/*.ts",
+          "**/*.tsx",
+          ".next/types/**/*.ts",
+          ".next/dev/types/**/*.ts",
+        ],
         exclude: ["node_modules"],
       },
       null,
@@ -495,6 +504,12 @@ function main() {
   applyAdminTemplates();
   patchAdminValidations();
   pruneAdminOnlyPaths();
+
+  // Next.js 16 uses `src/proxy.ts` (`export async function proxy`). Drop any stale middleware entry.
+  const staleMiddleware = join(OUT, "src/middleware.ts");
+  if (existsSync(staleMiddleware)) {
+    rmSync(staleMiddleware, { force: true });
+  }
 
   console.log("Done. Next steps:");
   console.log("  cd deploy/lectrax-admin");

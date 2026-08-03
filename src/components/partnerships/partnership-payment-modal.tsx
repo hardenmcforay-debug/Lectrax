@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Copy, Download, Loader2, Smartphone, XCircle } from "lucide-react";
+import { zodResolver } from "@/lib/zod-resolver";
+import { Check, Copy, Download, Loader2, Smartphone, CircleX } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -212,22 +212,37 @@ export function PartnershipPaymentModal({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      setView("checkout");
-      setSelectedMethod(null);
-      setError(null);
-      setUssdDetails(null);
-      setCopied(false);
-      setPolling(false);
-      setReceipt(null);
-      reset();
-      return;
-    }
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevInitialView, setPrevInitialView] = useState(initialView);
+  const [prevInitialReceipt, setPrevInitialReceipt] = useState(initialReceipt);
 
+  if (
+    open &&
+    (!prevOpen || initialView !== prevInitialView || initialReceipt !== prevInitialReceipt)
+  ) {
+    setPrevOpen(true);
+    setPrevInitialView(initialView);
+    setPrevInitialReceipt(initialReceipt);
     setView(initialView);
     if (initialReceipt) setReceipt(initialReceipt);
-  }, [open, initialView, initialReceipt, reset]);
+  }
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setView("checkout");
+        setSelectedMethod(null);
+        setError(null);
+        setUssdDetails(null);
+        setCopied(false);
+        setPolling(false);
+        setReceipt(null);
+        reset();
+      }
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange, reset]
+  );
 
   useEffect(() => {
     if (!ussdDetails || !polling) return;
@@ -369,12 +384,12 @@ export function PartnershipPaymentModal({
   }
 
   function handleReturn() {
-    onOpenChange(false);
+    handleOpenChange(false);
     onReturnToPackages?.();
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="gap-0 overflow-hidden p-0 md:max-w-[640px]"
         onPointerDownOutside={(event) => {
@@ -589,7 +604,7 @@ export function PartnershipPaymentModal({
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => handleOpenChange(false)}
                   disabled={loading}
                 >
                   Cancel
@@ -690,7 +705,7 @@ export function PartnershipPaymentModal({
 
             <div className="shrink-0 border-t bg-background px-6 py-4">
               <DialogFooter>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
                   Close
                 </Button>
               </DialogFooter>
@@ -758,7 +773,7 @@ export function PartnershipPaymentModal({
               <DialogHeader className="text-left">
                 <DialogTitle className="flex items-center gap-2 text-slate-800">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
-                    <XCircle className="h-5 w-5 text-slate-500" />
+                    <CircleX className="h-5 w-5 text-slate-500" />
                   </span>
                   Payment cancelled
                 </DialogTitle>
@@ -771,7 +786,7 @@ export function PartnershipPaymentModal({
 
             <div className="shrink-0 border-t bg-background px-6 py-4">
               <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
                   Close
                 </Button>
                 <Button variant="accent" onClick={handleTryAgain}>
@@ -788,7 +803,7 @@ export function PartnershipPaymentModal({
               <DialogHeader className="text-left">
                 <DialogTitle className="flex items-center gap-2 text-red-700">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <CircleX className="h-5 w-5 text-red-600" />
                   </span>
                   Payment could not be completed
                 </DialogTitle>
@@ -808,7 +823,7 @@ export function PartnershipPaymentModal({
 
             <div className="shrink-0 border-t bg-background px-6 py-4">
               <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button variant="accent" onClick={handleTryAgain}>

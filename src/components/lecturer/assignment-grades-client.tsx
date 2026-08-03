@@ -91,6 +91,7 @@ export function AssignmentGradesClient({
   const serverGrades = useMemo(() => gradesFromRows(rows), [rows]);
 
   const [grades, setGrades] = useState(serverGrades);
+  const [prevServerGrades, setPrevServerGrades] = useState(serverGrades);
 
   const [savedGrades, setSavedGrades] = useState(serverGrades);
 
@@ -121,11 +122,11 @@ export function AssignmentGradesClient({
     [submittedRows],
   );
 
-  useEffect(() => {
+  if (serverGrades !== prevServerGrades) {
+    setPrevServerGrades(serverGrades);
     setGrades(serverGrades);
-
     setSavedGrades(serverGrades);
-  }, [serverGrades]);
+  }
 
   const submissionViewUrlFor = useCallback(
     (enrollmentId: string) =>

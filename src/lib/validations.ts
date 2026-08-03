@@ -21,6 +21,7 @@ import {
   requiredPhoneField,
   sanitizedRequiredString,
   sessionCodeField,
+  uuidField,
 } from "@/lib/security/zod-helpers";
 import { sanitizeTextInput } from "@/lib/security/sanitize";
 
@@ -30,10 +31,10 @@ export const loginIdentifierField = z
   .pipe(
     z
       .string()
-      .min(1, "Phone number or email is required")
+      .min(1, { error: "Phone number or email is required" })
       .refine(
         (value) => isEmailIdentifier(value) || isValidPhoneInput(value),
-        "Enter a valid phone number or email address"
+        { error: "Enter a valid phone number or email address" }
       )
   );
 
@@ -56,7 +57,7 @@ export const signupSchema = z
     collegeId: optionalSanitizedString(FIELD_LIMITS.COLLEGE_ID),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    error: "Passwords don't match",
     path: ["confirmPassword"],
   });
 
@@ -81,7 +82,7 @@ export const passwordChangeSchema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    error: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -99,7 +100,9 @@ export const classSessionSchema = z.object({
   courseCode: z
     .string()
     .transform((value) => sanitizeTextInput(value ?? ""))
-    .pipe(z.string().max(FIELD_LIMITS.COURSE_CODE, "Course code is too long")),
+    .pipe(
+      z.string().max(FIELD_LIMITS.COURSE_CODE, { error: "Course code is too long" })
+    ),
   semester: z.enum(["first_semester", "second_semester", "full_year"]),
   academicYear: sanitizedRequiredString({
     min: 4,
@@ -116,7 +119,7 @@ export const assignmentSchema = z.object({
   }),
   description: optionalSanitizedString(FIELD_LIMITS.DESCRIPTION),
   maxScore: z.coerce.number().int().min(1).max(1000),
-  deadline: z.string().min(1, "Deadline is required"),
+  deadline: z.string().min(1, { error: "Deadline is required" }),
 });
 
 export const caConfigSchema = z.object({
@@ -158,13 +161,16 @@ export const classTestSchema = z.object({
 export const BULK_GRADE_ENTRY_MAX = 500;
 
 export const attendanceScanSchema = attendanceDeviceIdentitySchema.extend({
-  token: z.string().min(1, "QR token is required").max(2048, "QR token is too long"),
+  token: z
+    .string()
+    .min(1, { error: "QR token is required" })
+    .max(2048, { error: "QR token is too long" }),
   latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
   longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
 });
 
 export const attendanceStartSchema = z.object({
-  classSessionId: z.string().uuid(),
+  classSessionId: uuidField(),
   title: optionalSanitizedString(FIELD_LIMITS.TITLE).optional(),
   durationMinutes: z.coerce
     .number()
@@ -187,22 +193,26 @@ export const exportStudentPerformanceSchema = z
       const provided = keys.filter((value) => value !== undefined).length;
       return provided === 0 || provided === 3;
     },
-    { message: "Provide all CA weight overrides or none." }
+    { error: "Provide all CA weight overrides or none." }
   );
 
 export const testScoresBulkSchema = z.object({
   scores: z
     .array(
       z.object({
-        enrollmentId: z.string().uuid(),
+        enrollmentId: uuidField(),
         score: z.coerce.number().min(0),
       })
     )
-    .max(BULK_GRADE_ENTRY_MAX, `Cannot save more than ${BULK_GRADE_ENTRY_MAX} grades at once`)
+    .max(BULK_GRADE_ENTRY_MAX, {
+      error: `Cannot save more than ${BULK_GRADE_ENTRY_MAX} grades at once`,
+    })
     .default([]),
   deleteEnrollmentIds: z
-    .array(z.string().uuid())
-    .max(BULK_GRADE_ENTRY_MAX, `Cannot clear more than ${BULK_GRADE_ENTRY_MAX} grades at once`)
+    .array(uuidField())
+    .max(BULK_GRADE_ENTRY_MAX, {
+      error: `Cannot clear more than ${BULK_GRADE_ENTRY_MAX} grades at once`,
+    })
     .optional(),
 });
 
@@ -223,21 +233,19 @@ export const monimeWebhookEventSchema = z.object({
     })
     .optional(),
   data: z
-    .object({
+    .looseObject({
       reference: z.string().max(200).optional(),
       id: z.string().max(200).optional(),
       status: z.string().max(80).optional(),
       paymentStatus: z.string().max(80).optional(),
       metadata: z
-        .object({
-          payment_id: z.string().uuid().optional(),
-          lecturer_id: z.string().uuid().optional(),
+        .looseObject({
+          payment_id: uuidField().optional(),
+          lecturer_id: uuidField().optional(),
           billing_plan: z.enum(["monthly", "semester", "annual"]).optional(),
         })
-        .passthrough()
         .optional(),
     })
-    .passthrough()
     .optional(),
 });
 
@@ -249,7 +257,7 @@ export const studentRowsWeightQuerySchema = z
   })
   .refine(
     (data) => data.attendanceWeight + data.assignmentWeight + data.testWeight <= 100,
-    { message: "CA weight overrides cannot exceed 100% combined." }
+    { error: "CA weight overrides cannot exceed 100% combined." }
   );
 
 export const contactInquirySchema = z.object({
@@ -291,9 +299,9 @@ export const partnershipInquirySchema = z.object({
   phoneNumber: requiredPhoneField,
   expectedLecturers: z.coerce
     .number()
-    .int("Expected lecturers must be a whole number")
-    .min(1, "Expected lecturers must be at least 1")
-    .max(10000, "Expected lecturers value is too large"),
+    .int({ error: "Expected lecturers must be a whole number" })
+    .min(1, { error: "Expected lecturers must be at least 1" })
+    .max(10000, { error: "Expected lecturers value is too large" }),
   selectedPackage: z.enum(["small", "medium", "large"]),
   additionalNotes: optionalSanitizedString(FIELD_LIMITS.NOTES),
 });
@@ -326,23 +334,23 @@ export const partnershipCheckoutSchema = z.object({
 });
 
 export const adminToggleLecturerSchema = z.object({
-  lecturerId: z.string().uuid("Invalid lecturer ID"),
+  lecturerId: uuidField("Invalid lecturer ID"),
   isActive: z.boolean(),
 });
 
 export const adminGrantFreeSchema = z.object({
-  lecturerId: z.string().uuid("Invalid lecturer ID"),
+  lecturerId: uuidField("Invalid lecturer ID"),
   days: z.coerce.number().int().min(1).max(3650).default(300),
 });
 
 export const adminExtendSubscriptionSchema = z
   .object({
-    subscriptionId: z.string().uuid("Invalid subscription ID").optional(),
-    lecturerId: z.string().uuid("Invalid lecturer ID").optional(),
+    subscriptionId: uuidField("Invalid subscription ID").optional(),
+    lecturerId: uuidField("Invalid lecturer ID").optional(),
     days: z.coerce.number().int().min(1).max(3650).default(30),
   })
   .refine((data) => Boolean(data.lecturerId || data.subscriptionId), {
-    message: "lecturerId or subscriptionId required",
+    error: "lecturerId or subscriptionId required",
   });
 
 export type LoginInput = z.infer<typeof loginSchema>;

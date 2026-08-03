@@ -21,27 +21,42 @@ type AdminMobileHeaderProps = {
 export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [pathWhenOpen, setPathWhenOpen] = useState(pathname);
+  const isOpen = open && pathWhenOpen === pathname;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pageTitle = getAdminMobilePageTitle(pathname, title);
   const activeHref = getActiveAdminNavHref(pathname);
 
-  useEffect(() => {
+  function openMenu() {
+    setPathWhenOpen(pathname);
+    setOpen(true);
+  }
+
+  function closeMenu() {
     setOpen(false);
-  }, [pathname]);
+  }
+
+  function toggleMenu() {
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeMenu();
         triggerRef.current?.focus();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [isOpen]);
 
   return (
     <header className="admin-mobile-header portal-mobile-header portal-mobile-only z-40">
@@ -51,23 +66,23 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
         <button
           ref={triggerRef}
           type="button"
-          aria-label={open ? "Close admin menu" : "Open admin menu"}
-          aria-expanded={open}
+          aria-label={isOpen ? "Close admin menu" : "Open admin menu"}
+          aria-expanded={isOpen}
           aria-haspopup="menu"
-          onClick={() => setOpen((current) => !current)}
+          onClick={toggleMenu}
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-primary transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
-          {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
+          {isOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
         </button>
       </div>
 
-      <PortalMobileMenu open={open} onClose={() => setOpen(false)} ariaLabel="Admin navigation">
+      <PortalMobileMenu open={isOpen} onClose={closeMenu} ariaLabel="Admin navigation">
         <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-[#0B3D91] to-[#0F4DA8] px-3 py-4">
           <Logo variant="light" className="gap-2" labelClassName="text-base font-bold" />
           <button
             type="button"
             aria-label="Close admin menu"
-            onClick={() => setOpen(false)}
+            onClick={closeMenu}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-white/90 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -83,7 +98,7 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
                 key={item.href}
                 href={item.href}
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={closeMenu}
                 className={cn(
                   "admin-mobile-nav-link mb-1 flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   active
@@ -111,7 +126,7 @@ export function AdminMobileHeader({ title }: AdminMobileHeaderProps) {
         <div className="mt-auto border-t border-slate-100 px-1 py-3">
           <LogoutButton
             role="menuitem"
-            onBeforeLogout={() => setOpen(false)}
+            onBeforeLogout={closeMenu}
             className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-wait disabled:opacity-50"
           >
             <LogOut className="h-5 w-5 shrink-0 text-red-600" aria-hidden />

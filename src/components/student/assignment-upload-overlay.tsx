@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, Loader2, UploadCloud, XCircle } from "lucide-react";
+import { CircleCheckBig, Loader2, CloudUpload, CircleX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 export type AssignmentUploadOverlayPhase = "uploading" | "success" | "failed";
 
@@ -30,11 +31,7 @@ export function AssignmentUploadOverlay({
   onDismiss: () => void;
 }) {
   const reduceMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +44,7 @@ export function AssignmentUploadOverlay({
     };
   }, [open]);
 
-  if (!mounted) return null;
+  if (!hydrated) return null;
 
   const showProgress = phase === "uploading" && progress !== null;
 
@@ -82,7 +79,7 @@ export function AssignmentUploadOverlay({
             {phase === "uploading" ? (
               <div className="space-y-4 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <UploadCloud className="h-6 w-6" aria-hidden />
+                  <CloudUpload className="h-6 w-6" aria-hidden />
                 </div>
                 <div className="space-y-2">
                   <p className="text-base font-semibold text-foreground">
@@ -117,7 +114,7 @@ export function AssignmentUploadOverlay({
             {phase === "success" ? (
               <div className="space-y-3 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-700">
-                  <CheckCircle2 className="h-6 w-6" aria-hidden />
+                  <CircleCheckBig className="h-6 w-6" aria-hidden />
                 </div>
                 <div className="space-y-2">
                   <p className="text-base font-semibold text-foreground">
@@ -136,7 +133,7 @@ export function AssignmentUploadOverlay({
             {phase === "failed" ? (
               <div className="space-y-4 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                  <XCircle className="h-6 w-6" aria-hidden />
+                  <CircleX className="h-6 w-6" aria-hidden />
                 </div>
                 <div className="space-y-2">
                   <p className="text-base font-semibold text-foreground">Upload Failed</p>

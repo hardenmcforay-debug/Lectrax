@@ -43,8 +43,10 @@ export function sanitizedRequiredString(options: {
     .pipe(
       z
         .string()
-        .min(options.min, options.minMessage ?? "This field is required")
-        .max(options.max, options.maxMessage ?? `Must be at most ${options.max} characters`)
+        .min(options.min, { error: options.minMessage ?? "This field is required" })
+        .max(options.max, {
+          error: options.maxMessage ?? `Must be at most ${options.max} characters`,
+        })
     );
 }
 
@@ -60,9 +62,8 @@ export const emailField = z
   .transform((value) => sanitizeTextInput(value).toLowerCase())
   .pipe(
     z
-      .string()
-      .email("Invalid email address")
-      .max(FIELD_LIMITS.EMAIL, "Email is too long")
+      .email({ error: "Invalid email address" })
+      .max(FIELD_LIMITS.EMAIL, { error: "Email is too long" })
   );
 
 export const optionalEmailField = z
@@ -76,17 +77,16 @@ export const optionalEmailField = z
     z.union([
       z.undefined(),
       z
-        .string()
-        .email("Invalid email address")
-        .max(FIELD_LIMITS.EMAIL, "Email is too long"),
+        .email({ error: "Invalid email address" })
+        .max(FIELD_LIMITS.EMAIL, { error: "Email is too long" }),
     ])
   );
 
 export const passwordField = (minLength: number, minMessage: string) =>
   z
     .string()
-    .min(minLength, minMessage)
-    .max(FIELD_LIMITS.PASSWORD, "Password is too long");
+    .min(minLength, { error: minMessage })
+    .max(FIELD_LIMITS.PASSWORD, { error: "Password is too long" });
 
 export const optionalPhoneField = z
   .union([z.string(), z.undefined()])
@@ -99,9 +99,9 @@ export const optionalPhoneField = z
       z.undefined(),
       z
         .string()
-        .min(6, "Phone number is too short")
-        .max(FIELD_LIMITS.PHONE, "Phone number is too long")
-        .regex(/^[\d+\-() ]+$/, "Invalid phone number format"),
+        .min(6, { error: "Phone number is too short" })
+        .max(FIELD_LIMITS.PHONE, { error: "Phone number is too long" })
+        .regex(/^[\d+\-() ]+$/, { error: "Invalid phone number format" }),
     ])
   );
 
@@ -111,15 +111,15 @@ export const requiredPhoneField = z
   .pipe(
     z
       .string()
-      .min(6, "Phone number is required")
-      .max(FIELD_LIMITS.PHONE, "Phone number is too long")
-      .regex(/^[\d+\-() ]+$/, "Invalid phone number format")
+      .min(6, { error: "Phone number is required" })
+      .max(FIELD_LIMITS.PHONE, { error: "Phone number is too long" })
+      .regex(/^[\d+\-() ]+$/, { error: "Invalid phone number format" })
   );
 
 export const normalizedRequiredPhoneField = requiredPhoneField.transform((value, ctx) => {
   if (!isValidPhoneInput(value)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "Invalid phone number format",
     });
     return z.NEVER;
@@ -129,7 +129,7 @@ export const normalizedRequiredPhoneField = requiredPhoneField.transform((value,
     return normalizePhoneNumber(value);
   } catch {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "Invalid phone number format",
     });
     return z.NEVER;
@@ -142,7 +142,14 @@ export const sessionCodeField = z
   .pipe(
     z
       .string()
-      .min(4, "Session code must be at least 4 characters")
-      .max(FIELD_LIMITS.SESSION_CODE, "Session code is too long")
-      .regex(/^[A-Z0-9]+$/, "Session code may only contain letters and numbers")
+      .min(4, { error: "Session code must be at least 4 characters" })
+      .max(FIELD_LIMITS.SESSION_CODE, { error: "Session code is too long" })
+      .regex(/^[A-Z0-9]+$/, {
+        error: "Session code may only contain letters and numbers",
+      })
   );
+
+/** RFC 9562/4122 UUID (Supabase IDs). */
+export function uuidField(errorMessage = "Invalid ID") {
+  return z.uuid({ error: errorMessage });
+}

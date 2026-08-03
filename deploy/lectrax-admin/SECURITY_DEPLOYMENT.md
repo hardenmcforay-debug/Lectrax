@@ -4,7 +4,7 @@ This admin deployment includes the following production security controls.
 
 ## Route & session protection
 
-- Middleware session validation, CSRF checks, and API abuse filtering
+- Proxy (`src/proxy.ts`) session validation, CSRF checks, and API abuse filtering
 - Role-based access for `/admin` pages and `/api/admin/*` routes
 - `ProtectedSessionGuard` for PWA/bfcache session re-validation
 - Secure logout with client storage purge and history-safe redirect
@@ -32,7 +32,7 @@ This admin deployment includes the following production security controls.
 | `AUTHORIZATION_SECURITY_REPORT.md` | Role guards, RLS alignment |
 | `CSRF_SECURITY_REPORT.md` | Cross-site request forgery |
 | `COOKIE_SECURITY_REPORT.md` | Session cookie settings |
-| `DDoS_SECURITY_REPORT.md` | Abuse detection middleware |
+| `DDoS_SECURITY_REPORT.md` | Abuse detection (proxy) |
 | `ERROR_HANDLING_SECURITY_REPORT.md` | Information disclosure prevention |
 | `FILE_UPLOAD_SECURITY_REPORT.md` | Upload validation and scanning |
 | `HTTP_SECURITY_HEADERS_REPORT.md` | Response headers |

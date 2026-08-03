@@ -438,6 +438,52 @@ html[data-portal-mobile="true"] .admin-portal-content {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Home hero: transparent over blue. Scrolled / inner pages: solid white bar. */
+.landing-nav--hero,
+header[data-nav-mode="hero"],
+html[data-landing-nav="hero"] header.landing-nav-safe {
+  background-color: transparent;
+  background-image: none;
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+}
+
+.landing-nav--solid,
+header[data-nav-mode="solid"],
+html[data-landing-nav="solid"] header.landing-nav-safe {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/*
+  CSS-only home nav fill on scroll. Avoid !important on the home hero state
+  so this animation can paint the white bar even if JS is delayed.
+*/
+@supports (animation-timeline: scroll()) {
+  header.landing-nav-safe.landing-nav-home:not([data-nav-mode="solid"]) {
+    animation: landing-nav-scroll-solid linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 24px;
+  }
+
+  @keyframes landing-nav-scroll-solid {
+    from {
+      background-color: transparent;
+      border-bottom-color: transparent;
+      box-shadow: none;
+    }
+    to {
+      background-color: #ffffff;
+      border-bottom-color: transparent;
+      box-shadow: none;
+    }
+  }
+}
+
 .landing-nav-inner {
   padding-left: max(1rem, env(safe-area-inset-left, 0px));
   padding-right: max(1rem, env(safe-area-inset-right, 0px));

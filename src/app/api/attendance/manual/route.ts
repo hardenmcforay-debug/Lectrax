@@ -8,11 +8,12 @@ import { getAttendanceSessionForLecturer } from "@/lib/attendance/sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 const manualSchema = z.object({
-  attendanceSessionId: z.string().uuid(),
-  enrollmentId: z.string().uuid(),
-  classSessionId: z.string().uuid(),
+  attendanceSessionId: uuidField(),
+  enrollmentId: uuidField(),
+  classSessionId: uuidField(),
 });
 
 async function validateManualAttendanceRequest(

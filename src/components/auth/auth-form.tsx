@@ -6,10 +6,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zod-resolver";
 import { createClient, getSupabaseConfigError } from "@/lib/supabase/client";
 import { loginSchema, signupSchema, type LoginInput, type SignupInput } from "@/lib/validations";
-import { buildPhoneAuthEmail, isEmailIdentifier, parseSignupIdentifier } from "@/lib/auth/phone-number";
+import { buildPhoneAuthEmail, parseSignupIdentifier } from "@/lib/auth/phone-number";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -30,6 +30,7 @@ import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
 import { sanitizeQueryParam } from "@/lib/security/sanitize";
 import { REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY } from "@/lib/security/client-storage";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 const authInputClass =
   "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
@@ -42,7 +43,11 @@ function toAuthMessage(title: string, description: string, retryable = false): A
 
 export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
   const searchParams = useSearchParams();
+  const hydrated = useHydrated();
   const [rememberMe, setRememberMe] = useState(false);
+  const [rememberInitialized, setRememberInitialized] = useState(false);
+  // Stay disabled after a successful login until the dashboard navigation completes.
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<AuthUserMessage | null>(() => {
     const authError = sanitizeQueryParam(searchParams.get("error"), 20);
     if (authError === "auth") {
@@ -75,13 +80,14 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
-  useEffect(() => {
+  if (hydrated && !rememberInitialized) {
     const savedIdentifier = localStorage.getItem(REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY);
     if (savedIdentifier) {
-      setValue("identifier", savedIdentifier);
       setRememberMe(true);
+      setValue("identifier", savedIdentifier);
     }
-  }, [setValue]);
+    setRememberInitialized(true);
+  }
 
   async function onSubmit(data: LoginInput) {
     setError(null);
@@ -214,6 +220,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
         return;
       }
 
+      setIsRedirecting(true);
       redirectAfterAuth(role, searchParams.get("redirect"));
     } catch (cause) {
       setError(mapAuthError(cause, "login", "auth.login.unhandled"));
@@ -290,10 +297,10 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
         <Button
           type="submit"
-          loading={isSubmitting}
+          loading={isSubmitting || isRedirecting}
           className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
-          {isSubmitting ? "Signing in..." : "Sign In"}
+          {isSubmitting || isRedirecting ? "Signing in..." : "Sign In"}
         </Button>
       </form>
 

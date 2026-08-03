@@ -12,5 +12,6 @@ export async function requestPasswordResetEmail(email: string): Promise<void> {
   const supabase = createClient();
   const redirectTo = getPasswordResetCallbackUrl(window.location.origin);
 
+  // Errors are swallowed by callers — response must not reveal account existence.
   await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
 }

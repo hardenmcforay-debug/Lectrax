@@ -15,9 +15,23 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminAnalyticsData } from "@/lib/admin/queries";
+import {
+  chartTickToNumber,
+  chartValueToNumber,
+  type ChartTooltipFormatter,
+} from "@/lib/charts/recharts-value";
 import { formatChargeAmount } from "@/lib/subscription/payment-currency";
 
 const COLORS = ["#0B3D91", "#10B981", "#64748B", "#F59E0B", "#EF4444"];
+
+function formatRevenueTick(value: unknown): string {
+  return formatChargeAmount(chartTickToNumber(value), "SLE");
+}
+
+const formatRevenueTooltip: ChartTooltipFormatter = (value) => [
+  formatChargeAmount(chartValueToNumber(value), "SLE"),
+  "Revenue",
+];
 
 export function AdminAnalyticsCharts({
   subscriptionData,
@@ -66,8 +80,8 @@ export function AdminAnalyticsCharts({
               <BarChart data={revenueByPlan}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="plan" />
-                <YAxis tickFormatter={(v) => formatChargeAmount(Number(v), "SLE")} />
-                <Tooltip formatter={(v) => [formatChargeAmount(Number(v), "SLE"), "Revenue"]} />
+                <YAxis tickFormatter={formatRevenueTick} />
+                <Tooltip formatter={formatRevenueTooltip} />
                 <Bar dataKey="revenue" fill="#10B981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

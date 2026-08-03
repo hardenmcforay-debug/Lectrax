@@ -8,7 +8,7 @@ import {
   BarChart3,
   Bell,
   Calendar,
-  CheckCircle2,
+  CircleCheckBig,
   ClipboardList,
   FileText,
   GraduationCap,
@@ -24,7 +24,7 @@ type FloatingIcon = {
 
 const FLOATING_ICONS: FloatingIcon[] = [
   { icon: QrCode, className: "left-[2%] top-[8%]", delay: 0 },
-  { icon: CheckCircle2, className: "right-[4%] top-[12%]", delay: 0.4 },
+  { icon: CircleCheckBig, className: "right-[4%] top-[12%]", delay: 0.4 },
   { icon: FileText, className: "right-[0%] top-[42%]", delay: 0.8 },
   { icon: BarChart3, className: "left-[-2%] top-[48%]", delay: 1.2 },
   { icon: Calendar, className: "left-[8%] bottom-[14%]", delay: 0.6 },
@@ -143,12 +143,12 @@ export function HeroVisual({ imageUrl }: HeroVisualProps) {
                       src={imageUrl}
                       alt="Lectrax academic management platform"
                       fill
+                      priority
+                      fetchPriority="high"
+                      // Supabase storage often times out through /_next/image on this host.
                       unoptimized
                       className="object-cover"
                       sizes="(min-width: 1024px) 32rem, 0px"
-                      // Desktop-only visual; preload is handled via media query in LandingHero.
-                      loading="eager"
-                      fetchPriority="low"
                       decoding="async"
                     />
                   ) : (

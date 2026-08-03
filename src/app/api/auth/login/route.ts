@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { loginSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
 import { isEmailIdentifier } from "@/lib/auth/phone-number";
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid login details" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid login details" },
         { status: 400 }
       );
     }

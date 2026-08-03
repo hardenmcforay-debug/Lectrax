@@ -22,6 +22,8 @@ type LecturerMobileHeaderProps = {
 export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [pathWhenOpen, setPathWhenOpen] = useState(pathname);
+  const isOpen = open && pathWhenOpen === pathname;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pageTitle = title ?? getLecturerMobilePageTitle(pathname);
   const activeHref =
@@ -30,23 +32,36 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
       ? LECTURER_SETTINGS_HREF
       : null);
 
-  useEffect(() => {
+  function openMenu() {
+    setPathWhenOpen(pathname);
+    setOpen(true);
+  }
+
+  function closeMenu() {
     setOpen(false);
-  }, [pathname]);
+  }
+
+  function toggleMenu() {
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeMenu();
         triggerRef.current?.focus();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [isOpen]);
 
   return (
     <header className="lecturer-mobile-header portal-mobile-header portal-mobile-only z-40">
@@ -56,13 +71,13 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
         <button
           ref={triggerRef}
           type="button"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isOpen}
           aria-haspopup="menu"
-          onClick={() => setOpen((current) => !current)}
+          onClick={toggleMenu}
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-primary transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
-          {open ? (
+          {isOpen ? (
             <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
           ) : (
             <Menu {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
@@ -70,13 +85,13 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
         </button>
       </div>
 
-      <PortalMobileMenu open={open} onClose={() => setOpen(false)} ariaLabel="Lecturer navigation">
+      <PortalMobileMenu open={isOpen} onClose={closeMenu} ariaLabel="Lecturer navigation">
         <div className="flex items-center justify-between border-b border-slate-100 px-1 py-3">
           <span className="text-base font-semibold text-primary">Menu</span>
           <button
             type="button"
             aria-label="Close menu"
-            onClick={() => setOpen(false)}
+            onClick={closeMenu}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-slate-50"
           >
             <X {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5 text-primary" aria-hidden />
@@ -93,7 +108,7 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
                 key={item.href}
                 href={item.href}
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={closeMenu}
                 className={cn(
                   "lecturer-nav-link mb-1 flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   active
@@ -117,7 +132,7 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
           <Link
             href={LECTURER_SETTINGS_HREF}
             role="menuitem"
-            onClick={() => setOpen(false)}
+            onClick={closeMenu}
             className={cn(
               "lecturer-nav-link flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
               activeHref === LECTURER_SETTINGS_HREF
@@ -137,7 +152,7 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
           </Link>
           <LogoutButton
             role="menuitem"
-            onBeforeLogout={() => setOpen(false)}
+            onBeforeLogout={closeMenu}
             className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-50"
           >
             <LogOut

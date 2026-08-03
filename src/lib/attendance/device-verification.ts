@@ -18,7 +18,7 @@ export const attendanceDeviceIdentitySchema = z.object({
   deviceFingerprint: z.string().min(8),
   browserFingerprint: z.string().min(8),
   deviceIdentifier: z.string().min(8),
-  deviceMetadata: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  deviceMetadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 
 export type AttendanceDeviceIdentityInput = z.infer<typeof attendanceDeviceIdentitySchema>;

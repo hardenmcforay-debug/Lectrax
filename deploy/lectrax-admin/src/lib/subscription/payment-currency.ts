@@ -20,7 +20,7 @@ export function formatChargeAmount(
   currency: PaymentCurrency = "SLE"
 ): string {
   if (currency === "SLE") {
-    return `Le ${amount.toLocaleString()}`;
+    return `Le ${amount.toLocaleString("en-US")}`;
   }
   return `$${amount}`;
 }
@@ -36,7 +36,7 @@ export function formatUsdPrice(plan: BillingPlan): string {
 
 export function formatSleChargeAmount(plan: BillingPlan, amountMajor?: number): string {
   const major = amountMajor ?? DEFAULT_SLE_CHARGE_AMOUNTS[plan];
-  return `Le ${major.toLocaleString()}`;
+  return `Le ${major.toLocaleString("en-US")}`;
 }
 
 /** Shown in checkout when UI is USD but Monime collects SLE. */

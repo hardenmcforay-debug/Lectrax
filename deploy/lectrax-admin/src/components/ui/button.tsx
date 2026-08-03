@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -46,6 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       loading = false,
       disabled,
       children,
+      onClick,
       ...props
     },
     ref
@@ -57,7 +60,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         className={cn(
           buttonVariants({ variant, size, className }),
-          loading && "cursor-wait"
+          loading && "pointer-events-none cursor-wait"
         )}
         ref={ref}
         disabled={asChild ? undefined : isDisabled}
@@ -65,6 +68,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         data-loading={loading ? "" : undefined}
         {...props}
+        onClick={(event) => {
+          if (isDisabled) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          onClick?.(event);
+        }}
       >
         {asChild ? (
           children

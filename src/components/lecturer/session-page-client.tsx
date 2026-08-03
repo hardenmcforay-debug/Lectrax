@@ -144,6 +144,7 @@ export function SessionPageClient({
   const [manualError, setManualError] = useState<string | null>(null);
   const [addingManual, setAddingManual] = useState(false);
   const [assignments, setAssignments] = useState(sessionAssignments);
+  const [prevSessionAssignments, setPrevSessionAssignments] = useState(sessionAssignments);
   const [deleteAssignmentTarget, setDeleteAssignmentTarget] =
     useState<SessionAssignmentSummary | null>(null);
   const [deletingAssignment, setDeletingAssignment] = useState(false);
@@ -156,19 +157,25 @@ export function SessionPageClient({
   const [closingSession, setClosingSession] = useState(false);
   const [closeSessionError, setCloseSessionError] = useState<string | null>(null);
   const [studentRows, setStudentRows] = useState(rows);
+  const [prevRows, setPrevRows] = useState(rows);
   const studentRowsRefreshTimerRef = useRef<number | null>(null);
   const caPreviewTimerRef = useRef<number | null>(null);
   const savedCaWeightsRef = useRef<CAWeights | undefined>(initialCaWeights);
 
-  useEffect(() => {
+  if (rows !== prevRows) {
+    setPrevRows(rows);
     setStudentRows(rows);
-    savedCaWeightsRef.current = initialCaWeights;
-  }, [rows, initialCaWeights]);
+  }
 
   useEffect(() => {
+    savedCaWeightsRef.current = initialCaWeights;
+  }, [initialCaWeights]);
+
+  if (sessionAssignments !== prevSessionAssignments) {
+    setPrevSessionAssignments(sessionAssignments);
     setAssignments(sessionAssignments);
     setAssignmentLimitMessage(null);
-  }, [sessionAssignments]);
+  }
 
   const allowCreateAssignment = canWrite && canCreateMoreAssignments(subscriptionPlan, assignments.length);
 
@@ -395,7 +402,7 @@ export function SessionPageClient({
     });
 
     if (!parsed.success) {
-      setManualError(parsed.error.errors[0]?.message ?? "Invalid student details.");
+      setManualError(parsed.error.issues[0]?.message ?? "Invalid student details.");
       return;
     }
 

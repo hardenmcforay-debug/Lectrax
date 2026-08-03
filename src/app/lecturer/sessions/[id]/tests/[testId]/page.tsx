@@ -15,39 +15,35 @@ export default async function TestGradesPage({
   const { id, testId } = await params;
   const user = await requireAuthenticatedUser();
 
+  let data: Awaited<ReturnType<typeof getTestGradeEntryData>> | null = null;
+  let loadFailed = false;
   try {
-    const data = await getTestGradeEntryData(testId, user.id);
-    if (!data || data.test.class_session_id !== id) notFound();
-
-    return (
-      <DashboardShell
-        role="lecturer"
-        title="Enter test scores"
-        description="Enter and manage test scores while maintaining accurate student assessment records."
-      >
-        <div className="mb-4">
-          <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />
-        </div>
-        <TestGradesClient classSessionId={id} data={data} />
-      </DashboardShell>
-    );
+    data = await getTestGradeEntryData(testId, user.id);
   } catch (error) {
+    loadFailed = true;
     if (process.env.NODE_ENV === "development") {
       console.error("[TestGradesPage] getTestGradeEntryData failed", error);
     }
-    return (
-      <DashboardShell
-        role="lecturer"
-        title="Enter test scores"
-        description="Enter and manage test scores while maintaining accurate student assessment records."
-      >
-        <div className="mb-4">
-          <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />
-        </div>
+  }
+
+  if (!loadFailed && (!data || data.test.class_session_id !== id)) notFound();
+
+  return (
+    <DashboardShell
+      role="lecturer"
+      title="Enter test scores"
+      description="Enter and manage test scores while maintaining accurate student assessment records."
+    >
+      <div className="mb-4">
+        <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />
+      </div>
+      {loadFailed || !data ? (
         <p className="text-sm text-destructive">
           Could not load test grades. Please refresh the page or try again later.
         </p>
-      </DashboardShell>
-    );
-  }
+      ) : (
+        <TestGradesClient classSessionId={id} data={data} />
+      )}
+    </DashboardShell>
+  );
 }

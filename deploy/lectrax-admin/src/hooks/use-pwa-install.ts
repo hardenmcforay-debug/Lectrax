@@ -115,7 +115,8 @@ export function usePwaInstall(): PwaInstallState {
 
   const canInstall =
     !snapshot.isInstalled && !!snapshot.deferredPrompt && canUseNativeInstallPrompt();
-  const isIOSInstallable = !snapshot.isInstalled && snapshot.isIOS && !isStandaloneMode();
+  // Prefer snapshot flags only — avoid live browser checks during render.
+  const isIOSInstallable = !snapshot.isInstalled && snapshot.isIOS;
 
   return {
     isInstalled: snapshot.isInstalled,

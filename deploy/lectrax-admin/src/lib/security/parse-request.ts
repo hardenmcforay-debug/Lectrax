@@ -6,12 +6,12 @@ export function parseRouteUuid(
   value: string,
   label = "ID"
 ): { ok: true; id: string } | { ok: false; response: NextResponse } {
-  const parsed = z.string().uuid(`Invalid ${label}`).safeParse(value);
+  const parsed = z.uuid({ error: `Invalid ${label}` }).safeParse(value);
   if (!parsed.success) {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? `Invalid ${label}` },
+        { error: parsed.error.issues[0]?.message ?? `Invalid ${label}` },
         { status: 400 }
       ),
     };

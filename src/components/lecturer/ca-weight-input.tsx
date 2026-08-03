@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FocusEvent } from "react";
+import { useState, type FocusEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -38,12 +38,12 @@ export function CaWeightInput({ id, value, onChange, disabled, className }: CaWe
   const normalized = clampCaWeight(value);
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState("");
+  const [prevNormalized, setPrevNormalized] = useState(normalized);
 
-  useEffect(() => {
-    if (!isEditing) {
-      setText(normalized === 0 ? "" : String(normalized));
-    }
-  }, [normalized, isEditing]);
+  if (!isEditing && normalized !== prevNormalized) {
+    setPrevNormalized(normalized);
+    setText(normalized === 0 ? "" : String(normalized));
+  }
 
   function handleFocus(event: FocusEvent<HTMLInputElement>) {
     setIsEditing(true);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Download } from "lucide-react";
+import { CircleCheckBig, Download } from "lucide-react";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { IosInstallInstructions, IosInstallButtonLabel } from "@/components/pwa/ios-install-instructions";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,7 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
         )}
         aria-live="polite"
       >
-        <CheckCircle2 className="h-4 w-4" aria-hidden />
+        <CircleCheckBig className="h-4 w-4" aria-hidden />
         App Installed
       </span>
     );

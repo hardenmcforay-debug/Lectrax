@@ -82,15 +82,6 @@ export function StudentAssignmentDetailClient({
   });
 
   useEffect(() => {
-    if (pastDeadline) {
-      uploadInFlightRef.current = false;
-      setOverlayOpen(false);
-      setSelectedFile(null);
-      clearSuccessTimer();
-    }
-  }, [clearSuccessTimer, pastDeadline]);
-
-  useEffect(() => {
     return () => {
       clearSuccessTimer();
     };

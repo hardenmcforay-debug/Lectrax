@@ -1,4 +1,8 @@
-import { getAdaptiveFetchTimeoutMs, readConnectionQuality } from "@/lib/network/connection-quality";
+import {
+  getAdaptiveFetchTimeoutMs,
+  readConnectionQuality,
+  reportNetworkSample,
+} from "@/lib/network/connection-quality";
 import { getCsrfRequestHeaders } from "@/lib/security/csrf";
 
 const ASSIGNMENT_UPLOAD_TIMEOUT_MS = 120_000;
@@ -33,6 +37,9 @@ export function uploadFormDataWithProgress(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    const startedAt = performance.now();
+    const elapsedMs = () => Math.round(performance.now() - startedAt);
+
     xhr.open("POST", url);
     xhr.withCredentials = true;
     xhr.timeout = timeoutMs;
@@ -63,10 +70,22 @@ export function uploadFormDataWithProgress(
     });
 
     xhr.addEventListener("error", () => {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: false,
+        networkError: true,
+        ignoreDuration: true,
+      });
       reject(new Error("UPLOAD_NETWORK_ERROR"));
     });
 
     xhr.addEventListener("timeout", () => {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: false,
+        timedOut: true,
+        ignoreDuration: true,
+      });
       reject(new Error("UPLOAD_TIMEOUT"));
     });
 

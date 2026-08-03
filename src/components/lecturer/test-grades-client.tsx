@@ -51,15 +51,17 @@ export function TestGradesClient({
 
   const serverScores = useMemo(() => scoresFromRows(rows), [rows]);
   const [scores, setScores] = useState(serverScores);
+  const [prevServerScores, setPrevServerScores] = useState(serverScores);
   const [savedScores, setSavedScores] = useState(serverScores);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (serverScores !== prevServerScores) {
+    setPrevServerScores(serverScores);
     setScores(serverScores);
     setSavedScores(serverScores);
-  }, [serverScores]);
+  }
 
   const dirtyCount = useMemo(
     () => countDirtyGrades(enrollmentIds, scores, savedScores),

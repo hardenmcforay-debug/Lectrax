@@ -3,7 +3,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { rejectIfCsrfViolation } from "@/lib/security/csrf";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const abuseResponse = rejectIfAbusiveRequest(request);
   if (abuseResponse) return abuseResponse;
 
@@ -15,6 +15,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|icons/|splash/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|robots.txt|sitemap.xml|icons/|splash/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html)$).*)",
   ],
 };

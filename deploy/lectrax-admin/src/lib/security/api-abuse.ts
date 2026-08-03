@@ -100,6 +100,10 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
     return { policy: "passwordReset", rule: RATE_LIMIT_POLICIES.passwordReset };
   }
 
+  if (pathname === "/api/account" && upperMethod === "DELETE") {
+    return { policy: "accountDeletion", rule: RATE_LIMIT_POLICIES.accountDeletion };
+  }
+
   if (pathname === "/api/attendance/scan" && upperMethod === "POST") {
     return { policy: "attendanceScan", rule: RATE_LIMIT_POLICIES.attendanceScan };
   }

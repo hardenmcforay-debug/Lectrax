@@ -8,9 +8,10 @@ import {
 } from "@/lib/subscription/lifecycle";
 import type { BillingPlan } from "@/types/database";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 const activateSchema = z.object({
-  lecturerId: z.string().uuid(),
+  lecturerId: uuidField(),
   billingPlan: z.enum(["monthly", "semester", "annual"]).default("monthly"),
 });
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 }
 
 const extendSchema = z.object({
-  lecturerId: z.string().uuid(),
+  lecturerId: uuidField(),
   days: z.coerce.number().min(1).max(730).default(30),
 });
 
@@ -84,7 +85,7 @@ export async function PATCH(request: Request) {
 }
 
 const revokeSchema = z.object({
-  lecturerId: z.string().uuid(),
+  lecturerId: uuidField(),
 });
 
 export async function DELETE(request: Request) {

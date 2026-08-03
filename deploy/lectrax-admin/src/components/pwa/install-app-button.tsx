@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Download } from "lucide-react";
+import { CircleCheckBig, Download } from "lucide-react";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { IosInstallInstructions, IosInstallButtonLabel } from "@/components/pwa/ios-install-instructions";
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 type InstallAppButtonProps = {
   className?: string;
@@ -12,8 +13,14 @@ type InstallAppButtonProps = {
 };
 
 export function InstallAppButton({ className, variant = "default" }: InstallAppButtonProps) {
+  const hydrated = useHydrated();
   const { isInstalled, canInstall, isIOSInstallable, promptInstall } = usePwaInstall();
   const [iosDialogOpen, setIosDialogOpen] = useState(false);
+
+  // Keep SSR and the hydration pass identical (null) — PWA detection is browser-only.
+  if (!hydrated) {
+    return null;
+  }
 
   if (isInstalled) {
     return (
@@ -24,7 +31,7 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
         )}
         aria-live="polite"
       >
-        <CheckCircle2 className="h-4 w-4" aria-hidden />
+        <CircleCheckBig className="h-4 w-4" aria-hidden />
         App Installed
       </span>
     );
@@ -51,7 +58,11 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
 
   return (
     <>
-      <button type="button" onClick={handleClick} className={cn(variant === "hero" ? heroStyles : defaultStyles, className)}>
+      <button
+        type="button"
+        onClick={handleClick}
+        className={cn(variant === "hero" ? heroStyles : defaultStyles, className)}
+      >
         {isIOSInstallable ? (
           <IosInstallButtonLabel />
         ) : (

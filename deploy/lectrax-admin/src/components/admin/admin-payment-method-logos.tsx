@@ -139,7 +139,7 @@ function PaymentMethodLogoUpload({
           <h3 className="text-sm font-semibold text-slate-900">{label}</h3>
           {state.updatedAt ? (
             <p className="text-xs text-muted-foreground">
-              Updated: {new Date(state.updatedAt).toLocaleString()}
+              Updated: {new Date(state.updatedAt).toLocaleString("en-US", { timeZone: "UTC" })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">No custom logo — phone icon is used</p>

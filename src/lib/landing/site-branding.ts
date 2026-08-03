@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createPublicReadClient } from "@/lib/supabase/server";
 import { LANDING_FEATURE_CARDS } from "@/lib/landing/feature-cards";
 import { PRODUCTS, type ProductSlug } from "@/lib/landing/products";
@@ -72,7 +73,7 @@ export type LandingProductImagesSetting = {
   products: Record<string, BrandingImageSetting>;
 };
 
-async function getBrandingSetting(key: string): Promise<BrandingImageSetting | null> {
+const getBrandingSetting = cache(async (key: string): Promise<BrandingImageSetting | null> => {
   const supabase = await createPublicReadClient();
   const { data, error } = await supabase
     .from("site_settings")
@@ -89,7 +90,7 @@ async function getBrandingSetting(key: string): Promise<BrandingImageSetting | n
     storage_path: value.storage_path,
     updated_at: value.updated_at ?? (data.updated_at as string | undefined),
   };
-}
+});
 
 export async function getLandingHeroImageUrl(): Promise<string | null> {
   const setting = await getBrandingSetting(HERO_IMAGE_SETTING_KEY);
@@ -111,19 +112,21 @@ export async function getSiteLogoSetting(): Promise<BrandingImageSetting | null>
   return getBrandingSetting(SITE_LOGO_SETTING_KEY);
 }
 
-export async function getLandingFeatureCardsSetting(): Promise<Record<string, BrandingImageSetting>> {
-  const supabase = await createPublicReadClient();
-  const { data, error } = await supabase
-    .from("site_settings")
-    .select("value")
-    .eq("key", LANDING_FEATURE_CARDS_SETTING_KEY)
-    .maybeSingle();
+export const getLandingFeatureCardsSetting = cache(
+  async (): Promise<Record<string, BrandingImageSetting>> => {
+    const supabase = await createPublicReadClient();
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", LANDING_FEATURE_CARDS_SETTING_KEY)
+      .maybeSingle();
 
-  if (error || !data?.value) return {};
+    if (error || !data?.value) return {};
 
-  const value = data.value as LandingFeatureCardsSetting;
-  return value.cards ?? {};
-}
+    const value = data.value as LandingFeatureCardsSetting;
+    return value.cards ?? {};
+  }
+);
 
 export async function getLandingFeatureCardImageUrls(): Promise<Record<string, string>> {
   const cards = await getLandingFeatureCardsSetting();

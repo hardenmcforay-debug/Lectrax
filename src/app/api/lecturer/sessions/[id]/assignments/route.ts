@@ -55,7 +55,7 @@ export async function POST(
   const parsed = assignmentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid assignment data" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid assignment data" },
       { status: 400 }
     );
   }

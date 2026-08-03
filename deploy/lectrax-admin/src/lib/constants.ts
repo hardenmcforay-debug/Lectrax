@@ -29,6 +29,7 @@ export const PUBLIC_ROUTES = [
   "/contact",
   "/privacy",
   "/terms",
+  "/cookies",
   "/auth/callback",
   /** Payment gateway return bounce (may arrive cross-site without cookies). */
   "/payments/return",

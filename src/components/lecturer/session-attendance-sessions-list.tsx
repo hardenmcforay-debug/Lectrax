@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatAttendanceTime } from "@/lib/attendance/constants";
@@ -31,12 +31,15 @@ export function SessionAttendanceSessionsList({
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [presentBySession, setPresentBySession] = useState(initialPresentBySession);
+  const [prevInitialPresentBySession, setPrevInitialPresentBySession] =
+    useState(initialPresentBySession);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (initialPresentBySession !== prevInitialPresentBySession) {
+    setPrevInitialPresentBySession(initialPresentBySession);
     setPresentBySession(initialPresentBySession);
-  }, [initialPresentBySession]);
+  }
 
   async function fetchPresentStudents(sessionId: string) {
     if (loadingId !== null) return;

@@ -17,7 +17,7 @@ import {
   Building2,
   Mail,
   Sparkles,
-} from "lucide-react";
+} from "@/components/lucide-icons";
 import { formatDate } from "@/lib/utils";
 import { formatChargeAmount } from "@/lib/subscription/payment-currency";
 

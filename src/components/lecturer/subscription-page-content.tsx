@@ -31,7 +31,7 @@ import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/paymen
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
 import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
 import { PaymentCheckoutFlow } from "@/components/lecturer/payment-checkout-flow";
-import { AlertCircle, Check, Trash2 } from "lucide-react";
+import { CircleAlert, Check, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -229,7 +229,7 @@ export function SubscriptionPageContent({
           role="alert"
           className="mb-6 flex items-start gap-3 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-4 text-red-700 shadow-md sm:px-5 sm:py-5"
         >
-          <AlertCircle className="mt-0.5 h-7 w-7 shrink-0 text-red-600 sm:h-8 sm:w-8" aria-hidden />
+          <CircleAlert className="mt-0.5 h-7 w-7 shrink-0 text-red-600 sm:h-8 sm:w-8" aria-hidden />
           <div className="min-w-0">
             <p className="text-lg font-bold leading-tight tracking-tight text-red-700 sm:text-xl">
               Payment was cancelled.

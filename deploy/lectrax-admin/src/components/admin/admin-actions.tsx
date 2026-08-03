@@ -12,6 +12,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAsyncAction } from "@/hooks/use-async-action";
+import { DeferredSelect } from "@/components/shared/deferred-select";
+
+const FREE_PLAN_LABELS: Record<string, string> = {
+  "30": "30 days",
+  "120": "4 months",
+  "180": "6 months",
+  "300": "10 months",
+};
+
+const EXTEND_LABELS: Record<string, string> = {
+  "30": "+30d",
+  "90": "+90d",
+  "180": "+180d",
+  "300": "+300d",
+};
 
 export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
   const [days, setDays] = useState("300");
@@ -19,17 +34,23 @@ export function AdminFreePlanButton({ lecturerId }: { lecturerId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Select value={days} onValueChange={setDays}>
-        <SelectTrigger className="h-8 w-28">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="30">30 days</SelectItem>
-          <SelectItem value="120">4 months</SelectItem>
-          <SelectItem value="180">6 months</SelectItem>
-          <SelectItem value="300">10 months</SelectItem>
-        </SelectContent>
-      </Select>
+      <DeferredSelect
+        placeholderLabel={FREE_PLAN_LABELS[days] ?? "10 months"}
+        triggerClassName="h-8 w-28"
+        className="w-28"
+      >
+        <Select value={days} onValueChange={setDays}>
+          <SelectTrigger className="h-8 w-28">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">30 days</SelectItem>
+            <SelectItem value="120">4 months</SelectItem>
+            <SelectItem value="180">6 months</SelectItem>
+            <SelectItem value="300">10 months</SelectItem>
+          </SelectContent>
+        </Select>
+      </DeferredSelect>
       <Button
         size="sm"
         variant="accent"
@@ -89,17 +110,23 @@ export function AdminExtendSubscriptionButton({ subscriptionId }: { subscription
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Select value={days} onValueChange={setDays}>
-        <SelectTrigger className="h-8 w-24">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="30">+30d</SelectItem>
-          <SelectItem value="90">+90d</SelectItem>
-          <SelectItem value="180">+180d</SelectItem>
-          <SelectItem value="300">+300d</SelectItem>
-        </SelectContent>
-      </Select>
+      <DeferredSelect
+        placeholderLabel={EXTEND_LABELS[days] ?? "+30d"}
+        triggerClassName="h-8 w-24"
+        className="w-24"
+      >
+        <Select value={days} onValueChange={setDays}>
+          <SelectTrigger className="h-8 w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">+30d</SelectItem>
+            <SelectItem value="90">+90d</SelectItem>
+            <SelectItem value="180">+180d</SelectItem>
+            <SelectItem value="300">+300d</SelectItem>
+          </SelectContent>
+        </Select>
+      </DeferredSelect>
       <Button
         size="sm"
         variant="outline"

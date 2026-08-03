@@ -20,6 +20,7 @@ import {
   subscribeToConnectionQuality,
   type ConnectionQuality,
 } from "@/lib/network/connection-quality";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 const POOR_CONNECTION_TOAST_MS = 5_000;
 const OFFLINE_TOAST_MS = 6_000;
@@ -44,7 +45,7 @@ const PlatformErrorContext = createContext<PlatformErrorContextValue | null>(nul
 
 export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
   const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>("online");
   const [connectionNoticeVisible, setConnectionNoticeVisible] = useState(false);
   const [globalError, setGlobalError] = useState<PlatformErrorState | null>(null);
@@ -59,11 +60,6 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const hideConnectionNotice = useCallback(() => {
-    clearHideTimer();
-    setConnectionNoticeVisible(false);
-  }, [clearHideTimer]);
-
   const showConnectionNotice = useCallback(
     (durationMs: number) => {
       clearHideTimer();
@@ -76,8 +72,21 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     [clearHideTimer]
   );
 
+  if (connectionQuality === "online") {
+    if (connectionNoticeVisible) {
+      setConnectionNoticeVisible(false);
+    }
+    if (globalError?.category === "network") {
+      setGlobalError(null);
+    }
+  }
+
   useEffect(() => {
-    setMounted(true);
+    if (connectionQuality !== "online") return;
+    clearHideTimer();
+  }, [connectionQuality, clearHideTimer]);
+
+  useEffect(() => {
     return subscribeToConnectionQuality(setConnectionQuality);
   }, []);
 
@@ -92,14 +101,10 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
     previousQualityRef.current = connectionQuality;
 
     if (connectionQuality === "online") {
-      hideConnectionNotice();
-      setGlobalError((current) =>
-        current?.category === "network" ? null : current
-      );
       return;
     }
 
-    if (!mounted) {
+    if (!hydrated) {
       return;
     }
 
@@ -119,7 +124,7 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
       lastSlowToastAtRef.current = now;
       showConnectionNotice(POOR_CONNECTION_TOAST_MS);
     }
-  }, [connectionQuality, mounted, hideConnectionNotice, showConnectionNotice]);
+  }, [connectionQuality, hydrated, showConnectionNotice]);
 
   const isOnline = connectionQuality !== "offline";
 
@@ -186,7 +191,7 @@ export function PlatformErrorProvider({ children }: { children: ReactNode }) {
   );
 
   const showConnectionNoticeToast =
-    mounted && connectionQuality !== "online" && connectionNoticeVisible;
+    hydrated && connectionQuality !== "online" && connectionNoticeVisible;
 
   return (
     <PlatformErrorContext.Provider value={value}>

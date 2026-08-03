@@ -1,7 +1,8 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { cn } from "@/lib/utils";
 
 type PortalMobileMenuProps = {
@@ -20,11 +21,7 @@ export function PortalMobileMenu({
   ariaLabel,
   panelClassName,
 }: PortalMobileMenuProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   useEffect(() => {
     if (!open) return;

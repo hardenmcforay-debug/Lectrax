@@ -62,7 +62,7 @@ export function Logo({
         sizes={markClassName?.includes("h-10") ? "40px" : "36px"}
         // Bypass /_next/image so PWA + Supabase branding loads reliably after deploy.
         unoptimized
-        priority={isDefaultMark}
+        priority
       />
     </div>
   );

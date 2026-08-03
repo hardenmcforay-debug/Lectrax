@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const parsed = markReadSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid notification type" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid notification type" },
       { status: 400 }
     );
   }

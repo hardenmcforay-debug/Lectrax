@@ -4,6 +4,8 @@ import { LoginFailedBanner } from "@/components/auth/login-failed-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { AuthLaunchGate } from "@/components/pwa/auth-launch-gate";
 import { getAuthenticatedHomeRedirect } from "@/lib/auth/resolve-authenticated-home";
+import { getLandingHeroImageUrl } from "@/lib/landing/hero-image";
+import { getLandingFeatureCardImageUrls } from "@/lib/landing/site-branding";
 import "./landing.css";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +25,13 @@ export default async function HomePage({
   const params = await searchParams;
   const accountDeleted = readParam(params.accountDeleted) === "1";
 
+  // Start branding URL lookups in parallel with the auth redirect check so
+  // hero/feature images can enter HTML (and preload) as soon as guests render.
+  const brandingPromise = Promise.all([
+    getLandingHeroImageUrl().catch(() => null),
+    getLandingFeatureCardImageUrls().catch(() => ({})),
+  ]);
+
   // After account deletion the session is already cleared; skip auth home redirect
   // so the confirmation banner can show on the landing page.
   if (!accountDeleted) {
@@ -32,6 +41,8 @@ export default async function HomePage({
     }
   }
 
+  const [heroImageUrl, featureImages] = await brandingPromise;
+
   const showLoginFailed =
     readParam(params.login_failed) === "1" || readParam(params.error) === "auth";
 
@@ -39,7 +50,7 @@ export default async function HomePage({
     <AuthLaunchGate>
       <AccountDeletedBanner show={accountDeleted} />
       <LoginFailedBanner show={showLoginFailed && !accountDeleted} />
-      <LandingPage />
+      <LandingPage heroImageUrl={heroImageUrl} featureImages={featureImages} />
     </AuthLaunchGate>
   );
 }

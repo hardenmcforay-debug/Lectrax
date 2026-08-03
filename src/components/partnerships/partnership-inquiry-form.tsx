@@ -4,7 +4,8 @@ import { appFetch } from "@/lib/api/client-fetch";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zod-resolver";
+import { z } from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,11 @@ export function PartnershipInquiryForm({
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<PartnershipInquiryInput>({
+  } = useForm<
+    z.input<typeof partnershipInquirySchema>,
+    unknown,
+    PartnershipInquiryInput
+  >({
     resolver: zodResolver(partnershipInquirySchema),
     defaultValues: {
       selectedPackage,

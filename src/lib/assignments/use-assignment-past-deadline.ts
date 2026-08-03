@@ -52,7 +52,10 @@ export function useAssignmentPastDeadline(
   }
 ): boolean {
   const onDeadlinePassedRef = useRef(options?.onDeadlinePassed);
-  onDeadlinePassedRef.current = options?.onDeadlinePassed;
+
+  useEffect(() => {
+    onDeadlinePassedRef.current = options?.onDeadlinePassed;
+  });
 
   const serverOffsetRef = useRef(0);
 

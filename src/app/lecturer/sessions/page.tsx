@@ -5,7 +5,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/lucide-icons";
 import { SEMESTER_LABELS } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { cn } from "@/lib/utils";

@@ -4,8 +4,8 @@ import { appFetch } from "@/lib/api/client-fetch";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@/lib/zod-resolver";
 import { classSessionSchema, type ClassSessionInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<ClassSessionInput>({
     resolver: zodResolver(classSessionSchema),
@@ -45,7 +45,7 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
     },
   });
 
-  const semester = watch("semester");
+  const semester = useWatch({ control, name: "semester" });
 
   function onSubmit(data: ClassSessionInput) {
     setSubmitError(null);

@@ -139,7 +139,7 @@ export function AdminSiteLogoUpload({
 
       {updatedAt && (
         <p className="text-sm text-muted-foreground">
-          Last updated: {new Date(updatedAt).toLocaleString()}
+          Last updated: {new Date(updatedAt).toLocaleString("en-US", { timeZone: "UTC" })}
         </p>
       )}
 

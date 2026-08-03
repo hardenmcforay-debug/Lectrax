@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { logServerError } from "@/lib/errors/logger";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 const PARTNERSHIP_NOTIFICATION_TYPES = [
   "partnership_inquiry",
@@ -10,11 +11,11 @@ const PARTNERSHIP_NOTIFICATION_TYPES = [
 
 const markReadSchema = z
   .object({
-    ids: z.array(z.string().uuid()).max(200).optional(),
+    ids: z.array(uuidField()).max(200).optional(),
     types: z.array(z.enum(PARTNERSHIP_NOTIFICATION_TYPES)).max(10).optional(),
   })
   .refine((value) => Boolean(value.ids?.length || value.types?.length), {
-    message: "Provide ids or types",
+    error: "Provide ids or types",
   });
 
 export async function POST(request: Request) {

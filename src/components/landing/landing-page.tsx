@@ -1,53 +1,25 @@
-import { Suspense } from "react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingFeatures } from "@/components/landing/landing-features";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingDeferredSections } from "@/components/landing/landing-deferred-sections";
-import { getLandingHeroImageUrl } from "@/lib/landing/hero-image";
-import { getLandingFeatureCardImageUrls } from "@/lib/landing/site-branding";
+import type { FeatureCardId } from "@/lib/landing/feature-cards";
 
-/**
- * Streams the hero immediately (LCP heading), then loads remote image URLs
- * without blocking first paint.
- */
-async function LandingHeroWithImage() {
-  let heroImageUrl: string | null = null;
-  try {
-    heroImageUrl = await getLandingHeroImageUrl();
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[LandingHeroWithImage] Failed to load hero image:", error);
-    }
-  }
-  return <LandingHero heroImageUrl={heroImageUrl} />;
-}
+type LandingPageProps = {
+  heroImageUrl?: string | null;
+  featureImages?: Partial<Record<FeatureCardId, string>>;
+};
 
-async function LandingFeaturesWithImages() {
-  let featureImages: Record<string, string> = {};
-  try {
-    featureImages = await getLandingFeatureCardImageUrls();
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[LandingFeaturesWithImages] Failed to load feature images:", error);
-    }
-  }
-  return <LandingFeatures featureImages={featureImages} />;
-}
-
-export function LandingPage() {
+export function LandingPage({
+  heroImageUrl = null,
+  featureImages = {},
+}: LandingPageProps) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <LandingNav />
       <main>
-        <Suspense fallback={<LandingHero heroImageUrl={null} />}>
-          <LandingHeroWithImage />
-        </Suspense>
-
-        <Suspense fallback={<LandingFeatures featureImages={{}} />}>
-          <LandingFeaturesWithImages />
-        </Suspense>
-
+        <LandingHero heroImageUrl={heroImageUrl} />
+        <LandingFeatures featureImages={featureImages} />
         <LandingDeferredSections />
       </main>
       <LandingFooter />

@@ -90,7 +90,7 @@ export async function POST(
 
     return NextResponse.json(
 
-      { error: payload.error.errors[0]?.message ?? "Invalid export request." },
+      { error: payload.error.issues[0]?.message ?? "Invalid export request." },
 
       { status: 400 }
 

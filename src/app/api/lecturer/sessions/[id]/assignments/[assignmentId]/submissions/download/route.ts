@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,6 +9,7 @@ import { getClassAssignmentForLecturer } from "@/lib/lecturer/class-assignments"
 import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
 import { getSignedSubmissionUrl } from "@/lib/assignments/submissions";
 import { sanitizeFilename } from "@/lib/security/sanitize";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 
 
@@ -31,7 +31,7 @@ export async function GET(
     return NextResponse.json({ error: "enrollmentId is required." }, { status: 400 });
   }
 
-  const enrollmentIdParsed = z.string().uuid().safeParse(enrollmentIdParam);
+  const enrollmentIdParsed = uuidField().safeParse(enrollmentIdParam);
   if (!enrollmentIdParsed.success) {
     return NextResponse.json({ error: "Invalid enrollmentId." }, { status: 400 });
   }

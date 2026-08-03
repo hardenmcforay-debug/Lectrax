@@ -18,6 +18,20 @@ import {
   lecturerPortalCardClass,
 } from "@/components/lecturer/lecturer-dashboard-styles";
 import type { LecturerAttendanceChartPoint } from "@/lib/lecturer/analytics";
+import {
+  chartTickToNumber,
+  chartValueToNumber,
+  type ChartTooltipFormatter,
+} from "@/lib/charts/recharts-value";
+
+function formatRateTick(value: unknown): string {
+  return `${chartTickToNumber(value)}%`;
+}
+
+const formatRateTooltip: ChartTooltipFormatter = (value) => [
+  `${chartValueToNumber(value)}%`,
+  "Participation",
+];
 
 function LecturerAnalyticsClientComponent({
   attendanceData,
@@ -35,8 +49,8 @@ function LecturerAnalyticsClientComponent({
             <BarChart data={attendanceData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={formatRateTick} />
+              <Tooltip formatter={formatRateTooltip} />
               <Bar dataKey="rate" fill="#10B981" name="Participation %" />
             </BarChart>
           </ResponsiveContainer>
@@ -51,8 +65,8 @@ function LecturerAnalyticsClientComponent({
             <LineChart data={attendanceData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={formatRateTick} />
+              <Tooltip formatter={formatRateTooltip} />
               <Line type="monotone" dataKey="rate" stroke="#0B3D91" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>

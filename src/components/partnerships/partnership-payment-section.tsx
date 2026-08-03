@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Check, Loader2 } from "lucide-react";
+import { TriangleAlert, Check, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,18 +50,44 @@ function matchPackage(receipt?: PaymentReceipt | null): PartnershipPaymentPackag
   return matched ?? PARTNERSHIP_PAYMENT_PACKAGES[1] ?? PARTNERSHIP_PAYMENT_PACKAGES[0];
 }
 
+function readPaymentReturnQuery(): {
+  outcome: string | null;
+  paymentId: string | null;
+} {
+  if (typeof window === "undefined") {
+    return { outcome: null, paymentId: null };
+  }
+  const params = new URLSearchParams(window.location.search);
+  return {
+    outcome: params.get("payment"),
+    paymentId: params.get("ref"),
+  };
+}
+
 export function PartnershipPaymentSection({
   paymentMethodLogos,
 }: {
   paymentMethodLogos?: Record<PaymentMethodLogoId, string | null>;
 }) {
-  const [selectedPackage, setSelectedPackage] = useState<PartnershipPaymentPackage | null>(
-    null
+  const [paymentQuery] = useState(readPaymentReturnQuery);
+  const [selectedPackage, setSelectedPackage] = useState<PartnershipPaymentPackage | null>(() => {
+    if (paymentQuery.outcome === "cancelled" || paymentQuery.outcome === "failed") {
+      return matchPackage(null);
+    }
+    return null;
+  });
+  const [modalOpen, setModalOpen] = useState(
+    () => paymentQuery.outcome === "cancelled" || paymentQuery.outcome === "failed"
   );
-  const [modalOpen, setModalOpen] = useState(false);
-  const [initialView, setInitialView] = useState<ModalView>("checkout");
+  const [initialView, setInitialView] = useState<ModalView>(() => {
+    if (paymentQuery.outcome === "cancelled") return "cancelled";
+    if (paymentQuery.outcome === "failed") return "failed";
+    return "checkout";
+  });
   const [initialReceipt, setInitialReceipt] = useState<PaymentReceipt | null>(null);
-  const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [confirmingReturn, setConfirmingReturn] = useState(
+    () => paymentQuery.outcome === "success" && Boolean(paymentQuery.paymentId)
+  );
 
   const clearPaymentQuery = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -73,87 +99,67 @@ export function PartnershipPaymentSection({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const paymentOutcome = params.get("payment");
-    const paymentId = params.get("ref");
-
-    if (!paymentOutcome) return;
-
-    if (paymentOutcome === "cancelled") {
-      setSelectedPackage(matchPackage(null));
-      setInitialView("cancelled");
-      setModalOpen(true);
+    if (paymentQuery.outcome === "cancelled" || paymentQuery.outcome === "failed") {
       clearPaymentQuery();
       return;
     }
 
-    if (paymentOutcome === "failed") {
-      setSelectedPackage(matchPackage(null));
-      setInitialView("failed");
-      setModalOpen(true);
-      clearPaymentQuery();
-      return;
-    }
+    const paymentId = paymentQuery.paymentId;
+    if (paymentQuery.outcome !== "success" || !paymentId) return;
 
-    if (paymentOutcome === "success" && paymentId) {
-      let cancelled = false;
-      setConfirmingReturn(true);
+    let cancelled = false;
 
-      void (async () => {
-        try {
-          let attempts = 0;
-          let result = await fetchPaymentStatus(paymentId);
+    void (async () => {
+      try {
+        let attempts = 0;
+        let result = await fetchPaymentStatus(paymentId);
 
-          while (
-            !cancelled &&
-            attempts < 8 &&
-            result.status !== "completed" &&
-            result.status !== "failed"
-          ) {
-            await new Promise((resolve) => window.setTimeout(resolve, 2000));
-            if (cancelled) return;
-            result = await fetchPaymentStatus(paymentId);
-            attempts += 1;
-          }
-
+        while (
+          !cancelled &&
+          attempts < 8 &&
+          result.status !== "completed" &&
+          result.status !== "failed"
+        ) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
           if (cancelled) return;
-
-          if (result.status === "completed" && result.payment) {
-            setSelectedPackage(matchPackage(result.payment));
-            setInitialReceipt(result.payment);
-            setInitialView("success");
-            setModalOpen(true);
-          } else if (result.status === "failed") {
-            setSelectedPackage(matchPackage(null));
-            setInitialView("failed");
-            setModalOpen(true);
-          } else {
-            // User returned without completing payment confirmation
-            setSelectedPackage(matchPackage(null));
-            setInitialView("cancelled");
-            setModalOpen(true);
-          }
-        } catch {
-          if (!cancelled) {
-            setSelectedPackage(matchPackage(null));
-            setInitialView("cancelled");
-            setModalOpen(true);
-          }
-        } finally {
-          if (!cancelled) {
-            setConfirmingReturn(false);
-            clearPaymentQuery();
-          }
+          result = await fetchPaymentStatus(paymentId);
+          attempts += 1;
         }
-      })();
 
-      return () => {
-        cancelled = true;
-      };
-    }
-  }, [clearPaymentQuery]);
+        if (cancelled) return;
+
+        if (result.status === "completed" && result.payment) {
+          setSelectedPackage(matchPackage(result.payment));
+          setInitialReceipt(result.payment);
+          setInitialView("success");
+          setModalOpen(true);
+        } else if (result.status === "failed") {
+          setSelectedPackage(matchPackage(null));
+          setInitialView("failed");
+          setModalOpen(true);
+        } else {
+          setSelectedPackage(matchPackage(null));
+          setInitialView("cancelled");
+          setModalOpen(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setSelectedPackage(matchPackage(null));
+          setInitialView("cancelled");
+          setModalOpen(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setConfirmingReturn(false);
+          clearPaymentQuery();
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearPaymentQuery, paymentQuery]);
 
   function choosePackage(pkg: PartnershipPaymentPackage) {
     setSelectedPackage(pkg);
@@ -175,7 +181,7 @@ export function PartnershipPaymentSection({
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-sm">
-                <AlertTriangle className="h-6 w-6" aria-hidden />
+                <TriangleAlert className="h-6 w-6" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-base font-bold tracking-tight text-amber-950 sm:text-lg">

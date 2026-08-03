@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { normalizedRequiredPhoneField } from "@/lib/security/zod-helpers";
+import { normalizedRequiredPhoneField, uuidField } from "@/lib/security/zod-helpers";
 import { confirmPhoneOnlyAccount } from "@/lib/auth/phone-account";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
 
 const finalizePhoneSignupSchema = z.object({
-  userId: z.string().uuid("Invalid user ID"),
+  userId: uuidField("Invalid user ID"),
   phoneNumber: normalizedRequiredPhoneField,
 });
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const parsed = finalizePhoneSignupSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid request" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
         { status: 400 }
       );
     }

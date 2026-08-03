@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -12,6 +12,19 @@ import { cn } from "@/lib/utils";
 /** Stable IDs — avoid useId() hydration mismatches for aria-controls. */
 const PRODUCTS_MENU_ID = "landing-nav-products-menu";
 const COMPANY_MENU_ID = "landing-nav-company-menu";
+
+/** Switch to solid white after a small scroll. */
+const SCROLL_SOLID_OFFSET = 8;
+
+function readScrollY() {
+  if (typeof window === "undefined") return 0;
+  return Math.max(
+    window.scrollY || 0,
+    window.pageYOffset || 0,
+    document.documentElement.scrollTop || 0,
+    document.body.scrollTop || 0
+  );
+}
 
 type ProductLink = {
   label: string;
@@ -78,48 +91,88 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onOutside: ()
 
 export function LandingNav() {
   const pathname = usePathname();
+  const headerRef = useRef<HTMLElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
+  const scrolledRef = useRef(false);
 
   const [clickedScrollSection, setClickedScrollSection] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [productsOpen, setProductsOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [mobileCompanyOpen, setMobileCompanyOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  const isHome = pathname === "/";
-  const transparent = isHome && !scrolled;
-  const mobileMenuOnHero = transparent;
-
-  useClickOutside(productsRef, () => setProductsOpen(false), productsOpen);
-  useClickOutside(companyRef, () => setCompanyOpen(false), companyOpen);
-
-  useEffect(() => {
+  // Close menus / clear home scroll highlight when the route changes (Compiler-safe).
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileOpen(false);
     setProductsOpen(false);
     setCompanyOpen(false);
     setMobileProductsOpen(false);
     setMobileCompanyOpen(false);
-  }, [pathname]);
+    setClickedScrollSection(null);
+    setScrolledPastHero(false);
+    scrolledRef.current = false;
+  }
 
-  useEffect(() => {
-    if (!isHome) return;
+  const isHome = pathname === "/";
+  /** Solid white nav: always on inner pages; on home once the user scrolls. */
+  const solid = !isHome || scrolledPastHero;
+  const transparent = !solid;
+  const mobileMenuOnHero = transparent;
 
-    function onScroll() {
-      setScrolled(window.scrollY > 48);
-    }
+  useClickOutside(productsRef, () => setProductsOpen(false), productsOpen);
+  useClickOutside(companyRef, () => setCompanyOpen(false), companyOpen);
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isHome]);
+  useLayoutEffect(() => {
+    const header = headerRef.current;
 
-  useEffect(() => {
+    const paint = (mode: "solid" | "hero") => {
+      document.documentElement.dataset.landingNav = mode;
+      if (!header) return;
+      header.dataset.navMode = mode;
+      if (mode === "solid") {
+        header.style.backgroundColor = "#ffffff";
+      } else {
+        header.style.removeProperty("background-color");
+      }
+      header.classList.toggle("landing-nav--solid", mode === "solid");
+      header.classList.toggle("landing-nav--hero", mode === "hero");
+    };
+
     if (!isHome) {
-      setClickedScrollSection(null);
+      paint("solid");
+      scrolledRef.current = true;
+      setScrolledPastHero(true);
+      return () => {
+        delete document.documentElement.dataset.landingNav;
+      };
     }
+
+    const updateScrolled = () => {
+      const next = readScrollY() > SCROLL_SOLID_OFFSET;
+      paint(next ? "solid" : "hero");
+      if (scrolledRef.current === next) return;
+      scrolledRef.current = next;
+      setScrolledPastHero(next);
+    };
+
+    updateScrolled();
+    window.addEventListener("scroll", updateScrolled, { passive: true });
+    document.addEventListener("scroll", updateScrolled, { passive: true, capture: true });
+    window.addEventListener("touchmove", updateScrolled, { passive: true });
+    window.addEventListener("resize", updateScrolled, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", updateScrolled);
+      document.removeEventListener("scroll", updateScrolled, true);
+      window.removeEventListener("touchmove", updateScrolled);
+      window.removeEventListener("resize", updateScrolled);
+      delete document.documentElement.dataset.landingNav;
+    };
   }, [isHome]);
 
   function isLinkActive(link: NavLink) {
@@ -172,14 +225,14 @@ export function LandingNav() {
           ? "text-emerald-300"
           : mobile
             ? "text-white/85 hover:bg-white/10"
-            : "text-white/80 hover:text-white"
+            : "text-white/90 hover:text-white"
         : active
           ? mobile
             ? "bg-primary/5 text-primary"
             : "text-primary"
           : mobile
-            ? "text-slate-600 hover:bg-slate-50"
-            : "text-slate-600 hover:text-primary"
+            ? "text-slate-800 hover:bg-slate-50"
+            : "text-slate-800 hover:text-primary"
     );
   }
 
@@ -199,7 +252,7 @@ export function LandingNav() {
       "absolute left-1/2 top-full z-50 mt-3 w-64 -translate-x-1/2 overflow-hidden rounded-xl border py-2 shadow-lg",
       transparent
         ? "border-white/15 bg-[#0B3D91]/95 text-white backdrop-blur-md"
-        : "border-slate-200 bg-white text-slate-700"
+        : "border-slate-200 bg-white text-slate-800"
     );
   }
 
@@ -215,14 +268,12 @@ export function LandingNav() {
           ? "bg-white/10 text-emerald-300"
           : mobile
             ? "text-white/80 hover:bg-white/10"
-            : "text-white/85 hover:bg-white/10 hover:text-white"
+            : "text-white/90 hover:bg-white/10 hover:text-white"
         : active
-          ? mobile
-            ? "bg-primary/5 text-primary"
-            : "bg-primary/5 text-primary"
+          ? "bg-primary/5 text-primary"
           : mobile
-            ? "text-slate-600 hover:bg-white"
-            : "text-slate-600 hover:bg-slate-50 hover:text-primary"
+            ? "text-slate-800 hover:bg-white"
+            : "text-slate-800 hover:bg-slate-50 hover:text-primary"
     );
   }
 
@@ -298,14 +349,20 @@ export function LandingNav() {
 
   return (
     <header
+      ref={headerRef}
       className={cn(
-        "landing-nav-safe top-0 left-0 right-0 z-50 transition-all duration-300",
-        isHome ? "fixed" : "sticky",
-        transparent ? "bg-transparent" : "landing-nav-glass bg-white"
+        "landing-nav-safe top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300",
+        isHome ? "fixed landing-nav-home" : "sticky",
+        transparent ? "landing-nav--hero" : "landing-nav--solid"
       )}
+      data-nav-mode={transparent ? "hero" : "solid"}
+      aria-label="Site"
     >
       <div className="landing-nav-inner mx-auto flex h-16 max-w-7xl items-center justify-between">
-        <Logo iconWithBackground variant={transparent ? "light" : "default"} />
+        <Logo
+          iconWithBackground
+          variant={transparent ? "light" : "default"}
+        />
 
         <nav
           className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex"
@@ -364,7 +421,11 @@ export function LandingNav() {
           <Button
             variant="ghost"
             asChild
-            className={cn(transparent && "text-white hover:bg-white/10 hover:text-white")}
+            className={cn(
+              transparent
+                ? "text-white hover:bg-white/10 hover:text-white"
+                : "text-slate-700 hover:bg-slate-100 hover:text-primary"
+            )}
           >
             <Link href="/login">Sign in</Link>
           </Button>
@@ -376,8 +437,10 @@ export function LandingNav() {
         <button
           type="button"
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-lg md:hidden",
-            transparent ? "bg-white/10 text-white" : "landing-icon-bg"
+            "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:hidden",
+            transparent
+              ? "bg-white/10 text-white hover:bg-white/15"
+              : "landing-icon-bg text-slate-700 hover:bg-slate-100"
           )}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}

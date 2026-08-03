@@ -57,7 +57,7 @@ export async function PATCH(
   const parsed = updateManualStudentCollegeIdSchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid college ID" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid college ID" },
       { status: 400 }
     );
   }

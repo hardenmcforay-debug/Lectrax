@@ -9,9 +9,10 @@ import {
   getAttendanceSessionForLecturer,
 } from "@/lib/attendance/sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { uuidField } from "@/lib/security/zod-helpers";
 
 const refreshSchema = z.object({
-  attendanceSessionId: z.string().uuid(),
+  attendanceSessionId: uuidField(),
 });
 
 function resolveAppUrl(request: Request): string {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { TriangleAlert, Trash2 } from "lucide-react";
 import { appFetch } from "@/lib/api/client-fetch";
 import { ACCOUNT_DELETE_CONFIRMATION_PHRASE } from "@/lib/account/delete-account-constants";
 import { signOutAndClearClientStorage } from "@/lib/auth/client-sign-out";
@@ -138,7 +138,7 @@ export function DeleteAccountSection({
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
+              <TriangleAlert className="h-5 w-5" />
               Delete your account?
             </DialogTitle>
             <DialogDescription asChild>

@@ -94,7 +94,7 @@ export async function PATCH(request: Request) {
   const parsed = profileUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Invalid profile data" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid profile data" },
       { status: 400 }
     );
   }

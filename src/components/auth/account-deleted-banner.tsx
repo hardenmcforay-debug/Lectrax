@@ -7,14 +7,16 @@ const AUTO_DISMISS_MS = 5000;
 
 export function AccountDeletedBanner({ show }: { show: boolean }) {
   const [visible, setVisible] = useState(show);
+  const [prevShow, setPrevShow] = useState(show);
+
+  if (show !== prevShow) {
+    setPrevShow(show);
+    setVisible(show);
+  }
 
   useEffect(() => {
-    if (!show) {
-      setVisible(false);
-      return;
-    }
+    if (!show) return;
 
-    setVisible(true);
     const timer = window.setTimeout(() => {
       setVisible(false);
       stripSensitiveUrlParams(["accountDeleted"]);

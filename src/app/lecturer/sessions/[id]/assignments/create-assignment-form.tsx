@@ -40,7 +40,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.errors[0]?.message ?? "Invalid assignment details.");
+      setError(parsed.error.issues[0]?.message ?? "Invalid assignment details.");
       return;
     }
 

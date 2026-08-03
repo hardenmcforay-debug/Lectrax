@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardList, Plus, RotateCcw, Trash2 } from "lucide-react";
@@ -57,10 +57,12 @@ export function CaStructurePanel({
   const [caWeights, setCaWeights] = useState<CAWeights>(() => ({
     ...(initialWeights ?? EMPTY_CA_WEIGHTS),
   }));
+  const [prevInitialWeights, setPrevInitialWeights] = useState(initialWeights);
 
-  useEffect(() => {
+  if (initialWeights !== prevInitialWeights) {
+    setPrevInitialWeights(initialWeights);
     setCaWeights({ ...(initialWeights ?? EMPTY_CA_WEIGHTS) });
-  }, [initialWeights]);
+  }
 
   function handleWeightFieldChange(field: keyof CAWeights, value: number) {
     const next = { ...caWeights, [field]: value };
@@ -82,14 +84,16 @@ export function CaStructurePanel({
   const [testTitle, setTestTitle] = useState("Test");
   const [maxScore, setMaxScore] = useState(100);
   const [classTests, setClassTests] = useState(initialClassTests);
+  const [prevInitialClassTests, setPrevInitialClassTests] = useState(initialClassTests);
   const [deleteTarget, setDeleteTarget] = useState<ClassTestSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [testActionMessage, setTestActionMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (initialClassTests !== prevInitialClassTests) {
+    setPrevInitialClassTests(initialClassTests);
     setClassTests(initialClassTests);
-  }, [initialClassTests]);
+  }
 
   const activeTestCount = classTests.length;
   const nextTestNumber = useMemo(() => getNextTestNumber(activeTestCount), [activeTestCount]);
@@ -186,7 +190,7 @@ export function CaStructurePanel({
     });
 
     if (!parsed.success) {
-      setCreateError(parsed.error.errors[0]?.message ?? "Invalid test details.");
+      setCreateError(parsed.error.issues[0]?.message ?? "Invalid test details.");
       return;
     }
 

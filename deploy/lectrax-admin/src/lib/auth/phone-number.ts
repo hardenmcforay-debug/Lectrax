@@ -14,7 +14,7 @@ const DIGITS_ONLY_PATTERN = /^\d{8,15}$/;
 
 export function isEmailIdentifier(value: string): boolean {
   const trimmed = value.trim().toLowerCase();
-  return z.string().email().safeParse(trimmed).success;
+  return z.email().safeParse(trimmed).success;
 }
 
 export function isValidPhoneInput(value: string): boolean {

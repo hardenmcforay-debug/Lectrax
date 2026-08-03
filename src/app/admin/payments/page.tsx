@@ -16,7 +16,7 @@ import {
 } from "@/lib/subscription/payment-method-logo-ids";
 import { getPaymentMethodLogosSetting } from "@/lib/subscription/payment-method-logos";
 import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
-import { DollarSign, Clock, CheckCircle2 } from "lucide-react";
+import { DollarSign, Clock, CircleCheckBig } from "@/components/lucide-icons";
 
 export default async function AdminPaymentsPage({
   searchParams,
@@ -81,7 +81,7 @@ export default async function AdminPaymentsPage({
     >
       <div className="mb-6 admin-stat-grid admin-stat-grid--cols-3">
         <StatCard title="Total revenue" value={formatChargeAmount(revenue, "SLE")} icon={DollarSign} />
-        <StatCard title="Completed" value={completedCount} icon={CheckCircle2} />
+        <StatCard title="Completed" value={completedCount} icon={CircleCheckBig} />
         <StatCard title="Pending" value={pendingCount ?? 0} icon={Clock} />
       </div>
 

@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Copy, Loader2, Smartphone } from "lucide-react";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -147,16 +147,20 @@ export function PaymentCheckoutFlow({
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
-      setStep("method");
-      setSelectedMethod(null);
-      setError(null);
-      setUssdDetails(null);
-      setCopied(false);
-      setPolling(false);
-    }
-  }, [open]);
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setStep("method");
+        setSelectedMethod(null);
+        setError(null);
+        setUssdDetails(null);
+        setCopied(false);
+        setPolling(false);
+      }
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange]
+  );
 
   useEffect(() => {
     preloadPaymentMethodLogos(paymentMethodLogos);
@@ -173,14 +177,14 @@ export function PaymentCheckoutFlow({
         if (data.status === "completed") {
           setPolling(false);
           onPaymentComplete?.();
-          onOpenChange(false);
+          handleOpenChange(false);
           window.location.href = `/lecturer/subscription?success=1`;
         }
       })();
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [ussdDetails, polling, onOpenChange, onPaymentComplete]);
+  }, [ussdDetails, polling, handleOpenChange, onPaymentComplete]);
 
   function startCheckout() {
     if (!plan || !selectedMethod) return;
@@ -239,7 +243,7 @@ export function PaymentCheckoutFlow({
   const checkoutSummary = plan ? formatCheckoutChargeSummary(plan) : "";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="gap-0 overflow-hidden p-0 md:max-w-[600px]"
         onPointerDownOutside={(event) => event.preventDefault()}
@@ -286,7 +290,7 @@ export function PaymentCheckoutFlow({
 
             <div className="shrink-0 border-t bg-background px-6 py-4">
               <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
                   Cancel
                 </Button>
                 <Button
@@ -369,7 +373,7 @@ export function PaymentCheckoutFlow({
 
             <div className="shrink-0 border-t bg-background px-6 py-4">
               <DialogFooter>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
                   Close
                 </Button>
               </DialogFooter>

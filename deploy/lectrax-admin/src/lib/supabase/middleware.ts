@@ -32,6 +32,18 @@ function withSessionCookies(
   source: NextResponse,
   target: NextResponse
 ): NextResponse {
+  const setCookies =
+    typeof source.headers.getSetCookie === "function"
+      ? source.headers.getSetCookie()
+      : [];
+
+  if (setCookies.length > 0) {
+    for (const cookie of setCookies) {
+      target.headers.append("Set-Cookie", cookie);
+    }
+    return target;
+  }
+
   source.cookies.getAll().forEach((cookie) => {
     target.cookies.set(cookie.name, cookie.value);
   });
@@ -152,9 +164,12 @@ export async function updateSession(request: NextRequest) {
     // Keep the user on the page (or return 503 for APIs) so they can retry.
     if (!isPublic) {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "Service temporarily unavailable. Please try again." },
-          { status: 503 },
+        return withSessionCookies(
+          supabaseResponse,
+          NextResponse.json(
+            { error: "Service temporarily unavailable. Please try again." },
+            { status: 503 },
+          )
         );
       }
 
@@ -203,9 +218,12 @@ export async function updateSession(request: NextRequest) {
 
     if (!role && roleServiceUnavailable) {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "Service temporarily unavailable. Please try again." },
-          { status: 503 },
+        return withSessionCookies(
+          supabaseResponse,
+          NextResponse.json(
+            { error: "Service temporarily unavailable. Please try again." },
+            { status: 503 },
+          )
         );
       }
 
@@ -259,7 +277,10 @@ export async function updateSession(request: NextRequest) {
 
     const requiredApiRole = getRequiredApiRole(pathname);
     if (requiredApiRole && role !== requiredApiRole) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return withSessionCookies(
+        supabaseResponse,
+        NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      );
     }
 
     const requiredPortalRole = getRequiredPortalRole(pathname);
