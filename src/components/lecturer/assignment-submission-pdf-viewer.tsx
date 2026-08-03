@@ -60,22 +60,31 @@ export type AssignmentSubmissionViewerData = {
   studentId?: string | null;
 };
 
-const MIN_SCALE = 0.5;
+const MIN_SCALE = 0.25;
 const MAX_SCALE = 2.5;
 const SCALE_STEP = 0.25;
-/** Desktop / large screens */
-const DEFAULT_SCALE = 1.75;
-/** Small screens (phones): open at 100% so the page fits the viewport */
-const DEFAULT_SCALE_SMALL = 1;
-const SMALL_SCREEN_MAX_WIDTH = 767;
+/** Large desktop fallback before the document/container can be measured */
+const DEFAULT_SCALE_DESKTOP = 1.5;
+/** Phones / tablets / iPads: prefer fit-to-width once measured */
+const FIT_WIDTH_MAX_WIDTH = 1180;
+const VIEWER_PAGE_GUTTER_PX = 16;
 const MAX_RENDER_DPR = 2;
 const LAZY_PAGE_ROOT_MARGIN = "320px 0px";
 
-function getDefaultPdfScale(): number {
-  if (typeof window === "undefined") return DEFAULT_SCALE;
-  return window.matchMedia(`(max-width: ${SMALL_SCREEN_MAX_WIDTH}px)`).matches
-    ? DEFAULT_SCALE_SMALL
-    : DEFAULT_SCALE;
+function prefersFitWidthScale(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(`(max-width: ${FIT_WIDTH_MAX_WIDTH}px)`).matches;
+}
+
+function getFallbackPdfScale(): number {
+  return prefersFitWidthScale() ? 0.75 : DEFAULT_SCALE_DESKTOP;
+}
+
+function computeFitWidthScale(pageWidthAtScale1: number, containerWidth: number): number {
+  if (pageWidthAtScale1 <= 0 || containerWidth <= 0) return getFallbackPdfScale();
+  const available = Math.max(120, containerWidth - VIEWER_PAGE_GUTTER_PX);
+  const fit = available / pageWidthAtScale1;
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number(fit.toFixed(3))));
 }
 
 function formatSubmittedAt(value: string | null): string {
@@ -141,7 +150,7 @@ function PdfPageCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className="mx-auto block max-w-full rounded-sm bg-white shadow-sm"
+      className="mx-auto block h-auto max-w-full rounded-sm bg-white shadow-sm"
       aria-label={`Page ${pageNumber}`}
     />
   );
@@ -189,13 +198,13 @@ function LazyPdfPage({
   return (
     <div
       ref={containerRef}
-      className="flex min-h-[420px] w-full justify-center"
+      className="flex w-full min-h-[min(70vw,420px)] justify-center sm:min-h-[420px]"
     >
       {shouldRender ? (
         <PdfPageCanvas pdf={pdf} pageNumber={pageNumber} scale={scale} />
       ) : (
         <div
-          className="mx-auto w-full max-w-3xl animate-pulse rounded-sm bg-white/90 shadow-sm"
+          className="mx-auto aspect-[8.5/11] w-full max-w-full animate-pulse rounded-sm bg-white/90 shadow-sm"
           aria-hidden
         />
       )}
@@ -219,12 +228,14 @@ export function AssignmentSubmissionPdfViewer({
   const hydrated = useHydrated();
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const userZoomedRef = useRef(false);
+  const pageWidthRef = useRef<number | null>(null);
 
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pdfSourceUrl, setPdfSourceUrl] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(getDefaultPdfScale);
+  const [scale, setScale] = useState(getFallbackPdfScale);
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -234,10 +245,12 @@ export function AssignmentSubmissionPdfViewer({
 
   if (activeViewUrl !== prevActiveViewUrl) {
     setPrevActiveViewUrl(activeViewUrl);
+    userZoomedRef.current = false;
+    pageWidthRef.current = null;
     if (activeViewUrl === null) {
       setPageCount(0);
       setCurrentPage(1);
-      setScale(getDefaultPdfScale());
+      setScale(getFallbackPdfScale());
       setLoading(false);
       setLoadProgress(null);
       setLoadError(false);
@@ -249,9 +262,32 @@ export function AssignmentSubmissionPdfViewer({
         });
       }
     } else {
-      setScale(getDefaultPdfScale());
+      setScale(getFallbackPdfScale());
     }
   }
+
+  const applyFitWidthScale = useCallback(async (doc: PDFDocumentProxy) => {
+    const root = scrollRef.current;
+    if (!root) return;
+
+    let pageWidth = pageWidthRef.current;
+    if (pageWidth === null) {
+      try {
+        const page = await doc.getPage(1);
+        pageWidth = page.getViewport({ scale: 1 }).width;
+        pageWidthRef.current = pageWidth;
+      } catch {
+        return;
+      }
+    }
+
+    const fitScale = computeFitWidthScale(pageWidth, root.clientWidth);
+    // Phones/tablets/iPads: always fit width. Large desktops: fit only when needed.
+    const nextScale = prefersFitWidthScale()
+      ? fitScale
+      : Math.min(DEFAULT_SCALE_DESKTOP, fitScale);
+    setScale((prev) => (Math.abs(prev - nextScale) < 0.01 ? prev : nextScale));
+  }, []);
 
   const loadDocument = useCallback(async (fetchUrl: string) => {
     setLoading(true);
@@ -357,6 +393,31 @@ export function AssignmentSubmissionPdfViewer({
   }, [activeViewUrl, loadDocument]);
 
   useEffect(() => {
+    if (!open || !pdfDoc || loading || loadError) return;
+    if (userZoomedRef.current) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      void applyFitWidthScale(pdfDoc);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, pdfDoc, loading, loadError, applyFitWidthScale]);
+
+  useEffect(() => {
+    if (!open || !pdfDoc || loading || loadError) return;
+
+    const root = scrollRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      if (userZoomedRef.current) return;
+      void applyFitWidthScale(pdfDoc);
+    });
+
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [open, pdfDoc, loading, loadError, applyFitWidthScale]);
+
+  useEffect(() => {
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
@@ -435,12 +496,20 @@ export function AssignmentSubmissionPdfViewer({
   }, [currentPage, pageCount, scrollToPage]);
 
   const zoomIn = useCallback(() => {
+    userZoomedRef.current = true;
     setScale((prev) => Math.min(MAX_SCALE, Number((prev + SCALE_STEP).toFixed(2))));
   }, []);
 
   const zoomOut = useCallback(() => {
+    userZoomedRef.current = true;
     setScale((prev) => Math.max(MIN_SCALE, Number((prev - SCALE_STEP).toFixed(2))));
   }, []);
+
+  const fitToWidth = useCallback(() => {
+    if (!pdfDoc) return;
+    userZoomedRef.current = false;
+    void applyFitWidthScale(pdfDoc);
+  }, [pdfDoc, applyFitWidthScale]);
 
   const handleDownload = useCallback(async () => {
     if (!data) return;
@@ -511,33 +580,33 @@ export function AssignmentSubmissionPdfViewer({
           />
 
           <motion.div
-            className="relative z-[201] flex h-[100dvh] w-full max-w-[1400px] flex-col overflow-hidden border border-border/60 bg-background shadow-2xl md:h-[calc(100dvh-2rem)] md:rounded-xl"
+            className="relative z-[201] flex h-[100dvh] w-full max-w-[1400px] flex-col overflow-hidden border border-border/60 bg-background shadow-2xl max-md:pb-[env(safe-area-inset-bottom)] max-md:pt-[env(safe-area-inset-top)] md:h-[calc(100dvh-2rem)] md:rounded-xl"
             initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
             <header className="sticky top-0 z-10 shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-              <div className="flex items-start justify-between gap-3 px-4 py-2 md:px-6 md:py-3">
-                <div className="min-w-0 space-y-1 pr-2">
-                  <p id={titleId} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-start justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 md:px-6 md:py-3">
+                <div className="min-w-0 flex-1 space-y-1 pr-1">
+                  <p id={titleId} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">
                     {headerTitle}
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-5 md:gap-8">
                     {showStudentInfo ? (
-                      <div className="space-y-0.5 text-sm">
-                        <p>
+                      <div className="space-y-0.5 text-xs sm:text-sm">
+                        <p className="truncate">
                           <span className="font-medium text-foreground">Student Name:</span>{" "}
                           <span className="text-muted-foreground">{data.studentName}</span>
                         </p>
-                        <p>
+                        <p className="truncate">
                           <span className="font-medium text-foreground">Student ID:</span>{" "}
                           <span className="text-muted-foreground">{studentIdLabel}</span>
                         </p>
                       </div>
                     ) : null}
-                    <div className="space-y-0.5 text-sm">
-                      <p>
+                    <div className="space-y-0.5 text-xs sm:text-sm">
+                      <p className="line-clamp-2 break-words">
                         <span className="font-medium text-foreground">Assignment:</span>{" "}
                         <span className="text-muted-foreground">{data.assignmentTitle}</span>
                       </p>
@@ -599,26 +668,33 @@ export function AssignmentSubmissionPdfViewer({
                   </div>
                 </div>
 
-                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={onClose}>
-                    <X className="mr-1.5 h-4 w-4" />
-                    Close
+                <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 sm:h-9 sm:px-3"
+                    onClick={onClose}
+                  >
+                    <X className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Close</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-8 px-2 sm:h-9 sm:px-3"
                     onClick={() => handleDownload()}
                     disabled={!pdfDoc || loading || loadError}
                   >
-                    <Download className="mr-1.5 h-4 w-4" />
-                    Download
+                    <Download className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Download</span>
                   </Button>
                 </div>
               </div>
 
               {!loading && !loadError && pdfDoc && pageCount > 0 ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2 md:px-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2 sm:px-4 md:px-6">
                   <div className="flex items-center gap-1">
                     <Button
                       type="button"
@@ -631,7 +707,7 @@ export function AssignmentSubmissionPdfViewer({
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="min-w-[88px] text-center text-xs text-muted-foreground">
+                    <span className="min-w-[72px] text-center text-[11px] text-muted-foreground sm:min-w-[88px] sm:text-xs">
                       Page {currentPage} of {pageCount}
                     </span>
                     <Button
@@ -659,9 +735,15 @@ export function AssignmentSubmissionPdfViewer({
                     >
                       <ZoomOut className="h-4 w-4" />
                     </Button>
-                    <span className="min-w-[52px] text-center text-xs text-muted-foreground">
+                    <button
+                      type="button"
+                      className="min-w-[48px] rounded-md px-1 py-1 text-center text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:min-w-[52px] sm:text-xs"
+                      onClick={fitToWidth}
+                      aria-label="Fit PDF to screen width"
+                      title="Fit to width"
+                    >
                       {Math.round(scale * 100)}%
-                    </span>
+                    </button>
                     <Button
                       type="button"
                       variant="outline"
@@ -681,8 +763,8 @@ export function AssignmentSubmissionPdfViewer({
             <div
               ref={scrollRef}
               className={cn(
-                "min-h-0 flex-1 overflow-y-auto bg-muted/30",
-                loading || loadError ? "flex items-center justify-center" : "p-3 md:p-6",
+                "min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain bg-muted/30 [-webkit-overflow-scrolling:touch]",
+                loading || loadError ? "flex items-center justify-center" : "p-2 sm:p-3 md:p-6",
               )}
             >
               {loading ? (
@@ -729,13 +811,14 @@ export function AssignmentSubmissionPdfViewer({
               ) : null}
 
               {!loading && !loadError && pdfDoc && pageCount > 0 ? (
-                <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 md:gap-6">
+                <div className="mx-auto flex w-full max-w-full flex-col gap-3 sm:gap-4 md:max-w-5xl md:gap-6">
                   {Array.from({ length: pageCount }, (_, index) => {
                     const pageNumber = index + 1;
                     return (
                       <div
                         key={`${data.enrollmentId}-page-${pageNumber}`}
                         data-page={pageNumber}
+                        className="w-full max-w-full"
                         ref={(node) => {
                           if (node) pageRefs.current.set(pageNumber, node);
                           else pageRefs.current.delete(pageNumber);
