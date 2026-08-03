@@ -51,6 +51,7 @@ import {
 import type { ClassSession, StudentTableRow } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { QR_SIZE } from "@/lib/low-data/constants";
+import { cn } from "@/lib/utils";
 
 export type ActiveAttendanceSession = {
   id: string;
@@ -724,8 +725,18 @@ export function AttendanceSessionPanel({
     : `${session.course_code} — ${session.title}`;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card className={lecturerPortalCardClass}>
+    <div
+      className={cn(
+        "grid gap-6",
+        activeSession && "lg:grid-cols-2 lg:items-start",
+      )}
+    >
+      <Card
+        className={cn(
+          lecturerPortalCardClass,
+          activeSession && "lg:sticky lg:top-4 lg:self-start",
+        )}
+      >
         <CardHeader>
           <CardTitle>
             {activeSession ? "Active Attendance Session" : "Generate QR Code"}
@@ -834,12 +845,17 @@ export function AttendanceSessionPanel({
       </Card>
 
       {activeSession && (
-        <Card className={lecturerPortalCardClass}>
-          <CardHeader>
+        <Card
+          className={cn(
+            lecturerPortalCardClass,
+            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden",
+          )}
+        >
+          <CardHeader className="shrink-0">
             <CardTitle>Manual Attendance</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-96 space-y-3 overflow-y-auto">
-            <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm">
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-6 pt-0">
+            <div className="shrink-0 rounded-md border bg-slate-50 px-3 py-2 text-sm">
               <p>
                 <span className="font-medium text-green-700">Present:</span> {presentCount}
               </p>
@@ -851,55 +867,62 @@ export function AttendanceSessionPanel({
                 <span className="font-medium">Total Students:</span> {totalStudents}
               </p>
             </div>
-            {notice && <p className="text-sm text-amber-700">{notice}</p>}
-            {rows.map((student) => {
-              const markMethod = presentRecords.get(student.enrollmentId);
-              const isMarked = markMethod !== undefined;
-              const isQr = markMethod !== undefined && isQrLockedAttendance(markMethod);
-              const studentLabel = formatStudentNameWithId(student.name, student.collegeId);
+            {notice ? (
+              <p className="shrink-0 text-sm text-amber-700">{notice}</p>
+            ) : null}
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
+              {rows.map((student) => {
+                const markMethod = presentRecords.get(student.enrollmentId);
+                const isMarked = markMethod !== undefined;
+                const isQr = markMethod !== undefined && isQrLockedAttendance(markMethod);
+                const studentLabel = formatStudentNameWithId(student.name, student.collegeId);
 
-              return (
-                <div key={student.enrollmentId} className="flex items-center justify-between gap-3">
-                  <span className="text-sm">{studentLabel}</span>
-                  {isMarked ? (
-                    isQr ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="cursor-default bg-blue-600 text-white hover:bg-blue-600"
-                        onClick={() =>
-                          handlePresentControlClick(student.enrollmentId, studentLabel)
-                        }
-                      >
-                        <Check className="mr-1 h-3.5 w-3.5" />
-                        QR Verified
-                      </Button>
+                return (
+                  <div
+                    key={student.enrollmentId}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="text-sm">{studentLabel}</span>
+                    {isMarked ? (
+                      isQr ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="cursor-default bg-blue-600 text-white hover:bg-blue-600"
+                          onClick={() =>
+                            handlePresentControlClick(student.enrollmentId, studentLabel)
+                          }
+                        >
+                          <Check className="mr-1 h-3.5 w-3.5" />
+                          QR Verified
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-green-600 text-white hover:bg-green-700"
+                          onClick={() =>
+                            handlePresentControlClick(student.enrollmentId, studentLabel)
+                          }
+                        >
+                          <Check className="mr-1 h-3.5 w-3.5" />
+                          Present
+                        </Button>
+                      )
                     ) : (
                       <Button
                         type="button"
                         size="sm"
-                        className="bg-green-600 text-white hover:bg-green-700"
-                        onClick={() =>
-                          handlePresentControlClick(student.enrollmentId, studentLabel)
-                        }
+                        variant="outline"
+                        onClick={() => void markManual(student.enrollmentId)}
                       >
-                        <Check className="mr-1 h-3.5 w-3.5" />
-                        Present
+                        Mark Present
                       </Button>
-                    )
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void markManual(student.enrollmentId)}
-                    >
-                      Mark Present
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
