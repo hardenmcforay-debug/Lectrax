@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   const parsed = markReadSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid notification type" },
+      { error: userFacingZodMessage(parsed.error, "Invalid notification type") },
       { status: 400 }
     );
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { profileUpdateSchema } from "@/lib/validations";
@@ -94,7 +95,7 @@ export async function PATCH(request: Request) {
   const parsed = profileUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid profile data" },
+      { error: userFacingZodMessage(parsed.error, "Invalid profile data") },
       { status: 400 }
     );
   }

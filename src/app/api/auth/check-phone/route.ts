@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { normalizedRequiredPhoneField } from "@/lib/security/zod-helpers";
+import { normalizedRequiredPhoneField, userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { profileExistsForPhone } from "@/lib/auth/resolve-login-identifier";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const parsed = checkPhoneSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid phone number" },
+        { error: userFacingZodMessage(parsed.error, "Invalid phone number") },
         { status: 400 }
       );
     }

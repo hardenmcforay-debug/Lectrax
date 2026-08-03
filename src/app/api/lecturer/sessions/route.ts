@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { classSessionSchema } from "@/lib/validations";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   const parsed = classSessionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid session data" },
+      { error: userFacingZodMessage(parsed.error, "Invalid session data") },
       { status: 400 }
     );
   }

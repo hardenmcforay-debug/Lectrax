@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import {
   ACCOUNT_DELETE_CONFIRMATION_PHRASE,
   deleteUserAccount,
@@ -36,7 +37,7 @@ export async function DELETE(request: Request) {
   const parsed = deleteAccountBodySchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+      { error: userFacingZodMessage(parsed.error, "Invalid request") },
       { status: 400 }
     );
   }

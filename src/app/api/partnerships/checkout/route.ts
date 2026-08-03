@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { partnershipCheckoutSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isServiceRoleConfigured, getAppUrl } from "@/lib/env";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   const parsed = partnershipCheckoutSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid checkout request" },
+      { error: userFacingZodMessage(parsed.error, "Invalid checkout request") },
       { status: 400 }
     );
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 
 
@@ -90,7 +91,7 @@ export async function POST(
 
     return NextResponse.json(
 
-      { error: payload.error.issues[0]?.message ?? "Invalid export request." },
+      { error: userFacingZodMessage(payload.error, "Invalid export request.") },
 
       { status: 400 }
 

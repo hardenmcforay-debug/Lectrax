@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassTestForLecturer } from "@/lib/lecturer/class-tests";
@@ -50,7 +51,7 @@ export async function PUT(
   const parsed = testScoresBulkSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid scores" },
+      { error: userFacingZodMessage(parsed.error, "Invalid scores") },
       { status: 400 }
     );
   }

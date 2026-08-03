@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { contactInquirySchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logServerError } from "@/lib/errors/logger";
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   const parsed = contactInquirySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+      { error: userFacingZodMessage(parsed.error, "Invalid request") },
       { status: 400 }
     );
   }

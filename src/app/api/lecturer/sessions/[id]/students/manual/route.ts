@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
@@ -57,7 +58,7 @@ export async function POST(
   const parsed = manualStudentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid student data" },
+      { error: userFacingZodMessage(parsed.error, "Invalid student data") },
       { status: 400 }
     );
   }

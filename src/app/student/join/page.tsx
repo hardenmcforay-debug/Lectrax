@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { joinSessionSchema } from "@/lib/validations";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { sanitizeSessionCode } from "@/lib/security/sanitize";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -28,7 +29,7 @@ export default function JoinClassPage() {
 
     const parsed = joinSessionSchema.safeParse({ sessionCode: code });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Enter a valid session code.");
+      setError(userFacingZodMessage(parsed.error, "Enter a valid session code."));
       return;
     }
 

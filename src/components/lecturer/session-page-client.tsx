@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -402,7 +403,7 @@ export function SessionPageClient({
     });
 
     if (!parsed.success) {
-      setManualError(parsed.error.issues[0]?.message ?? "Invalid student details.");
+      setManualError(userFacingZodMessage(parsed.error, "Invalid student details."));
       return;
     }
 

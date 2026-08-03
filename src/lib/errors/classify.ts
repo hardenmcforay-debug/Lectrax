@@ -236,6 +236,16 @@ export function sanitizeErrorMessage(message: string | undefined | null): string
     return getMessageForCode("NETWORK_FAILURE").description;
   }
 
+  // Never surface Zod internals (e.g. "expected nonoptional, received undefined").
+  if (
+    /^Invalid input:/i.test(message) ||
+    /^Invalid type:/i.test(message) ||
+    /nonoptional/i.test(message) ||
+    /^Expected [a-z]+, received/i.test(message)
+  ) {
+    return "Please check your input and try again.";
+  }
+
   const unsafePatterns = [
     /supabase/i,
     /postgres/i,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createServiceClient, createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import {
@@ -54,7 +55,7 @@ export async function PUT(
   const parsed = testScoresBulkSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid grades payload" },
+      { error: userFacingZodMessage(parsed.error, "Invalid grades payload") },
       { status: 400 }
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -190,7 +191,7 @@ export function CaStructurePanel({
     });
 
     if (!parsed.success) {
-      setCreateError(parsed.error.issues[0]?.message ?? "Invalid test details.");
+      setCreateError(userFacingZodMessage(parsed.error, "Invalid test details."));
       return;
     }
 

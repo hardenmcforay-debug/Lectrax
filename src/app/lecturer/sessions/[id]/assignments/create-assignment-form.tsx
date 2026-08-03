@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -40,7 +41,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid assignment details.");
+      setError(userFacingZodMessage(parsed.error, "Invalid assignment details."));
       return;
     }
 

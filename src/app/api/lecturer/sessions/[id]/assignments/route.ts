@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { assignmentSchema } from "@/lib/validations";
@@ -55,7 +56,7 @@ export async function POST(
   const parsed = assignmentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid assignment data" },
+      { error: userFacingZodMessage(parsed.error, "Invalid assignment data") },
       { status: 400 }
     );
   }

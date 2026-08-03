@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { loginIdentifierField } from "@/lib/validations";
 import { accountExistsForSignupIdentifier } from "@/lib/auth/phone-account";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     const parsed = checkSignupIdentifierSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid phone number or email address" },
+        { error: userFacingZodMessage(parsed.error, "Invalid phone number or email address") },
         { status: 400 }
       );
     }

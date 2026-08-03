@@ -13,6 +13,7 @@ import {
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import { parseJsonBody } from "@/lib/security/parse-request";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { attendanceStartSchema } from "@/lib/validations";
 
 function resolveAppUrl(request: Request): string {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
   const parsed = attendanceStartSchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid attendance session data" },
+      { error: userFacingZodMessage(parsed.error, "Invalid attendance session data") },
       { status: 400 }
     );
   }
