@@ -40,15 +40,29 @@ export function wasPwaInstalled(): boolean {
   }
 }
 
+function matchesIosHomeScreenApp(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return (
+    "standalone" in window.navigator &&
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+/**
+ * True only while the app is actually running in an installed display mode.
+ * Does not use the install localStorage flag — browser tabs must keep the marketing site.
+ */
+export function isRunningAsInstalledPwa(): boolean {
+  if (typeof window === "undefined") return false;
+  return matchesInstalledDisplayMode() || matchesIosHomeScreenApp();
+}
+
 export function isStandaloneMode(): boolean {
   if (typeof window === "undefined") return false;
 
   const standalone =
-    matchesInstalledDisplayMode() ||
-    // iOS Safari home-screen apps
-    ("standalone" in window.navigator &&
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true) ||
-    wasPwaInstalled();
+    isRunningAsInstalledPwa() || wasPwaInstalled();
 
   if (standalone) {
     markPwaInstalled();

@@ -273,10 +273,7 @@ body {
   }
 
   .auth-back-link {
-    position: absolute;
-    top: max(1.5rem, env(safe-area-inset-top));
-    left: max(1.25rem, env(safe-area-inset-left));
-    z-index: 20;
+    display: none !important;
   }
 
   .auth-form-content {
@@ -329,10 +326,7 @@ html[data-pwa-standalone="true"] .auth-pwa-form-inner {
 }
 
 html[data-pwa-standalone="true"] .auth-back-link {
-  position: absolute;
-  top: max(1.5rem, env(safe-area-inset-top));
-  left: max(1.25rem, env(safe-area-inset-left));
-  z-index: 20;
+  display: none !important;
 }
 
 html[data-pwa-standalone="true"] .auth-form-content {
