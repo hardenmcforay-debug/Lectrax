@@ -1,6 +1,6 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
-import { DollarSign, Users, GraduationCap, CreditCard } from "lucide-react";
+import { DollarSign, Users, GraduationCap, CreditCard } from "@/components/lucide-icons";
 import { getAdminAnalytics } from "@/lib/admin/queries";
 import { formatChargeAmount } from "@/lib/subscription/payment-currency";
 import { AdminAnalyticsSection } from "@/components/admin/admin-analytics-section";

@@ -4,7 +4,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { AdminPartnershipsTable } from "@/components/admin/admin-partnerships-table";
 import { AdminPartnershipNotifications } from "@/components/admin/admin-partnership-notifications";
 import { AdminPartnershipPaymentsTable } from "@/components/admin/admin-partnership-payments-table";
-import { Building2, Bell, CircleCheckBig, CreditCard, MessageSquare } from "lucide-react";
+import { Building2, Bell, CircleCheckBig, CreditCard, MessageSquare } from "@/components/lucide-icons";
 import type {
   PlatformAdminNotification,
   UniversityPartnershipInquiry,

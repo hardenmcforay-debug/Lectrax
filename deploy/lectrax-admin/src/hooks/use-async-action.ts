@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type AsyncFn<TArgs extends unknown[], TResult> = (...args: TArgs) => Promise<TResult>;
 
@@ -106,9 +106,12 @@ export function useLockedAsyncHandler<TArgs extends unknown[], TResult>(
   const [isPending, setIsPending] = useState(false);
   const inFlightRef = useRef(false);
   const actionRef = useRef(action);
-  actionRef.current = action;
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+
+  useEffect(() => {
+    actionRef.current = action;
+    optionsRef.current = options;
+  });
 
   const execute = useCallback(async (...args: TArgs): Promise<TResult | undefined> => {
     if (inFlightRef.current) return undefined;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { appFetch } from "@/lib/api/client-fetch";
 import { APP_NAME } from "@/lib/constants";
@@ -26,13 +26,15 @@ export function PortalOnboardingDialog({
 }) {
   const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
+  const [prevHydrated, setPrevHydrated] = useState(false);
   const { isPending, run } = useAsyncAction();
 
   const settingsPath = getPortalSettingsPath(role);
 
-  useEffect(() => {
-    if (hydrated) setOpen(true);
-  }, [hydrated]);
+  if (hydrated && !prevHydrated) {
+    setPrevHydrated(true);
+    setOpen(true);
+  }
 
   function handleAcknowledge() {
     void run(async () => {

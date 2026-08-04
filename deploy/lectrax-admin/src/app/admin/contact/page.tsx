@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
 import { AdminContactTable } from "@/components/admin/admin-contact-table";
-import { Mail, MessageSquare, CircleCheckBig, Inbox } from "lucide-react";
+import { Mail, MessageSquare, CircleCheckBig, Inbox } from "@/components/lucide-icons";
 import type { ContactInquiry } from "@/types/database";
 
 export default async function AdminContactPage() {

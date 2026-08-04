@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { isRunningAsInstalledPwa } from "@/lib/pwa/detect";
 
 const AUTH_BACK_PATHS = ["/login", "/signup"];
 
 /**
  * Ensures the browser back button on sign-in/sign-up always returns to the landing page.
+ * Installed PWAs skip this — the marketing landing is not part of the app shell.
  */
 export function AuthBackToLanding() {
   const pathname = usePathname();
@@ -15,6 +17,11 @@ export function AuthBackToLanding() {
 
   useEffect(() => {
     if (!AUTH_BACK_PATHS.includes(pathname)) {
+      historyGuardReady.current = false;
+      return;
+    }
+
+    if (isRunningAsInstalledPwa()) {
       historyGuardReady.current = false;
       return;
     }

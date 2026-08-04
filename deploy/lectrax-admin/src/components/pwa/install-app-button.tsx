@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { CircleCheckBig, Download } from "lucide-react";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { IosInstallInstructions, IosInstallButtonLabel } from "@/components/pwa/ios-install-instructions";
+import { IOS_PWA_INSTALL_QUERY } from "@/components/pwa/ios-pwa-install-gate";
+import { getPwaStartUrl } from "@/lib/pwa/config";
 import { cn } from "@/lib/utils";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
+
+const MARKETING_INSTALL_PATHS = new Set([
+  "/",
+  "/about",
+  "/pricing",
+  "/products",
+  "/contact",
+  "/partnerships",
+]);
 
 type InstallAppButtonProps = {
   className?: string;
@@ -14,8 +26,11 @@ type InstallAppButtonProps = {
 
 export function InstallAppButton({ className, variant = "default" }: InstallAppButtonProps) {
   const hydrated = useHydrated();
+  const pathname = usePathname();
+  const router = useRouter();
   const { isInstalled, canInstall, isIOSInstallable, promptInstall } = usePwaInstall();
   const [iosDialogOpen, setIosDialogOpen] = useState(false);
+  const pwaStartUrl = getPwaStartUrl();
 
   // Keep SSR and the hydration pass identical (null) — PWA detection is browser-only.
   if (!hydrated) {
@@ -49,6 +64,11 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
 
   const handleClick = async () => {
     if (isIOSInstallable) {
+      // iOS often pins the current URL; leave marketing pages before Add to Home Screen.
+      if (MARKETING_INSTALL_PATHS.has(pathname)) {
+        router.push(`${pwaStartUrl}?${IOS_PWA_INSTALL_QUERY}=1`);
+        return;
+      }
       setIosDialogOpen(true);
       return;
     }

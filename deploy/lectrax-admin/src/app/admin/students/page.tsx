@@ -6,7 +6,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap } from "@/components/lucide-icons";
 import { formatDate } from "@/lib/utils";
 
 export default async function AdminStudentsPage({

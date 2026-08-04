@@ -16,7 +16,7 @@ import {
 } from "@/lib/subscription/payment-method-logo-ids";
 import { getPaymentMethodLogosSetting } from "@/lib/subscription/payment-method-logos";
 import { buildLandingAssetPublicUrl } from "@/lib/landing/public-asset-url";
-import { DollarSign, Clock, CircleCheckBig } from "lucide-react";
+import { DollarSign, Clock, CircleCheckBig } from "@/components/lucide-icons";
 
 export default async function AdminPaymentsPage({
   searchParams,

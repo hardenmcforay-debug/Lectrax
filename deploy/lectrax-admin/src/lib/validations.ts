@@ -26,7 +26,7 @@ import {
 import { sanitizeTextInput } from "@/lib/security/sanitize";
 
 export const loginIdentifierField = z
-  .string()
+  .string({ error: "Phone number or email is required" })
   .transform((value) => sanitizeTextInput(value))
   .pipe(
     z
@@ -79,7 +79,7 @@ export const profileUpdateSchema = z.object({
 export const passwordChangeSchema = z
   .object({
     password: passwordField(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
+    confirmPassword: z.string({ error: "Please confirm your password" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     error: "Passwords do not match",
@@ -97,9 +97,10 @@ export const classSessionSchema = z.object({
     max: FIELD_LIMITS.TITLE,
     minMessage: "Course title is required",
   }),
+  // Always a string (empty allowed). Keep input/output types aligned for react-hook-form.
   courseCode: z
-    .string()
-    .transform((value) => sanitizeTextInput(value ?? ""))
+    .string({ error: "Course code must be text" })
+    .transform((value) => sanitizeTextInput(value))
     .pipe(
       z.string().max(FIELD_LIMITS.COURSE_CODE, { error: "Course code is too long" })
     ),
@@ -118,14 +119,30 @@ export const assignmentSchema = z.object({
     minMessage: "Title is required",
   }),
   description: optionalSanitizedString(FIELD_LIMITS.DESCRIPTION),
-  maxScore: z.coerce.number().int().min(1).max(1000),
-  deadline: z.string().min(1, { error: "Deadline is required" }),
+  maxScore: z.coerce
+    .number({ error: "Enter a valid maximum score" })
+    .int({ error: "Maximum score must be a whole number" })
+    .min(1, { error: "Maximum score must be at least 1" })
+    .max(1000, { error: "Maximum score cannot exceed 1000" }),
+  deadline: z.string({ error: "Deadline is required" }).min(1, { error: "Deadline is required" }),
 });
 
 export const caConfigSchema = z.object({
-  attendanceWeight: z.coerce.number().int().min(0).max(100),
-  assignmentWeight: z.coerce.number().int().min(0).max(100),
-  testWeight: z.coerce.number().int().min(0).max(100),
+  attendanceWeight: z.coerce
+    .number({ error: "Enter a valid attendance weight" })
+    .int()
+    .min(0)
+    .max(100),
+  assignmentWeight: z.coerce
+    .number({ error: "Enter a valid assignment weight" })
+    .int()
+    .min(0)
+    .max(100),
+  testWeight: z.coerce
+    .number({ error: "Enter a valid test weight" })
+    .int()
+    .min(0)
+    .max(100),
 });
 
 export const manualStudentSchema = z.object({

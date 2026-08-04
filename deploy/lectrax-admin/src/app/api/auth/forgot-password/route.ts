@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { forgotPasswordSchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid email address" },
+        { error: userFacingZodMessage(parsed.error, "Invalid email address") },
         { status: 400 }
       );
     }

@@ -77,6 +77,7 @@ export function getSecurityHeaders(options?: { allowCamera?: boolean }): Securit
     { key: "Content-Security-Policy", value: getContentSecurityPolicy() },
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "X-Frame-Options", value: "DENY" },
+    { key: "X-Robots-Tag", value: "noindex, nofollow" },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     { key: "Permissions-Policy", value: getPermissionsPolicy(options) },
     { key: "X-DNS-Prefetch-Control", value: "off" },

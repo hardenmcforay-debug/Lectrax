@@ -7,6 +7,7 @@ import { pwaIconUrl } from "@/lib/pwa/config";
 
 export function AppLaunchSplash() {
   useLayoutEffect(() => {
+    // Hand off from the pre-React boot cover to this splash without a site flash.
     document.documentElement.classList.remove("pwa-booting");
     document.documentElement.dataset.pwaReady = "true";
     document.getElementById("lectrax-pwa-boot-splash")?.remove();

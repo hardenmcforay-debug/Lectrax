@@ -234,6 +234,11 @@ body {
 
 /* PWA installed app: form-only auth (login / signup) */
 @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  /* Never paint the marketing site inside the installed app */
+  [data-landing-root] {
+    display: none !important;
+  }
+
   .auth-branding-panel,
   .auth-form-marketing-copy {
     display: none !important;
@@ -289,6 +294,10 @@ body {
 
 html[data-pwa-standalone="true"] .auth-branding-panel,
 html[data-pwa-standalone="true"] .auth-form-marketing-copy {
+  display: none !important;
+}
+
+html[data-pwa-standalone="true"] [data-landing-root] {
   display: none !important;
 }
 

@@ -75,3 +75,4 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

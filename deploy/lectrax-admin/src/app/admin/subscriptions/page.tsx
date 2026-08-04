@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
 import { AdminSubscriptionsTable } from "@/components/admin/admin-subscriptions-table";
-import { CreditCard, Gift, Clock, TriangleAlert } from "lucide-react";
+import { CreditCard, Gift, Clock, TriangleAlert } from "@/components/lucide-icons";
 
 export default async function AdminSubscriptionsPage() {
   const supabase = await createClient();

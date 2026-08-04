@@ -13,31 +13,22 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import type { TooltipProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminAnalyticsData } from "@/lib/admin/queries";
+import {
+  chartTickToNumber,
+  chartValueToNumber,
+  type ChartTooltipFormatter,
+} from "@/lib/charts/recharts-value";
 import { formatChargeAmount } from "@/lib/subscription/payment-currency";
 
 const COLORS = ["#0B3D91", "#10B981", "#64748B", "#F59E0B", "#EF4444"];
 
-/** Narrow Recharts `ValueType` (number | string | array) to a finite number for currency formatters. */
-function chartValueToNumber(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  if (Array.isArray(value) && value.length > 0) {
-    return chartValueToNumber(value[0]);
-  }
-  return 0;
-}
-
 function formatRevenueTick(value: unknown): string {
-  return formatChargeAmount(chartValueToNumber(value), "SLE");
+  return formatChargeAmount(chartTickToNumber(value), "SLE");
 }
 
-const formatRevenueTooltip: NonNullable<TooltipProps["formatter"]> = (value) => [
+const formatRevenueTooltip: ChartTooltipFormatter = (value) => [
   formatChargeAmount(chartValueToNumber(value), "SLE"),
   "Revenue",
 ];

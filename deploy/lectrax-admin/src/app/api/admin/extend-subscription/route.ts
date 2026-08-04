@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { adminExtendPremium } from "@/lib/subscription/lifecycle";
 import { adminExtendSubscriptionSchema } from "@/lib/validations";
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   const parsed = adminExtendSubscriptionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+      { error: userFacingZodMessage(parsed.error, "Invalid request") },
       { status: 400 }
     );
   }

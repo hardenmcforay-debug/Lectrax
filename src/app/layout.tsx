@@ -32,6 +32,10 @@ export const metadata: Metadata = {
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
   manifest: pwaIconUrl("/manifest.json"),
+  robots: {
+    index: false,
+    follow: false,
+  },
   icons: {
     icon: [
       { url: pwaIconUrl("/favicon-32x32.png"), sizes: "32x32", type: "image/png" },

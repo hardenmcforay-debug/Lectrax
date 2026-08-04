@@ -18,7 +18,7 @@ export const PWA_MANIFEST_PATH = "/manifest.json";
 export const PWA_SERVICE_WORKER_PATH = "/sw.js";
 
 /** Bump when regenerating icons (`npm run sync-icons-from-site-logo` / generate:pwa-icons). */
-export const PWA_ICON_ASSET_VERSION = "20260718w";
+export const PWA_ICON_ASSET_VERSION = "20260803b";
 
 export function pwaIconUrl(path: string): string {
   const separator = path.includes("?") ? "&" : "?";
