@@ -97,14 +97,13 @@ export const classSessionSchema = z.object({
     max: FIELD_LIMITS.TITLE,
     minMessage: "Course title is required",
   }),
+  // Always a string (empty allowed). Keep input/output types aligned for react-hook-form.
   courseCode: z
-    .union([z.string(), z.undefined()])
-    .transform((value) => sanitizeTextInput(value ?? ""))
+    .string({ error: "Course code must be text" })
+    .transform((value) => sanitizeTextInput(value))
     .pipe(
       z.string().max(FIELD_LIMITS.COURSE_CODE, { error: "Course code is too long" })
-    )
-    .optional()
-    .transform((value) => value ?? ""),
+    ),
   semester: z.enum(["first_semester", "second_semester", "full_year"]),
   academicYear: sanitizedRequiredString({
     min: 4,
