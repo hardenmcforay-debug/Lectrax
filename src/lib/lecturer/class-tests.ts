@@ -1,5 +1,10 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import type { ClassSession, ClassTest, SemesterType } from "@/types/database";
+import {
+  PAGINATION,
+  toRangeBounds,
+  type OffsetPaginationInput,
+} from "@/lib/pagination";
 
 export interface TestGradeRow {
   enrollmentId: string;
@@ -13,6 +18,7 @@ export interface TestGradeEntryData {
   test: ClassTest;
   session: Pick<ClassSession, "id" | "course_code" | "title" | "class_name" | "semester" | "academic_year">;
   rows: TestGradeRow[];
+  total: number;
 }
 
 export async function getClassTestsForSession(
@@ -21,7 +27,7 @@ export async function getClassTestsForSession(
   academicYear: string,
   lecturerId: string
 ): Promise<ClassTest[]> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -47,7 +53,7 @@ export async function getClassTestForLecturer(
   classTestId: string,
   lecturerId: string
 ): Promise<ClassTest | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from("class_tests")
@@ -61,9 +67,13 @@ export async function getClassTestForLecturer(
 
 export async function getTestGradeEntryData(
   classTestId: string,
-  lecturerId: string
+  lecturerId: string,
+  pagination: OffsetPaginationInput = {
+    page: PAGINATION.DEFAULT_PAGE,
+    pageSize: PAGINATION.MAX_PAGE_SIZE,
+  }
 ): Promise<TestGradeEntryData | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const test = await getClassTestForLecturer(classTestId, lecturerId);
   if (!test) return null;
 
@@ -75,16 +85,28 @@ export async function getTestGradeEntryData(
 
   if (!session) return null;
 
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("id, is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id)")
-    .eq("class_session_id", test.class_session_id)
-    .order("joined_at", { ascending: true });
+  const pageSize = Math.min(pagination.pageSize, PAGINATION.MAX_PAGE_SIZE);
+  const { from, to } = toRangeBounds(pagination.page, pageSize);
 
-  const { data: scores } = await supabase
-    .from("test_scores")
-    .select("enrollment_id, score")
-    .eq("class_test_id", classTestId);
+  const { data: enrollments, count: enrollmentCount } = await supabase
+    .from("enrollments")
+    .select(
+      "id, is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id)",
+      { count: "exact" }
+    )
+    .eq("class_session_id", test.class_session_id)
+    .order("joined_at", { ascending: true })
+    .range(from, to);
+
+  const enrollmentIds = (enrollments ?? []).map((e) => e.id);
+
+  const { data: scores } = enrollmentIds.length
+    ? await supabase
+        .from("test_scores")
+        .select("enrollment_id, score")
+        .eq("class_test_id", classTestId)
+        .in("enrollment_id", enrollmentIds)
+    : { data: [] };
 
   const scoreByEnrollment = new Map(
     (scores ?? []).map((s) => [s.enrollment_id, Number(s.score)])
@@ -109,9 +131,9 @@ export async function getTestGradeEntryData(
     test: test as ClassTest,
     session: session as TestGradeEntryData["session"],
     rows,
+    total: enrollmentCount ?? 0,
   };
 }
-
 export interface DeleteClassTestResult {
   deletedTestId: string;
   renumberedRemainingTest: boolean;
@@ -122,7 +144,7 @@ export async function deleteClassTest(
   classTestId: string,
   lecturerId: string
 ): Promise<DeleteClassTestResult | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const test = await getClassTestForLecturer(classTestId, lecturerId);
   if (!test) return null;
 
@@ -185,7 +207,7 @@ export async function getNextTestNumber(
   semester: SemesterType,
   academicYear: string
 ): Promise<1 | 2 | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("class_tests")
     .select("test_number")

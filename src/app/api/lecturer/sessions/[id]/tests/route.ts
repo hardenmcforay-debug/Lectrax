@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { getClassTestsForSession, getNextTestNumber } from "@/lib/lecturer/class-tests";
@@ -12,8 +12,9 @@ import {
   requireWritableSubscription,
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function GET(
+async function getHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -63,7 +64,7 @@ export async function GET(
   });
 }
 
-export async function POST(
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -139,8 +140,7 @@ export async function POST(
     );
   }
 
-  const service = await createServiceClient();
-  const { data: test, error } = await service
+  const { data: test, error } = await supabase
     .from("class_tests")
     .insert({
       class_session_id: classSessionId,
@@ -171,3 +171,7 @@ export async function POST(
 
   return NextResponse.json({ test }, { status: 201 });
 }
+
+export const GET = withApiObservability("lecturer.sessions.tests.get", getHandler);
+
+export const POST = withApiObservability("lecturer.sessions.tests.post", postHandler);

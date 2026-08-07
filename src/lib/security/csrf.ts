@@ -6,7 +6,15 @@ export const CSRF_HEADER_VALUE = "1";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const CSRF_EXEMPT_PREFIXES = ["/api/webhooks/", "/api/cron/"] as const;
+const CSRF_EXEMPT_PREFIXES = [
+  "/api/webhooks/",
+  "/api/cron/",
+  "/api/health",
+  "/api/ready",
+  "/api/live",
+  "/api/csp-report",
+  "/monitoring",
+] as const;
 
 export function isMutationMethod(method: string): boolean {
   return MUTATION_METHODS.has(method.toUpperCase());

@@ -22,10 +22,11 @@ import { exportStudentPerformanceSchema } from "@/lib/validations";
 import type { CAWeights } from "@/lib/ca/constants";
 
 import type { SemesterType } from "@/types/database";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 
 
-export async function POST(
+async function postHandler(
 
   request: Request,
 
@@ -186,3 +187,5 @@ export async function POST(
 }
 
 
+
+export const POST = withApiObservability("lecturer.sessions.export-student-performance.post", postHandler);

@@ -4,6 +4,7 @@ export const DEVICE_VERIFICATION_CODES = {
   VERIFICATION_REQUIRED: "DEVICE_VERIFICATION_REQUIRED",
   ACCESS_REVOKED: "DEVICE_ACCESS_REVOKED",
   DEVICE_BOUND_TO_OTHER_ACCOUNT: "DEVICE_BOUND_TO_OTHER_ACCOUNT",
+  TRANSFER_LIMIT: "ATTENDANCE_DEVICE_TRANSFER_LIMIT",
 } as const;
 
 export type DeviceVerificationStatus =
@@ -15,10 +16,12 @@ export type DeviceVerificationStatus =
   | "device_owned_by_other";
 
 export const attendanceDeviceIdentitySchema = z.object({
-  deviceFingerprint: z.string().min(8),
-  browserFingerprint: z.string().min(8),
-  deviceIdentifier: z.string().min(8),
-  deviceMetadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  deviceFingerprint: z.string().min(8).max(128),
+  browserFingerprint: z.string().min(8).max(128),
+  deviceIdentifier: z.string().min(8).max(128),
+  deviceMetadata: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .optional(),
 });
 
 export type AttendanceDeviceIdentityInput = z.infer<typeof attendanceDeviceIdentitySchema>;
@@ -46,6 +49,11 @@ export const DEVICE_MESSAGES = {
       "Another student account is already registered to this device for attendance. You cannot mark attendance on this device.",
     detail:
       "Sign in with your account on your own device, or ask your lecturer to mark your attendance manually.",
+  },
+  transferLimit: {
+    title: "Transfer Limit Reached",
+    description:
+      "You have transferred attendance access too many times in the last 24 hours. Try again later, or ask your lecturer to mark you present manually.",
   },
 } as const;
 

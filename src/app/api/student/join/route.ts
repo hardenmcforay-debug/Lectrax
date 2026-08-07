@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { joinSessionSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,9 +33,8 @@ export async function POST(request: Request) {
   }
 
   const sessionCode = parsed.data.sessionCode;
-  const service = await createServiceClient();
 
-  const { data: session, error: sessionError } = await service
+  const { data: session, error: sessionError } = await supabase
     .from("class_sessions")
     .select("id, title, course_code, session_code, is_active")
     .eq("session_code", sessionCode)
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: enrollError } = await service.from("enrollments").insert({
+  const { error: enrollError } = await supabase.from("enrollments").insert({
     class_session_id: session.id,
     student_id: user.id,
     college_id: profile.college_id ?? null,
@@ -81,3 +81,5 @@ export async function POST(request: Request) {
     },
   });
 }
+
+export const POST = withApiObservability("student.join.post", postHandler);

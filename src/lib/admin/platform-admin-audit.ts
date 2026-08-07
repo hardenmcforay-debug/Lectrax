@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 /** Platform admin audit entries with insert failure logging. */
 export async function logPlatformAdminAudit(params: {
@@ -8,8 +8,8 @@ export async function logPlatformAdminAudit(params: {
   entityId?: string;
   metadata?: Record<string, unknown>;
 }): Promise<void> {
-  const service = await createServiceClient();
-  const { error } = await service.from("audit_logs").insert({
+  const supabase = await createClient();
+  const { error } = await supabase.from("audit_logs").insert({
     actor_id: params.actorId,
     action: params.action,
     entity_type: params.entityType,

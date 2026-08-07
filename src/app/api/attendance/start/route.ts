@@ -15,12 +15,13 @@ import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import { parseJsonBody } from "@/lib/security/parse-request";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { attendanceStartSchema } from "@/lib/validations";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 function resolveAppUrl(request: Request): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(request.url).origin;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,18 +48,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { classSessionId, title, durationMinutes, requireGps } = parsed.data;
-  const service = await createServiceClient();
+  const { classSessionId, title, durationMinutes } = parsed.data;
 
   const [{ data: profile }, { data: classSession }, { data: existingActive }] = await Promise.all([
-    service.from("profiles").select("role").eq("id", user.id).maybeSingle(),
-    service
+    supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+    supabase
       .from("class_sessions")
       .select("id")
       .eq("id", classSessionId)
       .eq("lecturer_id", user.id)
       .maybeSingle(),
-    service
+    supabase
       .from("attendance_sessions")
       .select("id, class_session_id, is_active, ended_at, session_expires_at, qr_expires_at")
       .eq("class_session_id", classSessionId)
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   }
 
   if (existingActive) {
-    const abandoned = await closeAttendanceSessionIfAbandoned(service, existingActive);
+    const abandoned = await closeAttendanceSessionIfAbandoned(supabase, existingActive);
     if (!abandoned) {
       return NextResponse.json(
         { error: "An attendance session is already active. End it before starting a new one." },
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: session, error: insertError } = await service
+  const { data: session, error: insertError } = await supabase
     .from("attendance_sessions")
     .insert({
       id: sessionId,
@@ -125,7 +125,6 @@ export async function POST(request: Request) {
       qr_token_hash: finalRotation.tokenHash,
       qr_expires_at: finalRotation.tokenExpiresAt.toISOString(),
       session_expires_at: sessionExpiresAt.toISOString(),
-      require_gps: requireGps,
       is_active: true,
     })
     .select("id, title, session_date, created_at, session_expires_at")
@@ -159,11 +158,13 @@ export async function POST(request: Request) {
   const sessionNumber = await getAttendanceSessionNumber(
     classSessionId,
     session.created_at,
-    service
+    supabase
   );
 
   const appUrl = resolveAppUrl(request);
 
+  // Student notification fan-out requires service (cross-user inserts).
+  const service = await createServiceClient();
   const classLabel = await getClassSessionLabel(service, classSessionId);
   void notifyEnrolledStudentsInClass(service, classSessionId, {
     type: "attendance",
@@ -184,3 +185,5 @@ export async function POST(request: Request) {
     tokenExpiresAt: finalRotation.tokenExpiresAt.toISOString(),
   });
 }
+
+export const POST = withApiObservability("attendance.start.post", postHandler);

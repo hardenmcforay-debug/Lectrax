@@ -28,7 +28,8 @@ function generateUuid(): string {
   });
 }
 
-function hashString(raw: string): string {
+/** Legacy 32-bit hash — only used when SubtleCrypto is unavailable. */
+function hashStringLegacy(raw: string): string {
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const chr = raw.charCodeAt(i);
@@ -38,7 +39,30 @@ function hashString(raw: string): string {
   return Math.abs(hash).toString(36);
 }
 
-function getCanvasFingerprint(): string {
+async function sha256Hex(raw: string): Promise<string> {
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(
+      ""
+    );
+  }
+
+  // FNV-1a 64-bit style fallback (much stronger than 32-bit legacy).
+  let h1 = 0x811c9dc5;
+  let h2 = 0x811c9dc5 ^ 0x9e3779b9;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw.charCodeAt(i);
+    h1 ^= c;
+    h1 = Math.imul(h1, 0x01000193);
+    h2 ^= c + i;
+    h2 = Math.imul(h2, 0x01000193);
+  }
+  const a = (h1 >>> 0).toString(16).padStart(8, "0");
+  const b = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `${a}${b}${a}${b}${a}${b}${a}${b}`;
+}
+
+function getCanvasFingerprintRaw(): string {
   try {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -51,13 +75,13 @@ function getCanvasFingerprint(): string {
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px Arial";
     ctx.fillText("lectrax-attendance-device", 12, 32);
-    return hashString(canvas.toDataURL());
+    return canvas.toDataURL();
   } catch {
     return "canvas_unavailable";
   }
 }
 
-function getWebGlFingerprint(): string {
+function getWebGlFingerprintRaw(): string {
   try {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl") ?? canvas.getContext("experimental-webgl");
@@ -69,7 +93,7 @@ function getWebGlFingerprint(): string {
     const renderer = debugInfo
       ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
       : gl.getParameter(gl.RENDERER);
-    return hashString(`${vendor}|${renderer}`);
+    return `${vendor}|${renderer}`;
   } catch {
     return "webgl_unavailable";
   }
@@ -84,7 +108,11 @@ export function getOrCreateDeviceIdentifier(): string {
   return id;
 }
 
-export function getAttendanceDeviceIdentity(): AttendanceDeviceIdentity {
+/**
+ * Stable device identity for attendance binding.
+ * Primary binding is the local UUID (`deviceIdentifier`); fingerprints are secondary signals.
+ */
+export async function getAttendanceDeviceIdentity(): Promise<AttendanceDeviceIdentity> {
   if (typeof window === "undefined") {
     return {
       deviceFingerprint: "server",
@@ -114,15 +142,20 @@ export function getAttendanceDeviceIdentity(): AttendanceDeviceIdentity {
     nav.userAgent,
     nav.language,
     nav.languages?.join(",") ?? "",
-    getCanvasFingerprint(),
-    getWebGlFingerprint(),
+    getCanvasFingerprintRaw(),
+    getWebGlFingerprintRaw(),
     nav.cookieEnabled,
     typeof nav.doNotTrack === "string" ? nav.doNotTrack : "",
   ].join("|");
 
+  const [deviceHash, browserHash] = await Promise.all([
+    sha256Hex(hardwareRaw),
+    sha256Hex(browserRaw),
+  ]);
+
   return {
-    deviceFingerprint: `dev_${hashString(hardwareRaw)}`,
-    browserFingerprint: `br_${hashString(browserRaw)}`,
+    deviceFingerprint: `dev_${deviceHash}`,
+    browserFingerprint: `br_${browserHash}`,
     deviceIdentifier,
     deviceMetadata: {
       platform: nav.platform,
@@ -132,6 +165,9 @@ export function getAttendanceDeviceIdentity(): AttendanceDeviceIdentity {
       screenHeight: screen.height,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       hardwareConcurrency: nav.hardwareConcurrency ?? null,
+      fingerprintAlgo: crypto.subtle ? "sha256" : "fnv1a64-fallback",
+      // Keep a legacy digest for diagnostics only (never used as auth alone).
+      legacyDeviceHint: hashStringLegacy(hardwareRaw),
     },
   };
 }

@@ -43,6 +43,9 @@ const eslintConfig = defineConfig([
     "supabase/functions/**",
     "scripts/**",
     "node_modules/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
     "next-env.d.ts",
   ]),
 ]);

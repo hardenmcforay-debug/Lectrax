@@ -24,7 +24,7 @@ Headers are now centralized in `src/lib/security/headers.ts` and applied through
 | `X-Content-Type-Options: nosniff` | Yes | Yes (via `transport.ts`) | Present |
 | `X-Frame-Options: DENY` | Yes | Yes | Present |
 | `Referrer-Policy: strict-origin-when-cross-origin` | Yes | Yes | Present |
-| `Permissions-Policy` | `camera=(self), geolocation=(self)` | `camera=(), geolocation=()` | Present, duplicated |
+| `Permissions-Policy` | `camera=(self), geolocation=()` | `camera=(), geolocation=()` | Present, duplicated |
 | `Strict-Transport-Security` | **No** | Yes (production only, in `transport.ts`) | Main app gap |
 | `Content-Security-Policy` | **No** | **No** | Missing |
 | `Cross-Origin-Opener-Policy` | **No** | **No** | Missing |
@@ -51,7 +51,7 @@ Headers are now centralized in `src/lib/security/headers.ts` and applied through
 | **X-Content-Type-Options** | `nosniff` | Prevents MIME-type confusion attacks |
 | **X-Frame-Options** | `DENY` | Prevents clickjacking via iframes |
 | **Referrer-Policy** | `strict-origin-when-cross-origin` | Limits referrer leakage on cross-origin navigation |
-| **Permissions-Policy** | Main: `camera=(self), geolocation=(self), …` / Admin: `camera=()` | Restricts browser feature access |
+| **Permissions-Policy** | Main: `camera=(self), geolocation=(), …` / Admin: `camera=(), geolocation=()` | Restricts browser feature access |
 | **Cross-Origin-Opener-Policy** | `same-origin` | Isolates browsing context from cross-origin popups |
 | **X-DNS-Prefetch-Control** | `off` | Reduces passive DNS prefetch leakage |
 | **Cache-Control** | `private, no-store, max-age=0, must-revalidate` | On sensitive routes (see below) |
@@ -104,16 +104,16 @@ upgrade-insecure-requests
 
 ### Main application
 ```
-camera=(self), microphone=(), geolocation=(self), payment=(), usb=(), bluetooth=(), interest-cohort=()
+camera=(self), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), interest-cohort=()
 ```
 - **camera=(self)** — student QR attendance scanning (`html5-qrcode`)
-- **geolocation=(self)** — optional GPS on attendance scan when lecturer enables `require_gps`
+- **geolocation=()** — GPS attendance validation removed; location permission not used
 
 ### Admin deployment
 ```
-camera=(), microphone=(), geolocation=(self), payment=(), usb=(), bluetooth=(), interest-cohort=()
+camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), interest-cohort=()
 ```
-- Camera disabled — admin portal does not scan QR codes
+- Camera and geolocation disabled — admin portal does not scan QR codes
 
 ---
 
@@ -201,7 +201,7 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload  [produc
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(self), microphone=(), geolocation=(self), ...
+Permissions-Policy: camera=(self), microphone=(), geolocation=(), ...
 Cross-Origin-Opener-Policy: same-origin
 X-DNS-Prefetch-Control: off
 Cache-Control: private, no-store, max-age=0, must-revalidate  [sensitive routes]

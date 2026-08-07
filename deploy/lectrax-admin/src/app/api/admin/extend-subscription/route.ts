@@ -5,9 +5,10 @@ import { adminExtendPremium } from "@/lib/subscription/lifecycle";
 import { adminExtendSubscriptionSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 /** Legacy route — extends premium via profile subscription_end_date */
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -70,3 +71,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withApiObservability("admin.extend-subscription.post", postHandler);

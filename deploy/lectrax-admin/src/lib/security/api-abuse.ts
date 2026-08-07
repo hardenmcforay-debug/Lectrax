@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isMutationMethod } from "@/lib/security/csrf";
 import { isBodyTooLarge } from "@/lib/security/request-limits";
 import {
+  buildRateLimitHeaders,
   buildRateLimitKey,
   checkRateLimit,
   logRateLimitViolation,
@@ -57,12 +58,28 @@ function isBrandingUploadPath(pathname: string): boolean {
     pathname === "/api/admin/site-logo" ||
     pathname === "/api/admin/landing-hero" ||
     pathname === "/api/admin/landing-feature-cards" ||
-    pathname === "/api/admin/landing-product-images"
+    pathname === "/api/admin/landing-product-images" ||
+    pathname === "/api/admin/payment-method-logos"
   );
 }
 
 function isWebhookPath(pathname: string): boolean {
   return pathname.startsWith("/api/webhooks/");
+}
+
+function isAuthRegistrationPath(pathname: string): boolean {
+  return (
+    pathname === "/api/auth/check-signup-identifier" ||
+    pathname === "/api/auth/finalize-phone-signup" ||
+    pathname === "/api/auth/check-phone"
+  );
+}
+
+function isEmailVerificationPath(pathname: string): boolean {
+  return (
+    pathname === "/api/auth/activate-phone-account" ||
+    pathname === "/auth/callback"
+  );
 }
 
 type ResolvedLimit = {
@@ -79,6 +96,16 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
 
   if (!pathname.startsWith("/api/")) return null;
   if (pathname.startsWith("/api/cron")) return null;
+  if (pathname === "/api/health" || pathname === "/api/ready" || pathname === "/api/live") {
+    return null;
+  }
+  if (pathname === "/monitoring" || pathname.startsWith("/monitoring/")) {
+    return null;
+  }
+
+  if (pathname === "/api/csp-report" && upperMethod === "POST") {
+    return { policy: "cspReport", rule: RATE_LIMIT_POLICIES.cspReport };
+  }
 
   if (isWebhookPath(pathname) && upperMethod === "POST") {
     return { policy: "webhookIngress", rule: RATE_LIMIT_POLICIES.webhookIngress };
@@ -96,8 +123,30 @@ function resolveRateLimit(pathname: string, method: string): ResolvedLimit | nul
     return { policy: "paymentCheckout", rule: RATE_LIMIT_POLICIES.paymentCheckout };
   }
 
+  if (pathname === "/api/auth/login" && upperMethod === "POST") {
+    return { policy: "authLoginIp", rule: RATE_LIMIT_POLICIES.authLoginIp };
+  }
+
+  if (pathname === "/api/auth/resolve-login" && upperMethod === "POST") {
+    return { policy: "resolveLogin", rule: RATE_LIMIT_POLICIES.resolveLogin };
+  }
+
+  if (isAuthRegistrationPath(pathname) && upperMethod === "POST") {
+    return {
+      policy: "authRegistrationIp",
+      rule: RATE_LIMIT_POLICIES.authRegistrationIp,
+    };
+  }
+
   if (pathname === "/api/auth/forgot-password" && upperMethod === "POST") {
     return { policy: "passwordReset", rule: RATE_LIMIT_POLICIES.passwordReset };
+  }
+
+  if (isEmailVerificationPath(pathname) && upperMethod === "POST") {
+    return {
+      policy: "emailVerification",
+      rule: RATE_LIMIT_POLICIES.emailVerification,
+    };
   }
 
   if (pathname === "/api/account" && upperMethod === "DELETE") {
@@ -191,32 +240,36 @@ export function rejectIfBodyTooLarge(request: NextRequest): NextResponse | null 
   );
 }
 
-/** Returns 429 when the client exceeds configured rate limits. */
-export function rejectIfRateLimited(request: NextRequest): NextResponse | null {
+/** Returns 429 when the client exceeds configured per-IP rate limits. */
+export async function rejectIfRateLimited(
+  request: NextRequest
+): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
   const resolved = resolveRateLimit(pathname, request.method);
   if (!resolved) return null;
 
   const ip = getClientIp(request);
   const key = buildRateLimitKey(ip, resolved.policy);
-  const result = checkRateLimit(key, resolved.rule);
+  const result = await checkRateLimit(key, resolved.rule);
 
   if (result.allowed) return null;
 
   logRateLimitViolation(resolved.policy, ip);
 
-  const headers: Record<string, string> = {};
-  if (result.retryAfterSec) {
-    headers["Retry-After"] = String(result.retryAfterSec);
-  }
-
   return NextResponse.json(
     { error: "Too many requests. Please try again later." },
-    { status: 429, headers }
+    {
+      status: 429,
+      headers: buildRateLimitHeaders(result),
+    }
   );
 }
 
-/** Combined early abuse checks for middleware (body size + rate limits). */
-export function rejectIfAbusiveRequest(request: NextRequest): NextResponse | null {
-  return rejectIfBodyTooLarge(request) ?? rejectIfRateLimited(request);
+/** Combined early abuse checks for middleware (body size + distributed rate limits). */
+export async function rejectIfAbusiveRequest(
+  request: NextRequest
+): Promise<NextResponse | null> {
+  const bodyReject = rejectIfBodyTooLarge(request);
+  if (bodyReject) return bodyReject;
+  return rejectIfRateLimited(request);
 }

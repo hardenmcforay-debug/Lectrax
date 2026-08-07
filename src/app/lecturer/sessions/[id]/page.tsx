@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import {
@@ -8,6 +8,7 @@ import {
 } from "@/lib/attendance/sessions";
 import { getStudentTableRows } from "@/lib/session-data";
 import type { ClassTestSummary } from "@/lib/session-data";
+import { PAGINATION, clampPage, toRangeBounds } from "@/lib/pagination";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SessionPageClient } from "@/components/lecturer/session-page-client";
 import { BackLink } from "@/components/ui/back-link";
@@ -30,24 +31,32 @@ export default async function SessionDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    attendancePage?: string;
+    auditPage?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { tab } = await searchParams;
-  const defaultTab = SESSION_TABS.includes(tab as (typeof SESSION_TABS)[number])
-    ? (tab as (typeof SESSION_TABS)[number])
+  const sp = await searchParams;
+  const defaultTab = SESSION_TABS.includes(sp.tab as (typeof SESSION_TABS)[number])
+    ? (sp.tab as (typeof SESSION_TABS)[number])
     : "students";
+  const attendancePage = clampPage(Number(sp.attendancePage ?? undefined));
+  const auditPage = clampPage(Number(sp.auditPage ?? undefined));
+  const attendanceBounds = toRangeBounds(attendancePage, PAGINATION.DEFAULT_PAGE_SIZE);
+  const auditBounds = toRangeBounds(auditPage, PAGINATION.DEFAULT_PAGE_SIZE);
+
   const user = await requireAuthenticatedUser();
   const supabase = await createClient();
 
   const session = await getClassSessionForLecturer(id, user.id);
   if (!session) notFound();
 
-  const service = await createServiceClient();
-
   const [
     ,
     tableData,
+    attendanceRosterResult,
     caConfigResult,
     assignmentsResult,
     attendanceSessionsResult,
@@ -55,8 +64,11 @@ export default async function SessionDetailPage({
     activeAttendanceSession,
     subscription,
   ] = await Promise.all([
-    service.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
-    getStudentTableRows(id, session.semester, session.academic_year, user.id).catch((error) => {
+    supabase.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
+    getStudentTableRows(id, session.semester, session.academic_year, user.id, undefined, {
+      page: 1,
+      pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
+    }).catch((error) => {
       if (process.env.NODE_ENV === "development") {
         console.error("[SessionDetailPage] getStudentTableRows failed", error);
       }
@@ -65,9 +77,19 @@ export default async function SessionDetailPage({
         testCount: 0,
         classTests: [] as ClassTestSummary[],
         classAssignments: [] as { id: string; max_score: number }[],
+        total: 0,
       };
     }),
-    service
+    // Slim roster for manual attendance (separate from paginated CA table rows).
+    supabase
+      .from("enrollments")
+      .select(
+        "id, college_id, is_manual, profiles(full_name, college_id), manual_students(full_name, college_id)"
+      )
+      .eq("class_session_id", id)
+      .order("created_at", { ascending: true })
+      .limit(PAGINATION.MAX_PRESENT_PAGE_SIZE),
+    supabase
       .from("ca_configurations")
       .select("attendance_weight, assignment_weight, test_weight")
       .eq("class_session_id", id)
@@ -78,19 +100,23 @@ export default async function SessionDetailPage({
       .from("assignments")
       .select("id, title, description, deadline, max_score")
       .eq("class_session_id", id)
-      .order("created_at", { ascending: false }),
-    service
+      .order("created_at", { ascending: false })
+      .limit(PAGINATION.MAX_PAGE_SIZE),
+    supabase
       .from("attendance_sessions")
       .select(
-        "id, title, session_date, created_at, ended_at, session_expires_at, attendance_records(count)"
+        "id, title, session_date, created_at, ended_at, session_expires_at, attendance_records(count)",
+        { count: "exact" }
       )
       .eq("class_session_id", id)
-      .order("created_at", { ascending: false }),
-    service
+      .order("created_at", { ascending: false })
+      .range(attendanceBounds.from, attendanceBounds.to),
+    supabase
       .from("audit_logs")
-      .select("id, action, entity_type, created_at")
+      .select("id, action, entity_type, created_at", { count: "exact" })
       .eq("class_session_id", id)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(auditBounds.from, auditBounds.to),
     getActiveAttendanceSession(id, user.id),
     refreshSubscriptionLifecycle(user.id).catch((error) => {
       if (process.env.NODE_ENV === "development") {
@@ -100,8 +126,25 @@ export default async function SessionDetailPage({
     }),
   ]);
 
+  const attendanceRows = (attendanceRosterResult.data ?? []).map((e) => {
+    const name = e.is_manual
+      ? (e.manual_students as unknown as { full_name: string } | null)?.full_name
+      : (e.profiles as unknown as { full_name: string } | null)?.full_name;
+    const collegeId =
+      e.college_id ??
+      (e.is_manual
+        ? (e.manual_students as unknown as { college_id: string | null } | null)?.college_id
+        : (e.profiles as unknown as { college_id: string | null } | null)?.college_id);
+
+    return {
+      enrollmentId: e.id as string,
+      name: name ?? "Unknown",
+      collegeId: collegeId ?? null,
+    };
+  });
+
   const activeSessionNumber = activeAttendanceSession
-    ? await getAttendanceSessionNumber(id, activeAttendanceSession.created_at, service)
+    ? await getAttendanceSessionNumber(id, activeAttendanceSession.created_at, supabase)
     : null;
 
   const caConfig = caConfigResult.data;
@@ -148,6 +191,8 @@ export default async function SessionDetailPage({
       <SessionPageClient
         session={session}
         rows={tableData.rows}
+        studentRowsTotal={tableData.total}
+        attendanceRows={attendanceRows}
         semester={session.semester}
         caWeights={caWeights}
         testCount={tableData.testCount}
@@ -155,8 +200,12 @@ export default async function SessionDetailPage({
         initialClassAssignments={tableData.classAssignments}
         sessionAssignments={sessionAssignments}
         attendanceAuditSessions={attendanceAuditSessions}
+        attendanceSessionsTotal={attendanceSessionsResult.count ?? 0}
+        attendancePage={attendancePage}
         attendancePresentBySession={{}}
         sessionAuditLogs={sessionAuditLogs}
+        auditLogsTotal={showAuditLogs ? (auditLogsResult.count ?? 0) : 0}
+        auditPage={auditPage}
         initialActiveSession={
           activeAttendanceSession
             ? {

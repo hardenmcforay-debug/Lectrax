@@ -7,9 +7,10 @@ import {
 } from "@/lib/assignments/submissions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
-import { createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 async function logRejectedSubmission(params: {
   userId: string;
@@ -33,7 +34,7 @@ async function logRejectedSubmission(params: {
   });
 }
 
-export async function POST(
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ assignmentId: string }> }
 ) {
@@ -43,6 +44,13 @@ export async function POST(
 
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
+
+  const rateLimited = await rejectIfUserRateLimited(
+    auth.userId,
+    "assignmentSubmitPerUser",
+    "assignment.submit"
+  );
+  if (rateLimited) return rateLimited;
 
   const formData = await request.formData();
   const file = formData.get("file");
@@ -71,8 +79,7 @@ export async function POST(
     return NextResponse.json({ error, code }, { status });
   }
 
-  const service = await createServiceClient();
-  await lockExpiredAssignmentSubmissions(service, routeId.id);
+  await lockExpiredAssignmentSubmissions(auth.supabase, routeId.id);
 
   const beforeDeadline = await isAssignmentBeforeDeadline(
     null,
@@ -174,5 +181,19 @@ export async function POST(
     return NextResponse.json({ error }, { status });
   }
 
+  const { trackBusinessEvent, BUSINESS_EVENTS } = await import(
+    "@/lib/observability/business-events"
+  );
+  trackBusinessEvent(
+    BUSINESS_EVENTS.ASSIGNMENT_UPLOAD_SUCCESS,
+    {
+      assignmentId: routeId.id,
+      classSessionId: assignment.class_session_id,
+    },
+    { userId: auth.userId }
+  );
+
   return NextResponse.json({ success: true });
 }
+
+export const POST = withApiObservability("student.assignments.submit.post", postHandler);

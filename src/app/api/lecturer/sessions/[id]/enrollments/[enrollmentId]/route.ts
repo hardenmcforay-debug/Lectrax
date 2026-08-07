@@ -8,8 +8,9 @@ import {
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string; enrollmentId: string }> }
 ) {
@@ -69,3 +70,5 @@ export async function DELETE(
     );
   }
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.enrollments.delete", deleteHandler);

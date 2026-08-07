@@ -15,6 +15,7 @@ import {
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { brandingExtensionMatchesMime, readBrandingFileBytes } from "@/lib/security/file-validation";
 import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 type AdminSupabase = Extract<
   Awaited<ReturnType<typeof requirePlatformAdmin>>,
@@ -42,7 +43,7 @@ async function saveFeatureCardsSetting(
   return { error, updatedAt };
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
   });
 }
 
-export async function DELETE(request: Request) {
+async function deleteHandler(request: Request) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -180,3 +181,7 @@ export async function DELETE(request: Request) {
 
   return NextResponse.json({ success: true, card_id: cardId });
 }
+
+export const POST = withApiObservability("admin.landing-feature-cards.post", postHandler);
+
+export const DELETE = withApiObservability("admin.landing-feature-cards.delete", deleteHandler);

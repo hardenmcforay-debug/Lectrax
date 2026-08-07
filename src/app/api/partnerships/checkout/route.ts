@@ -15,8 +15,16 @@ import {
   handleApiRouteError,
 } from "@/lib/errors/api";
 import { sanitizeErrorMessage, isTransientError } from "@/lib/errors/classify";
+import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
+import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+function buildPartnershipCheckoutRateLimitKey(email: string): string {
+  const hash = createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+  return `partnershipCheckout:${hash.slice(0, 24)}`;
+}
+
+async function postHandler(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
@@ -31,6 +39,13 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  const emailLimited = await rejectIfKeyRateLimited(
+    buildPartnershipCheckoutRateLimitKey(parsed.data.email),
+    "paymentCheckout",
+    "partnerships.checkout.email"
+  );
+  if (emailLimited) return emailLimited;
 
   if (!isServiceRoleConfigured()) {
     logServerError("partnerships.checkout.config", new Error("Service role not configured"));
@@ -174,3 +189,5 @@ export async function POST(request: Request) {
     return handleApiRouteError("partnerships.checkout", e);
   }
 }
+
+export const POST = withApiObservability("partnerships.checkout.post", postHandler);

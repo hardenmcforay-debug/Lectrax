@@ -19,6 +19,15 @@ From the main repository root:
 npm run export:admin
 ```
 
+CI enforces parity: `npm run verify:admin-parity` regenerates a fresh export in a temp directory and fails if `deploy/lectrax-admin` differs (source, shared infra, package versions, Sentry/Redis env surface).
+
+After changing shared infrastructure (`src/proxy.ts`, observability, security, Sentry configs, rate limiting, etc.), re-export and commit:
+
+```bash
+npm run export:admin
+npm run verify:admin-parity
+```
+
 ## Push to a separate GitHub repository
 
 ```bash

@@ -1,13 +1,15 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
 import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
 import type { AttendanceSession } from "@/types/database";
 
 export async function getAttendanceSessionForLecturer(
   attendanceSessionId: string,
-  lecturerId: string
+  lecturerId: string,
+  client?: SupabaseClient
 ): Promise<AttendanceSession | null> {
-  const supabase = await createServiceClient();
+  const supabase = client ?? (await createClient());
   const { data } = await supabase
     .from("attendance_sessions")
     .select("*")
@@ -20,9 +22,10 @@ export async function getAttendanceSessionForLecturer(
 
 export async function getActiveAttendanceSession(
   classSessionId: string,
-  lecturerId: string
+  lecturerId: string,
+  client?: SupabaseClient
 ): Promise<AttendanceSession | null> {
-  const supabase = await createServiceClient();
+  const supabase = client ?? (await createClient());
   const { data } = await supabase
     .from("attendance_sessions")
     .select("*")
@@ -44,8 +47,11 @@ export async function getActiveAttendanceSession(
   return session;
 }
 
-export async function countPresentStudents(attendanceSessionId: string): Promise<number> {
-  const supabase = await createServiceClient();
+export async function countPresentStudents(
+  attendanceSessionId: string,
+  client?: SupabaseClient
+): Promise<number> {
+  const supabase = client ?? (await createClient());
   const { count } = await supabase
     .from("attendance_records")
     .select("*", { count: "exact", head: true })
@@ -58,9 +64,9 @@ export async function countPresentStudents(attendanceSessionId: string): Promise
 export async function getAttendanceSessionNumber(
   classSessionId: string,
   sessionCreatedAt: string,
-  service?: Awaited<ReturnType<typeof createServiceClient>>
+  client?: SupabaseClient
 ): Promise<number> {
-  const supabase = service ?? (await createServiceClient());
+  const supabase = client ?? (await createClient());
   const { count } = await supabase
     .from("attendance_sessions")
     .select("*", { count: "exact", head: true })

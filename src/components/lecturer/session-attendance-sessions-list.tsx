@@ -1,7 +1,5 @@
 "use client";
 
-import { appFetch } from "@/lib/api/client-fetch";
-
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +7,7 @@ import { formatAttendanceTime } from "@/lib/attendance/constants";
 import { formatDate } from "@/lib/utils";
 import type { SessionAttendanceAudit } from "@/components/lecturer/session-audit-panel";
 import type { AttendancePresentStudent } from "@/lib/lecturer/attendance-sessions";
+import { fetchAllPresentStudents } from "@/lib/attendance/fetch-all-present-students";
 
 function formatMarkMethod(method: string): string {
   return method.replace(/_/g, " ");
@@ -46,22 +45,16 @@ export function SessionAttendanceSessionsList({
     setLoadingId(sessionId);
 
     try {
-      const res = await appFetch(
-        `/api/lecturer/sessions/${classSessionId}/attendance-sessions/${sessionId}/present`
-      );
-      const data = (await res.json()) as {
-        students?: AttendancePresentStudent[];
-        error?: string;
-      };
+      const students = await fetchAllPresentStudents(classSessionId, sessionId);
 
-      if (!res.ok) {
-        setError(data.error ?? "Could not load present students.");
+      if (!students) {
+        setError("Could not load present students.");
         return;
       }
 
       setPresentBySession((prev) => ({
         ...prev,
-        [sessionId]: data.students ?? [],
+        [sessionId]: students,
       }));
     } catch {
       setError("Network error. Please try again.");

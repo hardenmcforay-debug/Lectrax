@@ -3,9 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getAttendanceSessionPresentStudents } from "@/lib/lecturer/attendance-sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+import {
+  PAGINATION,
+  buildOffsetPaginationMeta,
+  parseOffsetPagination,
+} from "@/lib/pagination";
 
-export async function GET(
-  _request: Request,
+async function getHandler(
+  request: Request,
   { params }: { params: Promise<{ id: string; attendanceSessionId: string }> }
 ) {
   const { id: classSessionId, attendanceSessionId } = await params;
@@ -25,19 +31,34 @@ export async function GET(
   }
 
   try {
-    const students = await getAttendanceSessionPresentStudents(
+    const pagination = parseOffsetPagination(new URL(request.url).searchParams, {
+      defaultSize: 100,
+      maxSize: PAGINATION.MAX_PRESENT_PAGE_SIZE,
+    });
+
+    const result = await getAttendanceSessionPresentStudents(
       classSessionId,
       attendanceSessionId,
-      user.id
+      user.id,
+      pagination
     );
 
-    if (!students) {
+    if (!result) {
       return NextResponse.json({ error: "Attendance session not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ students });
+    return NextResponse.json({
+      students: result.students,
+      pagination: buildOffsetPaginationMeta(
+        pagination.page,
+        pagination.pageSize,
+        result.total
+      ),
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not load present students.";
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
+
+export const GET = withApiObservability("lecturer.sessions.attendance-sessions.present.get", getHandler);

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { User } from "@supabase/supabase-js";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { apiServiceUnavailableResponse } from "@/lib/errors/api";
+import { bindObservabilityUser } from "@/lib/observability/request-store";
 import type { UserRole } from "@/types/database";
 
 type ApiRoleGuardSuccess = {
@@ -12,7 +13,6 @@ type ApiRoleGuardSuccess = {
   user: User;
   userId: string;
   supabase: SupabaseClient;
-  service: SupabaseClient;
 };
 
 type ApiRoleGuardFailure = {
@@ -32,9 +32,8 @@ async function requireApiRole(
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const service = await createServiceClient();
   const supabase = await createClient();
-  const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
+  const roleResult = await getRoleForUserSafe(supabase, auth.user);
 
   if (roleResult.status === "service_unavailable") {
     return { error: apiServiceUnavailableResponse() };
@@ -44,7 +43,8 @@ async function requireApiRole(
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
-  return { user: auth.user, userId: auth.user.id, supabase, service };
+  bindObservabilityUser(auth.user.id);
+  return { user: auth.user, userId: auth.user.id, supabase };
 }
 
 export async function requireStudentRole() {
@@ -68,8 +68,8 @@ export async function requireAuthenticatedUser(): Promise<
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const service = await createServiceClient();
   const supabase = await createClient();
 
-  return { user: auth.user, userId: auth.user.id, supabase, service };
+  bindObservabilityUser(auth.user.id);
+  return { user: auth.user, userId: auth.user.id, supabase };
 }

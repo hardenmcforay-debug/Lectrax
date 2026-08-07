@@ -116,7 +116,7 @@ Apply **`045_performance_scaling.sql`** in Supabase production (after `044`).
 - `UNIQUE(attendance_session_id, enrollment_id)` prevents duplicate marks
 - `23505` handling returns user-safe errors on concurrent scans
 - Rate limiting on scan endpoint (`rejectIfUserRateLimited`)
-- GPS requirement enforced server-side (validation review)
+- QR attendance validated server-side without GPS (auth, enrollment, token, device, session, rate limits, duplicates)
 - One active session per class+lecturer (migration `044`)
 
 ### Risks

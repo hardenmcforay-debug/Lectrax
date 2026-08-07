@@ -208,7 +208,7 @@ Malformed requests generally receive 400 with validation messages (safe, user-fa
 | Endpoint class | Risk | Current state | Recommendation |
 |----------------|------|---------------|----------------|
 | `/api/contact`, `/api/partnerships/inquiry` | Spam, DB fill | No rate limit | Add Vercel/edge rate limit or Upstash Redis (e.g. 5/hour/IP) |
-| `/api/attendance/scan` | Automated attendance fraud | Device binding + GPS optional; no rate limit | Rate limit per student/device (e.g. 30/min) |
+| `/api/attendance/scan` | Automated attendance fraud | Device binding + QR/session checks; rate limited | Rate limit per student/device (e.g. 30/min) |
 | `/api/student/join` | Session code brute force | No rate limit | Limit attempts per IP/user |
 | `/api/payments/checkout` | Payment initiation abuse | Auth + lecturer role | Rate limit per lecturer |
 | Login/signup | Credential stuffing | Supabase Auth (external) | Enable Supabase Auth rate limits / CAPTCHA |

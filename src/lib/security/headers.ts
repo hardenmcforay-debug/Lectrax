@@ -1,5 +1,12 @@
 /**
  * Central HTTP security headers for Lectrax (Next.js `headers()` config).
+ *
+ * Content-Security-Policy is NOT set here — it is applied per-request in `proxy.ts`
+ * with a cryptographic nonce (see `src/lib/security/csp.ts`). A static CSP cannot
+ * carry request nonces and would conflict with the nonce + strict-dynamic policy.
+ *
+ * This module must stay free of `@/` imports and `next/server` so `next.config.ts`
+ * can load it during config compilation.
  */
 
 export type SecurityHeader = { key: string; value: string };
@@ -8,27 +15,14 @@ function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-function getSupabaseCspHosts(): { https: string; wss: string } {
-  const fallback = { https: "https://*.supabase.co", wss: "wss://*.supabase.co" };
-  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (!configured) return fallback;
-
-  try {
-    const host = new URL(configured).host;
-    return { https: `https://${host}`, wss: `wss://${host}` };
-  } catch {
-    return fallback;
-  }
-}
-
-/** Permissions-Policy — main app needs camera (QR scan) and geolocation (optional attendance GPS). */
+/** Permissions-Policy — main app needs camera for QR attendance scanning. */
 export function getPermissionsPolicy(options?: { allowCamera?: boolean }): string {
   const allowCamera = options?.allowCamera ?? true;
   const camera = allowCamera ? "(self)" : "()";
   return [
     `camera=${camera}`,
     "microphone=()",
-    "geolocation=(self)",
+    "geolocation=()",
     "payment=()",
     "usb=()",
     "bluetooth=()",
@@ -36,45 +30,9 @@ export function getPermissionsPolicy(options?: { allowCamera?: boolean }): strin
   ].join(", ");
 }
 
-/**
- * Content-Security-Policy tuned for Next.js App Router, Supabase Auth/REST/Realtime/Storage,
- * PWA inline bootstrap scripts, Tailwind inline styles, and html5-qrcode camera scanning.
- */
-export function getContentSecurityPolicy(): string {
-  const isDev = !isProduction();
-  const supabase = getSupabaseCspHosts();
-
-  const scriptSrc = ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])].join(" ");
-
-  const directives = [
-    "default-src 'self'",
-    `script-src ${scriptSrc}`,
-    "style-src 'self' 'unsafe-inline'",
-    // Exact project host + wildcard so custom or standard Supabase Storage URLs work in PWA.
-    `img-src 'self' data: blob: https://*.supabase.co ${supabase.https}`,
-    "font-src 'self'",
-    `connect-src 'self' ${supabase.https} ${supabase.wss}`,
-    "media-src 'self' blob:",
-    "worker-src 'self' blob:",
-    "manifest-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-src 'self' blob:",
-    "frame-ancestors 'none'",
-  ];
-
-  if (isProduction()) {
-    directives.push("upgrade-insecure-requests");
-  }
-
-  return directives.join("; ");
-}
-
-/** Baseline security headers applied to all application routes. */
+/** Baseline security headers applied to all application routes (CSP excluded — see proxy). */
 export function getSecurityHeaders(options?: { allowCamera?: boolean }): SecurityHeader[] {
   const headers: SecurityHeader[] = [
-    { key: "Content-Security-Policy", value: getContentSecurityPolicy() },
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "X-Frame-Options", value: "DENY" },
     { key: "X-Robots-Tag", value: "noindex, nofollow" },

@@ -9,6 +9,9 @@ export const GRACE_PERIOD_DAYS = 5;
 
 export const EXPIRY_REMINDER_DAYS = [14, 7, 3, 1] as const;
 
+/** Keyset page size for daily subscription lifecycle cron batches. */
+export const SUBSCRIPTION_CRON_PAGE_SIZE = 100;
+
 export const ADMIN_GRANTED_SUBSCRIBE_BLOCKED_MESSAGE =
   "Your Premium plan was activated by the platform administrator. You can subscribe once this plan ends or the administrator removes it.";
 

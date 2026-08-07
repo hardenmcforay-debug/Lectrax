@@ -8,6 +8,8 @@ import {
 import { requireAuthenticatedUser } from "@/lib/auth/require-api-role";
 import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
 import { parseJsonBody } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+import { createServiceClient } from "@/lib/supabase/server";
 
 const deleteAccountBodySchema = z.object({
   password: z.string().min(1, { error: "Password is required" }),
@@ -20,11 +22,11 @@ const deleteAccountBodySchema = z.object({
     ),
 });
 
-export async function DELETE(request: Request) {
+async function deleteHandler(request: Request) {
   const auth = await requireAuthenticatedUser();
   if (auth.error) return auth.error;
 
-  const limited = rejectIfUserRateLimited(
+  const limited = await rejectIfUserRateLimited(
     auth.userId,
     "accountDeletion",
     "account_deletion"
@@ -42,9 +44,10 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const service = await createServiceClient();
   const result = await deleteUserAccount({
     user: auth.user,
-    service: auth.service,
+    service,
     userClient: auth.supabase,
     password: parsed.data.password,
     confirmationPhrase: parsed.data.confirmationPhrase,
@@ -59,3 +62,5 @@ export async function DELETE(request: Request) {
     message: "Your account has been permanently deleted.",
   });
 }
+
+export const DELETE = withApiObservability("account.delete", deleteHandler);

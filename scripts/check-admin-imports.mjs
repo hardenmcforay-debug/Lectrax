@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -34,5 +35,17 @@ function walk(dir) {
   }
 }
 
+if (!existsSync(root)) {
+  console.error("deploy/lectrax-admin/src is missing. Run: npm run export:admin");
+  process.exit(1);
+}
+
 walk(root);
-console.log([...missing].sort().join("\n"));
+
+if (missing.size > 0) {
+  console.error("Unresolved admin @/ imports:");
+  console.error([...missing].sort().join("\n"));
+  process.exit(1);
+}
+
+console.log("Admin @/ import graph is closed.");

@@ -18,8 +18,9 @@ import { handleApiRouteError } from "@/lib/errors/api";
 import { monimeWebhookEventSchema } from "@/lib/validations";
 import { logServerError } from "@/lib/errors/logger";
 import { completePartnershipPayment } from "@/lib/partnerships/complete-payment";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const rawBody = await request.text();
   const signature = getMonimeWebhookSignature(request);
 
@@ -230,6 +231,28 @@ export async function POST(request: Request) {
       transactionReference: monimeResourceId ?? payment.transaction_reference,
       service,
     });
+
+    const { trackBusinessEvent, BUSINESS_EVENTS } = await import(
+      "@/lib/observability/business-events"
+    );
+    trackBusinessEvent(
+      BUSINESS_EVENTS.PAYMENT_SUCCESS,
+      {
+        paymentId: payment.id,
+        billingPlan,
+        lecturerId: payment.lecturer_id,
+      },
+      { userId: payment.lecturer_id }
+    );
+    trackBusinessEvent(
+      BUSINESS_EVENTS.SUBSCRIPTION_ACTIVATED,
+      {
+        paymentId: payment.id,
+        billingPlan,
+        lecturerId: payment.lecturer_id,
+      },
+      { userId: payment.lecturer_id }
+    );
   } catch (err) {
     if (err instanceof PaymentActivationInProgressError) {
       return NextResponse.json({ received: true, in_progress: true });
@@ -251,3 +274,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+export const POST = withApiObservability("webhooks.monime.post", postHandler);

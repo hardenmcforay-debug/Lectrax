@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassAssignmentForLecturer } from "@/lib/lecturer/class-assignments";
 import { deleteSubmissionFile } from "@/lib/assignments/submissions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
 ) {
@@ -30,9 +31,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
   }
 
-  const service = await createServiceClient();
-
-  const { data: submissions, error: submissionsError } = await service
+  const { data: submissions, error: submissionsError } = await supabase
     .from("assignment_submissions")
     .select("id, storage_path, enrollment_id")
     .eq("assignment_id", assignmentId);
@@ -50,7 +49,7 @@ export async function DELETE(
 
   const submissionIds = submissions.map((s) => s.id);
 
-  const { data: grades } = await service
+  const { data: grades } = await supabase
     .from("assignment_grades")
     .select("assignment_submission_id, grade")
     .in("assignment_submission_id", submissionIds);
@@ -73,11 +72,11 @@ export async function DELETE(
 
   for (const submission of submissions) {
     if (submission.storage_path) {
-      await deleteSubmissionFile(service, submission.storage_path);
+      await deleteSubmissionFile(supabase, submission.storage_path);
     }
   }
 
-  const { error: deleteError } = await service
+  const { error: deleteError } = await supabase
     .from("assignment_submissions")
     .delete()
     .eq("assignment_id", assignmentId);
@@ -91,3 +90,5 @@ export async function DELETE(
 
   return NextResponse.json({ deleted: submissions.length });
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.assignments.submissions.delete", deleteHandler);

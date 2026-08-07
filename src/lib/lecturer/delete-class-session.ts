@@ -1,5 +1,5 @@
 import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 
 export interface DeleteClassSessionResult {
@@ -12,7 +12,7 @@ export async function deleteClassSession(
   sessionId: string,
   lecturerId: string
 ): Promise<DeleteClassSessionResult | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const session = await getClassSessionForLecturer(sessionId, lecturerId);
   if (!session) return null;
 

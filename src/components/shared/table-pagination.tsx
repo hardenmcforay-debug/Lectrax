@@ -1,16 +1,41 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+function buildPageHref(
+  basePath: string,
+  page: number,
+  pageParam: string,
+  preserveParams?: Record<string, string | undefined>
+): string {
+  const params = new URLSearchParams();
+  if (preserveParams) {
+    for (const [key, value] of Object.entries(preserveParams)) {
+      if (value != null && value !== "" && key !== pageParam) {
+        params.set(key, value);
+      }
+    }
+  }
+  params.set(pageParam, String(page));
+  const query = params.toString();
+  return query ? `${basePath}?${query}` : basePath;
+}
+
 export function TablePagination({
   basePath,
   page,
   pageSize,
   total,
+  pageParam = "page",
+  preserveParams,
 }: {
   basePath: string;
   page: number;
   pageSize: number;
   total: number;
+  /** Query param name for the page number (default: `page`). */
+  pageParam?: string;
+  /** Extra query params preserved across page links (e.g. `tab`). */
+  preserveParams?: Record<string, string | undefined>;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -24,8 +49,10 @@ export function TablePagination({
     );
   }
 
-  const prevHref = page > 1 ? `${basePath}?page=${page - 1}` : null;
-  const nextHref = page < totalPages ? `${basePath}?page=${page + 1}` : null;
+  const prevHref =
+    page > 1 ? buildPageHref(basePath, page - 1, pageParam, preserveParams) : null;
+  const nextHref =
+    page < totalPages ? buildPageHref(basePath, page + 1, pageParam, preserveParams) : null;
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -8,7 +8,10 @@ import { resolveLoginEmailForSignInAsync } from "@/lib/auth/recovery-email";
 import { isServiceRoleConfigured } from "@/lib/env";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
+import { BUSINESS_EVENTS, trackBusinessEvent } from "@/lib/observability/business-events";
+import { bindObservabilityUser } from "@/lib/observability/request-store";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 function buildLoginRateLimitKey(identifier: string): string {
   const hash = createHash("sha256").update(identifier.trim().toLowerCase()).digest("hex");
@@ -22,7 +25,7 @@ function loginFailureMessage(authMessage: string): string {
   return "Sign in failed. Please check your phone number or email and password.";
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const { identifier, password } = parsed.data;
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildLoginRateLimitKey(identifier),
       "authLogin",
       "auth.login"
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
 
     const loginEmail = await resolveLoginEmailForSignInAsync(identifier);
     if (!loginEmail) {
+      trackBusinessEvent(BUSINESS_EVENTS.LOGIN_FAILURE, { reason: "invalid_identifier" });
       return NextResponse.json(
         { error: "Enter a valid phone number or email address." },
         { status: 400 }
@@ -60,24 +64,35 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const authResult = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password,
     });
+    const authError = authResult?.error ?? null;
+    const authUserId = authResult?.data?.user?.id ?? null;
 
     if (authError) {
+      trackBusinessEvent(BUSINESS_EVENTS.LOGIN_FAILURE, {
+        reason: "invalid_credentials",
+      });
       return NextResponse.json(
         { error: loginFailureMessage(authError.message) },
         { status: 401 }
       );
     }
 
+    bindObservabilityUser(authUserId);
+    trackBusinessEvent(BUSINESS_EVENTS.LOGIN_SUCCESS, {}, { userId: authUserId });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     logServerError("auth.login.unhandled", error);
+    trackBusinessEvent(BUSINESS_EVENTS.LOGIN_FAILURE, { reason: "unhandled" });
     return NextResponse.json(
       { error: "Sign in failed. Please try again." },
       { status: 500 }
     );
   }
 }
+
+export const POST = withApiObservability("auth.login.post", postHandler);

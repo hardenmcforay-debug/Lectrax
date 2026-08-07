@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createServiceClient } from "@/lib/supabase/server";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { adminToggleLecturerSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -26,8 +26,7 @@ export async function POST(request: Request) {
 
   const { lecturerId, isActive } = parsed.data;
 
-  const service = await createServiceClient();
-  const { error } = await service
+  const { error } = await auth.supabase
     .from("profiles")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", lecturerId)
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
     );
   }
 
-  await service.from("audit_logs").insert({
+  await auth.supabase.from("audit_logs").insert({
     actor_id: auth.userId,
     action: isActive ? "lecturer_activated" : "lecturer_deactivated",
     entity_type: "profile",
@@ -50,3 +49,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ success: true });
 }
+
+export const POST = withApiObservability("admin.toggle-lecturer.post", postHandler);

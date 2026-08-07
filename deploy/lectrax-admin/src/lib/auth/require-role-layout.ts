@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getRoleHomeUrl } from "@/lib/auth/admin-deployment";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
@@ -21,15 +21,8 @@ export async function requireRoleLayout(requiredRole: UserRole): Promise<RoleLay
     return { status: "redirect", href: "/login" };
   }
 
-  let service;
-  try {
-    service = await createServiceClient();
-  } catch {
-    return { status: "service_unavailable" };
-  }
-
   const supabase = await createClient();
-  const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
+  const roleResult = await getRoleForUserSafe(supabase, auth.user);
 
   if (roleResult.status === "service_unavailable") {
     return { status: "service_unavailable" };

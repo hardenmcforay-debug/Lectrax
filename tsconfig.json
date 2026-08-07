@@ -39,6 +39,13 @@
     "node_modules",
     "supabase/functions",
     "scripts",
-    "deploy"
+    "deploy",
+    "coverage",
+    "playwright-report",
+    "test-results",
+    "e2e",
+    "tests",
+    "vitest.config.ts",
+    "playwright.config.ts"
   ]
 }

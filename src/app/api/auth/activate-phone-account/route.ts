@@ -7,6 +7,7 @@ import { isEmailIdentifier } from "@/lib/auth/phone-number";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const activatePhoneAccountSchema = z.object({
   identifier: loginIdentifierField,
@@ -18,7 +19,7 @@ function buildActivatePhoneAccountRateLimitKey(identifier: string): string {
 }
 
 /** Best-effort activation for phone-only accounts stuck behind email confirmation. */
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildActivatePhoneAccountRateLimitKey(identifier),
       "activatePhoneAccount",
       "auth.activate-phone-account"
@@ -54,3 +55,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not activate phone account." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.activate-phone-account.post", postHandler);

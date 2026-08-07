@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string; logId: string }> }
 ) {
@@ -25,8 +25,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Class session not found." }, { status: 404 });
   }
 
-  const service = await createServiceClient();
-  const { data: log, error: fetchError } = await service
+  const { data: log, error: fetchError } = await auth.supabase
     .from("audit_logs")
     .select("id, class_session_id")
     .eq("id", logId)
@@ -40,7 +39,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Activity log does not belong to this session." }, { status: 403 });
   }
 
-  const { error: deleteError } = await service.from("audit_logs").delete().eq("id", logId);
+  const { error: deleteError } = await auth.supabase.from("audit_logs").delete().eq("id", logId);
 
   if (deleteError) {
     return NextResponse.json(
@@ -51,3 +50,5 @@ export async function DELETE(
 
   return NextResponse.json({ message: "Activity log deleted." });
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.audit-logs.by-id.delete", deleteHandler);

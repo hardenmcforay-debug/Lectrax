@@ -9,8 +9,10 @@ import {
 import type { BillingPlan } from "@/types/database";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+import { createServiceClient } from "@/lib/supabase/server";
 
-export async function GET(
+async function getHandler(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
@@ -22,7 +24,10 @@ export async function GET(
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
-  const { data: payment } = await auth.service
+  // Payment UPDATE/lifecycle has no lecturer RLS — service required.
+  const service = await createServiceClient();
+
+  const { data: payment } = await service
     .from("payments")
     .select("*")
     .eq("id", paymentId)
@@ -51,9 +56,9 @@ export async function GET(
         : await verifyMonimePayment(monimeId);
 
     if (verified.completed && payment.billing_plan) {
-      const { allowed } = await canLecturerSelfSubscribe(payment.lecturer_id, auth.service);
+      const { allowed } = await canLecturerSelfSubscribe(payment.lecturer_id, service);
       if (!allowed) {
-        await auth.service.from("payments").update({ status: "failed" }).eq("id", payment.id);
+        await service.from("payments").update({ status: "failed" }).eq("id", payment.id);
         return NextResponse.json(
           {
             status: "failed",
@@ -70,7 +75,7 @@ export async function GET(
           billingPlan: payment.billing_plan as BillingPlan,
           paymentId: payment.id,
           transactionReference: monimeId,
-          service: auth.service,
+          service,
         });
       } catch (err) {
         if (err instanceof PaymentActivationInProgressError) {
@@ -85,3 +90,5 @@ export async function GET(
 
   return NextResponse.json({ status: payment.status });
 }
+
+export const GET = withApiObservability("payments.by-id.status.get", getHandler);

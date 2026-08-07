@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
@@ -9,6 +10,7 @@ import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/su
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const manualSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -17,6 +19,7 @@ const manualSchema = z.object({
 });
 
 async function validateManualAttendanceRequest(
+  supabase: SupabaseClient,
   userId: string,
   attendanceSessionId: string,
   enrollmentId: string,
@@ -33,10 +36,8 @@ async function validateManualAttendanceRequest(
     return { error: NextResponse.json({ error: "Attendance session not found" }, { status: 404 }) };
   }
 
-  const service = await createServiceClient();
-
   if (!isAttendanceSessionOpen(attendanceSession)) {
-    await closeAttendanceSessionIfAbandoned(service, attendanceSession);
+    await closeAttendanceSessionIfAbandoned(supabase, attendanceSession);
     return {
       error: NextResponse.json(
         { error: "Attendance collection has ended for this session." },
@@ -45,7 +46,7 @@ async function validateManualAttendanceRequest(
     };
   }
 
-  if (await closeAttendanceSessionIfAbandoned(service, attendanceSession)) {
+  if (await closeAttendanceSessionIfAbandoned(supabase, attendanceSession)) {
     return {
       error: NextResponse.json(
         { error: "Attendance collection has ended for this session." },
@@ -54,7 +55,7 @@ async function validateManualAttendanceRequest(
     };
   }
 
-  const { data: enrollment } = await service
+  const { data: enrollment } = await supabase
     .from("enrollments")
     .select("id")
     .eq("id", enrollmentId)
@@ -73,7 +74,7 @@ async function validateManualAttendanceRequest(
   return { attendanceSession };
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
   const { attendanceSessionId, enrollmentId, classSessionId } = parsed.data;
 
   const validation = await validateManualAttendanceRequest(
+    auth.supabase,
     auth.userId,
     attendanceSessionId,
     enrollmentId,
@@ -153,7 +155,7 @@ export async function POST(request: Request) {
   });
 }
 
-export async function DELETE(request: Request) {
+async function deleteHandler(request: Request) {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
@@ -172,6 +174,7 @@ export async function DELETE(request: Request) {
   const { attendanceSessionId, enrollmentId, classSessionId } = parsed.data;
 
   const validation = await validateManualAttendanceRequest(
+    auth.supabase,
     auth.userId,
     attendanceSessionId,
     enrollmentId,
@@ -179,9 +182,7 @@ export async function DELETE(request: Request) {
   );
   if (validation.error) return validation.error;
 
-  const service = auth.service;
-
-  const { data: record, error: fetchError } = await service
+  const { data: record, error: fetchError } = await auth.supabase
     .from("attendance_records")
     .select("id, mark_method, enrollment_id")
     .eq("attendance_session_id", attendanceSessionId)
@@ -207,12 +208,14 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const { data: enrollment } = await service
+  const { data: enrollment } = await auth.supabase
     .from("enrollments")
     .select("student_id, manual_student_id")
     .eq("id", enrollmentId)
     .maybeSingle();
 
+  // Attendance DELETE lacks reliable lecturer RLS — service for delete only.
+  const service = await createServiceClient();
   const { error: deleteError } = await service
     .from("attendance_records")
     .delete()
@@ -241,3 +244,7 @@ export async function DELETE(request: Request) {
     message: "Attendance removed for this session.",
   });
 }
+
+export const POST = withApiObservability("attendance.manual.post", postHandler);
+
+export const DELETE = withApiObservability("attendance.manual.delete", deleteHandler);

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { persistAttendanceSessionClosed } from "@/lib/attendance/close-session";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const endSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -31,7 +32,7 @@ async function parseEndBody(request: Request): Promise<unknown> {
   }
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,12 +52,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid attendance session id" }, { status: 400 });
   }
 
-  const service = await createServiceClient();
   const { attendanceSessionId } = parsed.data;
 
   const [{ data: profile }, { data: attendanceSession }] = await Promise.all([
-    service.from("profiles").select("role").eq("id", user.id).maybeSingle(),
-    service
+    supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+    supabase
       .from("attendance_sessions")
       .select("id, class_session_id, is_active, ended_at")
       .eq("id", attendanceSessionId)
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const endedAt = await persistAttendanceSessionClosed(service, attendanceSession);
+    const endedAt = await persistAttendanceSessionClosed(supabase, attendanceSession);
 
     void logAudit({
       action: "attendance_session_ended",
@@ -100,3 +100,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("attendance.end.post", postHandler);

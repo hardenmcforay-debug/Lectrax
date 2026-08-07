@@ -6,6 +6,7 @@ import {
   getAdminActivateBlockedMessage,
   GRACE_PERIOD_DAYS,
   EXPIRY_REMINDER_DAYS,
+  SUBSCRIPTION_CRON_PAGE_SIZE,
   SUBSCRIPTION_STATUS_LABELS,
   SUBSCRIPTION_TIER_LABELS,
   type BillingPlan,
@@ -19,6 +20,7 @@ import {
   claimPaymentForActivation,
   releasePaymentActivationClaim,
 } from "@/lib/concurrency/payment-activation";
+import { logServerError } from "@/lib/errors/logger";
 
 type ProfileSubscriptionRow = {
   id: string;
@@ -350,49 +352,160 @@ export async function refreshSubscriptionLifecycle(
   return sub;
 }
 
+type PremiumLecturerPageRow = {
+  id: string;
+  subscription_status?: SubscriptionLifecycleStatus;
+  subscription_plan?: SubscriptionTier;
+  subscription_end_date?: string | null;
+  subscription_start_date?: string | null;
+};
+
+type PremiumLecturerPageOptions = {
+  select: string;
+  cursorId: string | null;
+  pageSize?: number;
+  /** Extra PostgREST filters after the shared premium-lecturer predicates. */
+  activeOnly?: boolean;
+  requireEndDate?: boolean;
+};
+
+/**
+ * Keyset-paginate premium lecturers by id so cron work stays bounded per query.
+ * Returns rows in ascending id order; empty array means no further pages.
+ */
+export async function fetchPremiumLecturerPage(
+  service: ServiceClient,
+  options: PremiumLecturerPageOptions
+): Promise<PremiumLecturerPageRow[]> {
+  const pageSize = options.pageSize ?? SUBSCRIPTION_CRON_PAGE_SIZE;
+
+  let query = service
+    .from("profiles")
+    .select(options.select)
+    .eq("role", "lecturer")
+    .eq("subscription_plan", "premium")
+    .order("id", { ascending: true })
+    .limit(pageSize);
+
+  if (options.activeOnly) {
+    query = query.eq("subscription_status", "active");
+  }
+  if (options.requireEndDate) {
+    query = query.not("subscription_end_date", "is", null);
+  }
+  if (options.cursorId) {
+    query = query.gt("id", options.cursorId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to page premium lecturers: ${error.message}`);
+  }
+  return (data ?? []) as unknown as PremiumLecturerPageRow[];
+}
+
+export type PremiumLifecycleBatchResult = {
+  lifecycleUpdates: number;
+  lifecycleFailures: number;
+  processedLecturers: number;
+  pagesProcessed: number;
+};
+
+/** Advance active→grace→expired for all premium lecturers using keyset pages. */
+export async function refreshAllPremiumSubscriptionLifecycles(
+  service?: ServiceClient
+): Promise<PremiumLifecycleBatchResult> {
+  const supabase = service ?? (await createServiceClient());
+  let cursorId: string | null = null;
+  let lifecycleUpdates = 0;
+  let lifecycleFailures = 0;
+  let processedLecturers = 0;
+  let pagesProcessed = 0;
+
+  while (true) {
+    const page = await fetchPremiumLecturerPage(supabase, {
+      select: "id, subscription_status",
+      cursorId,
+    });
+    if (page.length === 0) break;
+    pagesProcessed += 1;
+
+    for (const lecturer of page) {
+      processedLecturers += 1;
+      try {
+        const beforeStatus = lecturer.subscription_status;
+        const refreshed = await refreshSubscriptionLifecycle(lecturer.id, supabase);
+        if (refreshed && refreshed.status !== beforeStatus) {
+          lifecycleUpdates += 1;
+        }
+      } catch (error) {
+        lifecycleFailures += 1;
+        logServerError("cron.subscription_lifecycle.lecturer", error, {
+          lecturerId: lecturer.id,
+        });
+      }
+    }
+
+    if (page.length < SUBSCRIPTION_CRON_PAGE_SIZE) break;
+    cursorId = page[page.length - 1]!.id;
+  }
+
+  return {
+    lifecycleUpdates,
+    lifecycleFailures,
+    processedLecturers,
+    pagesProcessed,
+  };
+}
+
 export async function processExpiryReminders(
   service?: Awaited<ReturnType<typeof createServiceClient>>
 ): Promise<number> {
   const supabase = service ?? (await createServiceClient());
   const now = new Date();
   let sent = 0;
+  let cursorId: string | null = null;
 
-  const { data: lecturers } = await supabase
-    .from("profiles")
-    .select(
-      "id, subscription_plan, subscription_status, subscription_end_date"
-    )
-    .eq("role", "lecturer")
-    .eq("subscription_plan", "premium")
-    .eq("subscription_status", "active")
-    .not("subscription_end_date", "is", null);
-
-  for (const lecturer of lecturers ?? []) {
-    if (!lecturer.subscription_end_date) continue;
-    const end = new Date(lecturer.subscription_end_date);
-    const daysLeft = daysBetween(now, end);
-
-    if (!EXPIRY_REMINDER_DAYS.includes(daysLeft as (typeof EXPIRY_REMINDER_DAYS)[number])) {
-      continue;
-    }
-
-    const message = `Your Lectrax subscription will expire in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. You can renew once your current plan ends.`;
-
-    const { error } = await supabase.from("subscription_notifications").insert({
-      lecturer_id: lecturer.id,
-      subscription_end_date: lecturer.subscription_end_date,
-      days_before_expiry: daysLeft,
-      message,
+  while (true) {
+    const lecturers = await fetchPremiumLecturerPage(supabase, {
+      select: "id, subscription_plan, subscription_status, subscription_end_date",
+      cursorId,
+      activeOnly: true,
+      requireEndDate: true,
     });
 
-    if (error) {
-      if (error.code !== "23505") {
-        console.error("expiry_reminder_insert_failed", lecturer.id, error.message);
+    if (lecturers.length === 0) break;
+
+    for (const lecturer of lecturers) {
+      if (!lecturer.subscription_end_date) continue;
+      const end = new Date(lecturer.subscription_end_date);
+      const daysLeft = daysBetween(now, end);
+
+      if (!EXPIRY_REMINDER_DAYS.includes(daysLeft as (typeof EXPIRY_REMINDER_DAYS)[number])) {
+        continue;
       }
-      continue;
+
+      const message = `Your Lectrax subscription will expire in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. You can renew once your current plan ends.`;
+
+      const { error } = await supabase.from("subscription_notifications").insert({
+        lecturer_id: lecturer.id,
+        subscription_end_date: lecturer.subscription_end_date,
+        days_before_expiry: daysLeft,
+        message,
+      });
+
+      if (error) {
+        if (error.code !== "23505") {
+          console.error("expiry_reminder_insert_failed", lecturer.id, error.message);
+        }
+        continue;
+      }
+
+      sent += 1;
     }
 
-    sent += 1;
+    if (lecturers.length < SUBSCRIPTION_CRON_PAGE_SIZE) break;
+    cursorId = lecturers[lecturers.length - 1]!.id;
   }
 
   return sent;
@@ -815,20 +928,34 @@ export async function backfillMissingSubscriptionRecords(
   service?: ServiceClient
 ): Promise<number> {
   const supabase = service ?? (await createServiceClient());
-
-  const { data: lecturers } = await supabase
-    .from("profiles")
-    .select(
-      "id, subscription_plan, subscription_status, subscription_start_date, subscription_end_date"
-    )
-    .eq("role", "lecturer")
-    .eq("subscription_plan", "premium");
-
   let created = 0;
+  let cursorId: string | null = null;
 
-  for (const lecturer of lecturers ?? []) {
-    const didCreate = await backfillSubscriptionForLecturer(lecturer, supabase);
-    if (didCreate) created += 1;
+  while (true) {
+    const lecturers = await fetchPremiumLecturerPage(supabase, {
+      select:
+        "id, subscription_plan, subscription_status, subscription_start_date, subscription_end_date",
+      cursorId,
+    });
+
+    if (lecturers.length === 0) break;
+
+    for (const lecturer of lecturers) {
+      const didCreate = await backfillSubscriptionForLecturer(
+        {
+          id: lecturer.id,
+          subscription_plan: lecturer.subscription_plan ?? "premium",
+          subscription_status: lecturer.subscription_status ?? "active",
+          subscription_start_date: lecturer.subscription_start_date ?? null,
+          subscription_end_date: lecturer.subscription_end_date ?? null,
+        },
+        supabase
+      );
+      if (didCreate) created += 1;
+    }
+
+    if (lecturers.length < SUBSCRIPTION_CRON_PAGE_SIZE) break;
+    cursorId = lecturers[lecturers.length - 1]!.id;
   }
 
   return created;

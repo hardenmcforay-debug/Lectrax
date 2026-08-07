@@ -303,7 +303,7 @@ function parseMonimeSignatureHeader(header: string): {
   return { timestamp, signatures };
 }
 
-function safeEqualHex(a: string, b: string): boolean {
+function equalHex(a: string, b: string): boolean {
   try {
     const bufA = Buffer.from(a, "hex");
     const bufB = Buffer.from(b, "hex");
@@ -369,7 +369,7 @@ function verifyHmacWebhookSignature(
       : [payload];
 
     for (const message of candidates) {
-      if (safeEqualHex(computeHmacHex(secret, message), v1)) {
+      if (equalHex(computeHmacHex(secret, message), v1)) {
         return !timestamp || isWebhookTimestampFresh(timestamp);
       }
     }
@@ -377,7 +377,7 @@ function verifyHmacWebhookSignature(
   }
 
   if (!header.includes("=")) {
-    if (safeEqualHex(computeHmacHex(secret, payload), header)) {
+    if (equalHex(computeHmacHex(secret, payload), header)) {
       return true;
     }
   }

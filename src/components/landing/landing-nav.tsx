@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -13,17 +14,28 @@ import { cn } from "@/lib/utils";
 const PRODUCTS_MENU_ID = "landing-nav-products-menu";
 const COMPANY_MENU_ID = "landing-nav-company-menu";
 
-/** Switch to solid white after a small scroll. */
-const SCROLL_SOLID_OFFSET = 8;
+/** Switch to solid white after any meaningful scroll. */
+const SCROLL_SOLID_OFFSET = 1;
 
 function readScrollY() {
   if (typeof window === "undefined") return 0;
+  const scrollingElement = document.scrollingElement;
   return Math.max(
     window.scrollY || 0,
     window.pageYOffset || 0,
     document.documentElement.scrollTop || 0,
-    document.body.scrollTop || 0
+    document.body.scrollTop || 0,
+    scrollingElement?.scrollTop || 0
   );
+}
+
+/** Apply solid/hero classes on the header node — never use inline bg (React fights it). */
+function applyNavMode(header: HTMLElement | null, mode: "solid" | "hero") {
+  if (typeof document === "undefined" || !header) return;
+  document.documentElement.dataset.landingNav = mode;
+  header.dataset.navMode = mode;
+  header.classList.toggle("landing-nav--solid", mode === "solid");
+  header.classList.toggle("landing-nav--hero", mode === "hero");
 }
 
 type ProductLink = {
@@ -115,7 +127,6 @@ export function LandingNav() {
     setMobileCompanyOpen(false);
     setClickedScrollSection(null);
     setScrolledPastHero(false);
-    scrolledRef.current = false;
   }
 
   const isHome = pathname === "/";
@@ -129,51 +140,61 @@ export function LandingNav() {
 
   useLayoutEffect(() => {
     const header = headerRef.current;
-
-    const paint = (mode: "solid" | "hero") => {
-      document.documentElement.dataset.landingNav = mode;
-      if (!header) return;
-      header.dataset.navMode = mode;
-      if (mode === "solid") {
-        header.style.backgroundColor = "#ffffff";
-      } else {
-        header.style.removeProperty("background-color");
-      }
-      header.classList.toggle("landing-nav--solid", mode === "solid");
-      header.classList.toggle("landing-nav--hero", mode === "hero");
-    };
+    scrolledRef.current = false;
 
     if (!isHome) {
-      paint("solid");
       scrolledRef.current = true;
-      setScrolledPastHero(true);
+      applyNavMode(header, "solid");
+      setScrolledPastHero(false);
       return () => {
         delete document.documentElement.dataset.landingNav;
       };
     }
 
+    let frame = 0;
     const updateScrolled = () => {
       const next = readScrollY() > SCROLL_SOLID_OFFSET;
-      paint(next ? "solid" : "hero");
+      applyNavMode(header, next ? "solid" : "hero");
       if (scrolledRef.current === next) return;
       scrolledRef.current = next;
-      setScrolledPastHero(next);
+      // Commit className in the same turn so React doesn't wipe solid styles.
+      flushSync(() => {
+        setScrolledPastHero(next);
+      });
+    };
+
+    const onScroll = () => {
+      updateScrolled();
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateScrolled();
+      });
     };
 
     updateScrolled();
-    window.addEventListener("scroll", updateScrolled, { passive: true });
-    document.addEventListener("scroll", updateScrolled, { passive: true, capture: true });
-    window.addEventListener("touchmove", updateScrolled, { passive: true });
-    window.addEventListener("resize", updateScrolled, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    document.documentElement.addEventListener("scroll", onScroll, { passive: true });
+    document.body.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchmove", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onScroll, { passive: true });
+    window.visualViewport?.addEventListener("resize", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", updateScrolled);
-      document.removeEventListener("scroll", updateScrolled, true);
-      window.removeEventListener("touchmove", updateScrolled);
-      window.removeEventListener("resize", updateScrolled);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, true);
+      document.documentElement.removeEventListener("scroll", onScroll);
+      document.body.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchmove", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.visualViewport?.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("resize", onScroll);
       delete document.documentElement.dataset.landingNav;
     };
-  }, [isHome]);
+  }, [isHome, pathname]);
 
   function isLinkActive(link: NavLink) {
     if (link.kind === "route") return pathname === link.href;
@@ -351,21 +372,26 @@ export function LandingNav() {
     <header
       ref={headerRef}
       className={cn(
-        "landing-nav-safe top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300",
+        "landing-nav-safe top-0 left-0 right-0 z-50",
         isHome ? "fixed landing-nav-home" : "sticky",
-        transparent ? "landing-nav--hero" : "landing-nav--solid"
+        solid ? "landing-nav--solid" : "landing-nav--hero"
       )}
-      data-nav-mode={transparent ? "hero" : "solid"}
+      data-nav-mode={solid ? "solid" : "hero"}
       aria-label="Site"
     >
-      <div className="landing-nav-inner mx-auto flex h-16 max-w-7xl items-center justify-between">
+      <div className="landing-nav-inner relative mx-auto flex h-16 max-w-7xl items-center justify-between">
         <Logo
           iconWithBackground
           variant={transparent ? "light" : "default"}
+          labelClassName={
+            transparent
+              ? "landing-nav-brand-label text-white"
+              : "landing-nav-brand-label text-primary"
+          }
         />
 
         <nav
-          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex"
+          className="absolute left-1/2 z-20 hidden -translate-x-1/2 items-center gap-5 md:flex lg:gap-8"
           aria-label="Main"
         >
           {renderDesktopDropdown({
@@ -417,11 +443,12 @@ export function LandingNav() {
           {SECONDARY_LINKS.map((link) => renderNavLink(link))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="relative z-10 hidden items-center gap-2 md:flex">
           <Button
             variant="ghost"
             asChild
             className={cn(
+              "landing-nav-signin",
               transparent
                 ? "text-white hover:bg-white/10 hover:text-white"
                 : "text-slate-700 hover:bg-slate-100 hover:text-primary"
@@ -437,7 +464,7 @@ export function LandingNav() {
         <button
           type="button"
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:hidden",
+            "landing-nav-menu-toggle relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:hidden",
             transparent
               ? "bg-white/10 text-white hover:bg-white/15"
               : "landing-icon-bg text-slate-700 hover:bg-slate-100"

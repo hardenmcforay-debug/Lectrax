@@ -18,18 +18,27 @@ import {
   handleApiRouteError,
 } from "@/lib/errors/api";
 import { sanitizeErrorMessage, isTransientError } from "@/lib/errors/classify";
+import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const checkoutSchema = z.object({
   plan: z.enum(["monthly", "semester", "annual"]),
   paymentMethod: z.enum(["orange_money", "afrimoney", "visa_card"]),
 });
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return apiUnauthorizedResponse();
+
+  const rateLimited = await rejectIfUserRateLimited(
+    user.id,
+    "paymentCheckoutPerUser",
+    "payments.checkout"
+  );
+  if (rateLimited) return rateLimited;
 
   let body: unknown;
   try {
@@ -148,3 +157,5 @@ export async function POST(request: Request) {
     return handleApiRouteError("payments.checkout", e);
   }
 }
+
+export const POST = withApiObservability("payments.checkout.post", postHandler);

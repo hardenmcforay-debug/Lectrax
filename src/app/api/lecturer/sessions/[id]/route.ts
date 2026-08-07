@@ -6,8 +6,9 @@ import { deleteClassSession } from "@/lib/lecturer/delete-class-session";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -56,3 +57,5 @@ export async function DELETE(
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.delete", deleteHandler);

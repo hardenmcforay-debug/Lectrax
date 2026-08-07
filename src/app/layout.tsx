@@ -13,6 +13,7 @@ import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
 import { PWA_BOOT_CRITICAL_CSS } from "@/lib/pwa/boot-critical-css";
 import { pwaIconUrl } from "@/lib/pwa/config";
+import { getRequestCspNonce } from "@/lib/security/get-request-nonce";
 
 const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
 
@@ -75,6 +76,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cspNonce = await getRequestCspNonce();
+
   let logoUrl: string | null = null;
   try {
     logoUrl = await getSiteLogoUrl();
@@ -93,7 +96,7 @@ export default async function RootLayout({
         />
         <PwaHeadLinks />
         {/* beforeInteractive scripts must live under the initial document head. */}
-        <PwaBootstrapScripts />
+        <PwaBootstrapScripts nonce={cspNonce} />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <PwaProvider />

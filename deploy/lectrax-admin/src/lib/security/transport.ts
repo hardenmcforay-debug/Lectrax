@@ -2,6 +2,11 @@
  * Transport-layer security helpers for HTTPS enforcement across Lectrax.
  */
 
+import {
+  buildContentSecurityPolicy,
+  createCspNonce,
+} from "@/lib/security/csp";
+
 /** Local development origin — never used in production. */
 export const DEV_HTTP_ORIGIN = "http://localhost:3000";
 
@@ -85,9 +90,16 @@ export function normalizeSecureOrigin(url: string): string {
 
 export {
   getSecurityHeaders,
-  getContentSecurityPolicy,
   getPermissionsPolicy,
 } from "@/lib/security/headers";
+
+/**
+ * Sample CSP string (throwaway nonce). Prefer `buildContentSecurityPolicy(nonce)`
+ * from `@/lib/security/csp` for request-scoped policies.
+ */
+export function getContentSecurityPolicy(): string {
+  return buildContentSecurityPolicy(createCspNonce());
+}
 
 /**
  * Block insecure absolute HTTP requests from the browser in production.

@@ -10,8 +10,9 @@ import {
   getClassSessionLabel,
   notifyStudentsByEnrollmentIds,
 } from "@/lib/student/notifications";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function PUT(
+async function putHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; testId: string }> }
 ) {
@@ -73,14 +74,13 @@ export async function PUT(
     }
   }
 
-  const service = await createServiceClient();
   const touchedIds = [
     ...scores.map((s) => s.enrollmentId),
     ...deleteEnrollmentIds,
   ];
 
   if (touchedIds.length > 0) {
-    const { data: enrollments } = await service
+    const { data: enrollments } = await supabase
       .from("enrollments")
       .select("id")
       .eq("class_session_id", classSessionId)
@@ -106,7 +106,7 @@ export async function PUT(
       academic_year: test.academic_year,
     }));
 
-    const { error } = await service.from("test_scores").upsert(rows, {
+    const { error } = await supabase.from("test_scores").upsert(rows, {
       onConflict: "class_test_id,enrollment_id",
       ignoreDuplicates: false,
     });
@@ -127,6 +127,8 @@ export async function PUT(
       );
     }
 
+    // Student notification fan-out requires service (cross-user inserts).
+    const service = await createServiceClient();
     const classLabel = await getClassSessionLabel(service, classSessionId);
     void notifyStudentsByEnrollmentIds(
       service,
@@ -142,7 +144,7 @@ export async function PUT(
   }
 
   if (deleteEnrollmentIds.length > 0) {
-    const { error: deleteError } = await service
+    const { error: deleteError } = await supabase
       .from("test_scores")
       .delete()
       .eq("class_test_id", testId)
@@ -161,3 +163,5 @@ export async function PUT(
     deleted: deleteEnrollmentIds.length,
   });
 }
+
+export const PUT = withApiObservability("lecturer.sessions.tests.scores.put", putHandler);

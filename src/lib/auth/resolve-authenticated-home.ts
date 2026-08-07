@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getRoleHomeUrl } from "@/lib/auth/admin-deployment";
@@ -12,15 +12,7 @@ export async function getAuthenticatedHomeRedirect(): Promise<string | null> {
   }
 
   const supabase = await createClient();
-
-  let service;
-  try {
-    service = await createServiceClient();
-  } catch {
-    return null;
-  }
-
-  const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
+  const roleResult = await getRoleForUserSafe(supabase, auth.user);
 
   if (roleResult.status !== "ok") {
     return null;

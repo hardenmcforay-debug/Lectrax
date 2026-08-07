@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PORTAL_ONBOARDING_ACKNOWLEDGED_KEY } from "@/lib/auth/signup-method";
 import { logServerError } from "@/lib/errors/logger";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST() {
+async function postHandler() {
   try {
     const supabase = await createClient();
     const {
@@ -37,3 +38,5 @@ export async function POST() {
     return NextResponse.json({ error: "Could not save your confirmation." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.acknowledge-portal-onboarding.post", postHandler);

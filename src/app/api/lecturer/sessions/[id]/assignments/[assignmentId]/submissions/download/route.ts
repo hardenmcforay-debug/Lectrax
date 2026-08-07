@@ -10,10 +10,11 @@ import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
 import { getSignedSubmissionUrl } from "@/lib/assignments/submissions";
 import { sanitizeFilename } from "@/lib/security/sanitize";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 
 
-export async function GET(
+async function getHandler(
 
   request: Request,
 
@@ -130,3 +131,5 @@ export async function GET(
 
 }
 
+
+export const GET = withApiObservability("lecturer.sessions.assignments.submissions.download.get", getHandler);

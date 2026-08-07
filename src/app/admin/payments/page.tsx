@@ -33,8 +33,9 @@ export default async function AdminPaymentsPage({
 
   const [
     { data: payments, count },
-    { data: revenueRows },
+    paymentTotals,
     { count: pendingCount },
+    { count: completedCount },
     logoSettings,
   ] = await Promise.all([
     supabase
@@ -45,17 +46,21 @@ export default async function AdminPaymentsPage({
       )
       .order("created_at", { ascending: false })
       .range(from, to),
-    supabase.from("payments").select("amount").eq("status", "completed"),
+    supabase.rpc("admin_completed_payment_totals"),
     supabase
       .from("payments")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
+    supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "completed"),
     getPaymentMethodLogosSetting(),
   ]);
 
   const all = payments ?? [];
-  const revenue = (revenueRows ?? []).reduce((s, p) => s + Number(p.amount), 0);
-  const completedCount = revenueRows?.length ?? 0;
+  const totalsPayload = paymentTotals.data as { total_revenue?: number } | null;
+  const revenue = Number(totalsPayload?.total_revenue ?? 0);
   const total = count ?? 0;
 
   const initialLogos = PAYMENT_METHOD_LOGO_OPTIONS.reduce(
@@ -81,7 +86,7 @@ export default async function AdminPaymentsPage({
     >
       <div className="mb-6 admin-stat-grid admin-stat-grid--cols-3">
         <StatCard title="Total revenue" value={formatChargeAmount(revenue, "SLE")} icon={DollarSign} />
-        <StatCard title="Completed" value={completedCount} icon={CircleCheckBig} />
+        <StatCard title="Completed" value={completedCount ?? 0} icon={CircleCheckBig} />
         <StatCard title="Pending" value={pendingCount ?? 0} icon={Clock} />
       </div>
 
