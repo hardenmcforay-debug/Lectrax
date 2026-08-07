@@ -85,7 +85,6 @@ export const COPY_FILES = [
   "public/robots.txt",
   "postcss.config.mjs",
   "eslint.config.mjs",
-  "next-env.d.ts",
 ];
 
 export const COPY_SHARED_FILES = [

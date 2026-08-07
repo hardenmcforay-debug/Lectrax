@@ -237,6 +237,18 @@ function writeAdminPwaAssets() {
 }
 
 function writeAdminConfigs() {
+  // Root next-env.d.ts is gitignored and often absent in CI. Write a stable
+  // admin copy instead of copying from the main app working tree.
+  writeFileSync(
+    join(OUT, "next-env.d.ts"),
+    `/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+`
+  );
+
   writeFileSync(
     join(OUT, "next.config.ts"),
     `import type { NextConfig } from "next";
