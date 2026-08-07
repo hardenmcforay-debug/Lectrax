@@ -145,7 +145,7 @@ export function LandingNav() {
     if (!isHome) {
       scrolledRef.current = true;
       applyNavMode(header, "solid");
-      setScrolledPastHero(false);
+      // scrolledPastHero is reset on pathname change above; solid nav does not need it.
       return () => {
         delete document.documentElement.dataset.landingNav;
       };

@@ -4,6 +4,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Copy, Loader2, Smartphone } from "lucide-react";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import {
@@ -137,6 +138,7 @@ export function PaymentCheckoutFlow({
   onPaymentComplete?: () => void;
   paymentMethodLogos?: Record<PaymentMethodLogoId, string | null>;
 }) {
+  const router = useRouter();
   const [step, setStep] = useState<"method" | "ussd">("method");
   const [selectedMethod, setSelectedMethod] = useState<LectraxPaymentMethod | null>(null);
   const { isPending: loading, run } = useAsyncAction();
@@ -178,13 +180,13 @@ export function PaymentCheckoutFlow({
           setPolling(false);
           onPaymentComplete?.();
           handleOpenChange(false);
-          window.location.href = `/lecturer/subscription?success=1`;
+          router.push("/lecturer/subscription?success=1");
         }
       })();
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [ussdDetails, polling, handleOpenChange, onPaymentComplete]);
+  }, [ussdDetails, polling, handleOpenChange, onPaymentComplete, router]);
 
   function startCheckout() {
     if (!plan || !selectedMethod) return;
