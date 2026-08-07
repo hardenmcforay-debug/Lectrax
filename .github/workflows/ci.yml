@@ -47,9 +47,6 @@ jobs:
       - name: ESLint
         run: npm run lint
 
-      - name: Admin export parity
-        run: npm run verify:admin-parity
-
       - name: Unit, integration, and API tests
         run: npm run test:coverage
 

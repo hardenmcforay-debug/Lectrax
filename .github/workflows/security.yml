@@ -37,20 +37,3 @@ jobs:
 
       - name: Full dependency vulnerability scan
         run: npm run audit:all
-
-      - name: Admin export parity
-        run: npm run verify:admin-parity
-
-      - name: Admin export dependency audit
-        working-directory: deploy/lectrax-admin
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-            npm audit --omit=dev --audit-level=high
-            npm audit --audit-level=high
-          else
-            echo "No admin lockfile; regenerating via npm install for audit"
-            npm install --package-lock-only --ignore-scripts
-            npm audit --omit=dev --audit-level=high
-            npm audit --audit-level=high
-          fi

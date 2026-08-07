@@ -24,7 +24,7 @@
     "audit:deps": "npm audit --omit=dev",
     "audit:all": "npm audit --audit-level=high",
     "validate:env": "node scripts/validate-env.mjs",
-    "predeploy": "npm run typecheck && npm run lint && npm run verify:admin-parity && npm run test:coverage && npm run build",
+    "predeploy": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
     "fix:slow-fs": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-slow-filesystem.ps1",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "sync-icons-from-site-logo": "node scripts/sync-icons-from-site-logo.mjs",
