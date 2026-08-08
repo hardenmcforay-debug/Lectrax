@@ -13,22 +13,10 @@ export function getMonimeCurrency(): PaymentCurrency {
   return configured === "USD" ? "USD" : "SLE";
 }
 
-function sleAmountFromEnv(plan: BillingPlan): number | null {
-  const key = {
-    monthly: "MONIME_AMOUNT_MONTHLY",
-    semester: "MONIME_AMOUNT_SEMESTER",
-    annual: "MONIME_AMOUNT_ANNUAL",
-  }[plan];
-  const raw = process.env[key];
-  if (!raw) return null;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-/** Charge amount in major currency units (e.g. 120 SLE or 5 USD). Server-only. */
+/** Charge amount in major currency units from code defaults (USD list price or SLE). */
 export function getBillingChargeAmount(plan: BillingPlan): number {
   if (getMonimeCurrency() === "USD") {
     return BILLING_PLAN_PRICES[plan];
   }
-  return sleAmountFromEnv(plan) ?? DEFAULT_SLE_CHARGE_AMOUNTS[plan];
+  return DEFAULT_SLE_CHARGE_AMOUNTS[plan];
 }

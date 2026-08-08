@@ -32,19 +32,19 @@ export const STUDENT_SUBMISSIONS_DISABLED_MESSAGE =
 
 export const BILLING_PLANS = {
   monthly: {
-    price: 5,
+    price: 10,
     days: 30,
     label: "Monthly",
     description: "1 month of Premium",
   },
   semester: {
-    price: 20,
+    price: 35,
     days: 120,
     label: "Semester",
     description: "4 months of Premium",
   },
   annual: {
-    price: 45,
+    price: 70,
     days: 300,
     label: "Academic year",
     description: "10 months of Premium",

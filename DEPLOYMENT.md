@@ -51,7 +51,7 @@ Set these in **Vercel → Project → Settings → Environment Variables** for *
 | `MONIME_WEBHOOK_SECRET` | Webhook HMAC secret | No |
 | `MONIME_CURRENCY` | Currency code, e.g. `SLE` | No |
 
-Optional amount overrides: `MONIME_AMOUNT_MONTHLY`, `MONIME_AMOUNT_SEMESTER`, `MONIME_AMOUNT_ANNUAL`.
+Individual subscription amounts are defined in code (`BILLING_PLAN_PRICES` / `DEFAULT_SLE_CHARGE_AMOUNTS`); no env overrides.
 
 ## Supabase production configuration
 

@@ -5,9 +5,9 @@ export type PaymentCurrency = "SLE" | "USD";
 
 /** Default charge amounts in SLE (major units / whole leones). */
 export const DEFAULT_SLE_CHARGE_AMOUNTS: Record<BillingPlan, number> = {
-  monthly: 120,
-  semester: 480,
-  annual: 1080,
+  monthly: 240,
+  semester: 840,
+  annual: 1680,
 };
 
 /** Monime expects minor units (e.g. cents: 120 SLE → 12000). */
