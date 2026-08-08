@@ -6,6 +6,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { stripPwaScopePrefix } from "@/lib/pwa/scope";
 import type { StudentNotificationType } from "@/lib/student/notifications";
 
 export type StudentNavItem = {
@@ -46,10 +47,16 @@ export const STUDENT_SETTINGS_HREF = "/student/settings";
 
 /** Longest matching href wins so `/student` is not active on `/student/join`. */
 export function getActiveStudentNavHref(pathname: string): string | null {
+  const path = stripPwaScopePrefix(pathname);
   const hrefs = STUDENT_NAV_ITEMS.map((item) => item.href);
   const matches = hrefs.filter(
-    (href) => pathname === href || pathname.startsWith(`${href}/`)
+    (href) => path === href || path.startsWith(`${href}/`)
   );
   if (matches.length === 0) return null;
   return matches.reduce((longest, href) => (href.length > longest.length ? href : longest));
+}
+
+export function isStudentSettingsPath(pathname: string): boolean {
+  const path = stripPwaScopePrefix(pathname);
+  return path === STUDENT_SETTINGS_HREF || path.startsWith(`${STUDENT_SETTINGS_HREF}/`);
 }

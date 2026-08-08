@@ -1,4 +1,5 @@
 import { BookOpen, CreditCard, Home, type LucideIcon } from "lucide-react";
+import { stripPwaScopePrefix } from "@/lib/pwa/scope";
 
 export type LecturerNavItem = {
   href: string;
@@ -27,16 +28,22 @@ export const LECTURER_SETTINGS_HREF = "/lecturer/settings";
 
 /** Longest matching href wins so `/lecturer` is not active on nested routes. */
 export function getActiveLecturerNavHref(pathname: string): string | null {
+  const path = stripPwaScopePrefix(pathname);
   const hrefs = LECTURER_NAV_ITEMS.map((item) => item.href);
   const matches = hrefs.filter(
-    (href) => pathname === href || pathname.startsWith(`${href}/`)
+    (href) => path === href || path.startsWith(`${href}/`)
   );
   if (matches.length === 0) return null;
   return matches.reduce((longest, href) => (href.length > longest.length ? href : longest));
 }
 
+export function isLecturerSettingsPath(pathname: string): boolean {
+  const path = stripPwaScopePrefix(pathname);
+  return path === LECTURER_SETTINGS_HREF || path.startsWith(`${LECTURER_SETTINGS_HREF}/`);
+}
+
 export function getLecturerMobilePageTitle(pathname: string): string {
-  if (pathname === LECTURER_SETTINGS_HREF || pathname.startsWith(`${LECTURER_SETTINGS_HREF}/`)) {
+  if (isLecturerSettingsPath(pathname)) {
     return "Settings";
   }
 

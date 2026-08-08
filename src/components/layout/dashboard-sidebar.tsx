@@ -8,12 +8,14 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { cn } from "@/lib/utils";
 import {
   getActiveStudentNavHref,
+  isStudentSettingsPath,
   STUDENT_NAV_ITEMS,
   STUDENT_SETTINGS_HREF,
   type StudentNavItem,
 } from "@/lib/student/navigation";
 import {
   getActiveLecturerNavHref,
+  isLecturerSettingsPath,
   LECTURER_NAV_ITEMS,
   LECTURER_SETTINGS_HREF,
 } from "@/lib/lecturer/navigation";
@@ -58,14 +60,10 @@ export function DashboardSidebar({
       : null;
   const activeHref = isStudent
     ? getActiveStudentNavHref(pathname) ??
-      (pathname === STUDENT_SETTINGS_HREF || pathname.startsWith(`${STUDENT_SETTINGS_HREF}/`)
-        ? STUDENT_SETTINGS_HREF
-        : null)
+      (isStudentSettingsPath(pathname) ? STUDENT_SETTINGS_HREF : null)
     : isLecturer
       ? getActiveLecturerNavHref(pathname) ??
-        (pathname === LECTURER_SETTINGS_HREF || pathname.startsWith(`${LECTURER_SETTINGS_HREF}/`)
-          ? LECTURER_SETTINGS_HREF
-          : null)
+        (isLecturerSettingsPath(pathname) ? LECTURER_SETTINGS_HREF : null)
       : isAdmin
         ? getActiveAdminNavHref(pathname)
         : getActiveNavHref(
@@ -74,6 +72,9 @@ export function DashboardSidebar({
               ? [...nav.map((n) => n.href), footerSettingsHref]
               : nav.map((n) => n.href)
           );
+
+  const portalActiveClass = "bg-emerald-500 text-white";
+  const portalIdleClass = "text-muted-foreground hover:bg-muted hover:text-foreground";
 
   return (
     <aside
@@ -118,15 +119,17 @@ export function DashboardSidebar({
                   ? "gap-2 px-2.5 py-1.5 text-sm leading-none"
                   : "gap-3 px-3 py-2 text-sm",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? isStudent || isLecturer
+                    ? portalActiveClass
+                    : "bg-primary text-primary-foreground"
+                  : portalIdleClass
               )}
             >
               <Icon
                 {...(isLecturer || isStudent ? HERO_LUCIDE_ICON_PROPS : {})}
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  (isLecturer || isStudent) && (active ? "text-emerald-300" : "text-primary")
+                  (isLecturer || isStudent) && (active ? "text-white" : "text-primary")
                 )}
               />
               <span className={cn("truncate", isLecturer && "leading-none")}>{item.label}</span>
@@ -148,16 +151,14 @@ export function DashboardSidebar({
             className={cn(
               "lecturer-nav-link flex w-full items-center rounded-lg font-medium",
               "gap-2 px-2.5 py-1.5 text-sm leading-none",
-              activeHref === LECTURER_SETTINGS_HREF
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              activeHref === LECTURER_SETTINGS_HREF ? portalActiveClass : portalIdleClass
             )}
           >
             <Settings
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-4 w-4 shrink-0",
-                activeHref === LECTURER_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
+                activeHref === LECTURER_SETTINGS_HREF ? "text-white" : "text-primary"
               )}
             />
             <span className="truncate leading-none">Settings</span>
@@ -170,16 +171,14 @@ export function DashboardSidebar({
             className={cn(
               "student-nav-link flex w-full items-center rounded-lg font-medium",
               "gap-3 px-3 py-2 text-sm",
-              activeHref === STUDENT_SETTINGS_HREF
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              activeHref === STUDENT_SETTINGS_HREF ? portalActiveClass : portalIdleClass
             )}
           >
             <Settings
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-4 w-4 shrink-0",
-                activeHref === STUDENT_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
+                activeHref === STUDENT_SETTINGS_HREF ? "text-white" : "text-primary"
               )}
             />
             Settings

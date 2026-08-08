@@ -11,6 +11,7 @@ import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import {
   getActiveLecturerNavHref,
   getLecturerMobilePageTitle,
+  isLecturerSettingsPath,
   LECTURER_NAV_ITEMS,
   LECTURER_SETTINGS_HREF,
 } from "@/lib/lecturer/navigation";
@@ -28,9 +29,7 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
   const pageTitle = title ?? getLecturerMobilePageTitle(pathname);
   const activeHref =
     getActiveLecturerNavHref(pathname) ??
-    (pathname === LECTURER_SETTINGS_HREF || pathname.startsWith(`${LECTURER_SETTINGS_HREF}/`)
-      ? LECTURER_SETTINGS_HREF
-      : null);
+    (isLecturerSettingsPath(pathname) ? LECTURER_SETTINGS_HREF : null);
 
   function openMenu() {
     setPathWhenOpen(pathname);
@@ -109,17 +108,18 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
                 href={item.href}
                 role="menuitem"
                 onClick={closeMenu}
+                data-active={active ? "true" : "false"}
                 className={cn(
                   "lecturer-nav-link mb-1 flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   active
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-emerald-500 text-white"
                     : "text-slate-700 hover:bg-slate-50"
                 )}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon
                   {...HERO_LUCIDE_ICON_PROPS}
-                  className={cn("h-5 w-5 shrink-0", active ? "text-emerald-300" : "text-primary")}
+                  className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-primary")}
                   aria-hidden
                 />
                 <span className="truncate">{item.label}</span>
@@ -133,18 +133,20 @@ export function LecturerMobileHeader({ title }: LecturerMobileHeaderProps) {
             href={LECTURER_SETTINGS_HREF}
             role="menuitem"
             onClick={closeMenu}
+            data-active={activeHref === LECTURER_SETTINGS_HREF ? "true" : "false"}
             className={cn(
               "lecturer-nav-link flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
               activeHref === LECTURER_SETTINGS_HREF
-                ? "bg-primary text-primary-foreground"
+                ? "bg-emerald-500 text-white"
                 : "text-slate-700 hover:bg-slate-50"
             )}
+            aria-current={activeHref === LECTURER_SETTINGS_HREF ? "page" : undefined}
           >
             <Settings
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-5 w-5 shrink-0",
-                activeHref === LECTURER_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
+                activeHref === LECTURER_SETTINGS_HREF ? "text-white" : "text-primary"
               )}
               aria-hidden
             />

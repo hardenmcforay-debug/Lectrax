@@ -31,10 +31,11 @@ export function StudentBottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
+              data-active={active ? "true" : "false"}
               className={cn(
                 "student-bottom-nav-item group relative flex min-h-11 min-w-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
                 active
-                  ? "text-emerald-300"
+                  ? "text-emerald-400"
                   : "text-sky-300/70 hover:text-sky-200",
                 !reducedMotion && "transition-all duration-200"
               )}
@@ -49,7 +50,7 @@ export function StudentBottomNav() {
               <span
                 className={cn(
                   "relative flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-200",
-                  active ? "bg-emerald-500/20 text-emerald-300" : "text-inherit"
+                  active ? "bg-emerald-500/30 text-emerald-400" : "text-inherit"
                 )}
               >
                 <Icon {...HERO_LUCIDE_ICON_PROPS} className="h-5 w-5" aria-hidden />

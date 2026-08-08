@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { HERO_LUCIDE_ICON_PROPS } from "@/lib/ui/hero-lucide-icon";
 import {
   getActiveStudentNavHref,
+  isStudentSettingsPath,
   STUDENT_NAV_ITEMS,
   STUDENT_SETTINGS_HREF,
 } from "@/lib/student/navigation";
@@ -25,9 +26,7 @@ export function StudentMobileHeader() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const activeHref =
     getActiveStudentNavHref(pathname) ??
-    (pathname === STUDENT_SETTINGS_HREF || pathname.startsWith(`${STUDENT_SETTINGS_HREF}/`)
-      ? STUDENT_SETTINGS_HREF
-      : null);
+    (isStudentSettingsPath(pathname) ? STUDENT_SETTINGS_HREF : null);
   const { counts } = useStudentNotifications();
 
   function openMenu() {
@@ -112,17 +111,18 @@ export function StudentMobileHeader() {
                 href={item.href}
                 role="menuitem"
                 onClick={closeMenu}
+                data-active={active ? "true" : "false"}
                 className={cn(
                   "student-nav-link mb-1 flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   active
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-emerald-500 text-white"
                     : "text-slate-700 hover:bg-slate-50"
                 )}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon
                   {...HERO_LUCIDE_ICON_PROPS}
-                  className={cn("h-5 w-5 shrink-0", active ? "text-emerald-300" : "text-primary")}
+                  className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-primary")}
                   aria-hidden
                 />
                 <span className="truncate">{item.label}</span>
@@ -137,18 +137,20 @@ export function StudentMobileHeader() {
             href={STUDENT_SETTINGS_HREF}
             role="menuitem"
             onClick={closeMenu}
+            data-active={activeHref === STUDENT_SETTINGS_HREF ? "true" : "false"}
             className={cn(
               "student-nav-link flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
               activeHref === STUDENT_SETTINGS_HREF
-                ? "bg-primary text-primary-foreground"
+                ? "bg-emerald-500 text-white"
                 : "text-slate-700 hover:bg-slate-50"
             )}
+            aria-current={activeHref === STUDENT_SETTINGS_HREF ? "page" : undefined}
           >
             <Settings
               {...HERO_LUCIDE_ICON_PROPS}
               className={cn(
                 "h-5 w-5 shrink-0",
-                activeHref === STUDENT_SETTINGS_HREF ? "text-emerald-300" : "text-primary"
+                activeHref === STUDENT_SETTINGS_HREF ? "text-white" : "text-primary"
               )}
               aria-hidden
             />

@@ -27,9 +27,10 @@ export function LecturerBottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
+              data-active={active ? "true" : "false"}
               className={cn(
                 "lecturer-bottom-nav-item group relative flex min-h-11 min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B3D91]",
-                active ? "text-emerald-300" : "text-sky-300/70 hover:text-sky-200",
+                active ? "text-emerald-400" : "text-sky-300/70 hover:text-sky-200",
                 !reducedMotion && "transition-all duration-200"
               )}
             >
@@ -43,7 +44,7 @@ export function LecturerBottomNav() {
               <span
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-200",
-                  active ? "bg-emerald-500/20 text-emerald-300" : "text-inherit"
+                  active ? "bg-emerald-500/30 text-emerald-400" : "text-inherit"
                 )}
               >
                 <Icon
