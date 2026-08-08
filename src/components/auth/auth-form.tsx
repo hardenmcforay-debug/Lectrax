@@ -318,6 +318,8 @@ export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") === "lecturer" ? "lecturer" : "student";
+  // Stay disabled after success until portal / next-page navigation completes.
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<AuthUserMessage | null>(() => {
     const signupError = searchParams.get("error");
     if (signupError === "signup") {
@@ -353,6 +355,7 @@ export function SignupForm() {
 
   async function onSubmit(data: SignupInput) {
     setError(null);
+    setIsRedirecting(false);
 
     const configError = getSupabaseConfigError();
     if (configError) {
@@ -515,16 +518,19 @@ export function SignupForm() {
           });
         }
 
+        setIsRedirecting(true);
         redirectAfterAuth(resolvedRole);
         return;
       }
 
+      setIsRedirecting(true);
       router.push(
         signupId.type === "email"
           ? "/login?message=confirm-email"
           : "/login?message=account-created"
       );
     } catch (cause) {
+      setIsRedirecting(false);
       setError(mapAuthError(cause, "signup", "auth.signup.unhandled"));
     }
   }
@@ -652,10 +658,10 @@ export function SignupForm() {
 
         <Button
           type="submit"
-          loading={isSubmitting}
+          loading={isSubmitting || isRedirecting}
           className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
         >
-          {isSubmitting ? "Creating account..." : "Create Account"}
+          {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
         </Button>
       </form>
 
