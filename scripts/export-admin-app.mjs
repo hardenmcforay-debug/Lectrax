@@ -4,47 +4,126 @@
  *
  * Usage:
  *   node scripts/export-admin-app.mjs
- *   LECTRAX_ADMIN_OUT=/tmp/admin-export node scripts/export-admin-app.mjs
  *
- * Shared infrastructure (observability, security, Sentry, Redis rate-limit deps,
- * proxy/instrumentation) is copied from the main app and kept version-aligned
- * with root package.json so framework upgrades propagate automatically.
+ * Push to a separate repository:
+ *   cd deploy/lectrax-admin
+ *   git init
+ *   git remote add origin <your-admin-repo-url>
+ *   git add .
+ *   git commit -m "Export Lectrax platform admin"
+ *   git push -u origin main
  */
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  ADMIN_PRUNE_PATHS,
-  ADMIN_TEMPLATES,
-  COPY_DIRS,
-  COPY_FILES,
-  COPY_SHARED_FILES,
-  COPY_UI_FILES,
-  EXPORT_OWNED_ROOT_ENTRIES,
-  INFRASTRUCTURE_DIRS,
-  REQUIRED_ADMIN_DEPENDENCIES,
-  REQUIRED_ADMIN_DEV_DEPENDENCIES,
-} from "./admin-export-manifest.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const FINAL_OUT = process.env.LECTRAX_ADMIN_OUT
-  ? join(process.env.LECTRAX_ADMIN_OUT)
-  : join(ROOT, "deploy", "lectrax-admin");
-/** Stage in a temp folder first so Windows locks under deploy/ don't stall cleans. */
-let OUT = FINAL_OUT;
+const OUT = join(ROOT, "deploy", "lectrax-admin");
+
+const COPY_DIRS = [
+  "src/app/admin",
+  "src/app/api/admin",
+  "src/app/api/auth",
+  "src/app/auth",
+  "src/app/offline",
+  "src/components/admin",
+  "src/components/auth",
+  "src/components/errors",
+  "src/components/layout",
+  "src/components/pwa",
+  "src/hooks",
+  "src/lib/admin",
+  "src/lib/api",
+  "src/lib/attendance",
+  "src/lib/auth",
+  "src/lib/charts",
+  "src/lib/contact",
+  "src/lib/concurrency",
+  "src/lib/errors",
+  "src/lib/hooks",
+  "src/lib/env",
+  "src/lib/landing",
+  "src/lib/low-data",
+  "src/lib/network",
+  "src/lib/offline",
+  "src/lib/partnerships",
+  "src/lib/pwa",
+  "src/lib/security",
+  "src/lib/subscription",
+  "src/lib/supabase",
+  "src/store",
+  "src/types",
+  "public/icons",
+  "public/landing",
+];
+
+const COPY_SHARED_FILES = [
+  "src/components/shared/deferred-select.tsx",
+  "src/components/shared/stat-card.tsx",
+  "src/components/shared/table-pagination.tsx",
+];
+
+const COPY_UI_FILES = [
+  "src/components/ui/badge.tsx",
+  "src/components/ui/button.tsx",
+  "src/components/ui/card.tsx",
+  "src/components/ui/dialog.tsx",
+  "src/components/ui/input.tsx",
+  "src/components/ui/label.tsx",
+  "src/components/ui/password-input.tsx",
+  "src/components/ui/select.tsx",
+  "src/components/ui/table.tsx",
+];
+
+const ADMIN_PRUNE_PATHS = [
+  "src/components/errors/data-fetch-error.tsx",
+  "src/components/errors/form-error-message.tsx",
+  "src/components/errors/offline-cache-writer.tsx",
+  "src/lib/subscription/guards.ts",
+  "src/app/api/auth/login/route.ts",
+  "src/app/api/auth/resolve-login/route.ts",
+  "src/app/api/auth/check-signup-identifier/route.ts",
+  "src/app/api/auth/finalize-phone-signup/route.ts",
+  "src/app/api/auth/activate-phone-account/route.ts",
+  "src/app/api/auth/check-phone/route.ts",
+  "src/app/api/auth/acknowledge-portal-onboarding/route.ts",
+  "src/lib/attendance/qr-rotation.ts",
+  "src/lib/attendance/present-records.ts",
+  "src/lib/attendance/sessions.ts",
+  "src/lib/attendance/close-session.ts",
+  "src/lib/attendance/end-on-unload.ts",
+];
+
+const ADMIN_TEMPLATES = {
+  "src/components/auth/auth-form.tsx": "auth-form.tsx",
+  "src/components/layout/dashboard-shell.tsx": "dashboard-shell.tsx",
+  "src/components/layout/dashboard-sidebar.tsx": "dashboard-sidebar.tsx",
+  "src/lib/utils.ts": "utils.ts",
+  "src/lib/auth/cached-queries.ts": "cached-queries.ts",
+  "src/lib/subscription.ts": "subscription.ts",
+};
+
+const COPY_FILES = [
+  "src/lib/constants.ts",
+  "src/lib/audit.ts",
+  "src/lib/env.ts",
+  "src/lib/utils.ts",
+  "src/lib/validations.ts",
+  "src/lib/subscription.ts",
+  "src/lib/ui/hero-lucide-icon.ts",
+  "src/components/lucide-icons.tsx",
+  "src/app/globals.css",
+  "src/app/admin-portal-animations.css",
+  "src/app/mobile-layout.css",
+  "src/proxy.ts",
+  "src/instrumentation.ts",
+  "public/favicon.ico",
+  "public/robots.txt",
+  "postcss.config.mjs",
+  "eslint.config.mjs",
+  "next-env.d.ts",
+];
 
 function copyFromRoot(relativePath, destRelative = relativePath) {
   const source = join(ROOT, relativePath);
@@ -53,162 +132,11 @@ function copyFromRoot(relativePath, destRelative = relativePath) {
     throw new Error(`Missing source path: ${relativePath}`);
   }
   mkdirSync(dirname(destination), { recursive: true });
-  console.log(`  copy ${relativePath}`);
   cpSync(source, destination, { recursive: true });
-}
-
-function removePathWithRetry(target, attempts = 5) {
-  for (let i = 0; i < attempts; i += 1) {
-    try {
-      if (!existsSync(target)) return;
-      rmSync(target, { recursive: true, force: true });
-      return;
-    } catch (error) {
-      if (i === attempts - 1) throw error;
-      const waitUntil = Date.now() + 200 * (i + 1);
-      while (Date.now() < waitUntil) {
-        /* sync backoff for Windows file locks */
-      }
-    }
-  }
-}
-
-function walkFiles(dir, predicate, acc = []) {
-  if (!existsSync(dir)) return acc;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      walkFiles(full, predicate, acc);
-      continue;
-    }
-    if (predicate(full, entry.name)) acc.push(full);
-  }
-  return acc;
-}
-
-function resolveLocalModule(baseDir, importPath) {
-  const candidates = [
-    `${importPath}.ts`,
-    `${importPath}.tsx`,
-    `${importPath}.js`,
-    `${importPath}.mjs`,
-    join(importPath, "index.ts"),
-    join(importPath, "index.tsx"),
-  ];
-  for (const candidate of candidates) {
-    const full = join(baseDir, candidate);
-    if (existsSync(full) && statSync(full).isFile()) return full;
-  }
-  return null;
-}
-
-/**
- * Copy any missing @/ modules referenced by the admin tree from the main app
- * until the import graph closes. This picks up new shared infrastructure files
- * without requiring a manual manifest update for every leaf module.
- */
-const AUTO_COPY_DENY_PREFIXES = [
-  "app/lecturer/",
-  "app/student/",
-  "components/lecturer/",
-  "components/student/",
-  "lib/lecturer/",
-  "lib/student/",
-  "lib/attendance/qr-",
-  "lib/ca/",
-];
-
-function copyMissingLocalImports(maxPasses = 12) {
-  const outSrc = join(OUT, "src");
-  const rootSrc = join(ROOT, "src");
-  console.log("  resolving @/ import closure...");
-
-  for (let pass = 0; pass < maxPasses; pass += 1) {
-    let copied = 0;
-    const files = walkFiles(outSrc, (_full, name) => /\.(ts|tsx|js|mjs)$/.test(name));
-
-    for (const file of files) {
-      const content = readFileSync(file, "utf8");
-      for (const match of content.matchAll(/from\s+["']@\/([^"']+)["']/g)) {
-        const rel = match[1];
-        if (resolveLocalModule(outSrc, rel)) continue;
-
-        if (AUTO_COPY_DENY_PREFIXES.some((prefix) => rel.startsWith(prefix))) {
-          throw new Error(
-            `Admin export pulled disallowed module @/${rel} (from ${relative(OUT, file)})`
-          );
-        }
-
-        const sourceFile = resolveLocalModule(rootSrc, rel);
-        if (!sourceFile) {
-          throw new Error(
-            `Admin export unresolved @/${rel} (referenced from ${relative(OUT, file)})`
-          );
-        }
-
-        const destFile = join(outSrc, relative(rootSrc, sourceFile));
-        mkdirSync(dirname(destFile), { recursive: true });
-        cpSync(sourceFile, destFile);
-        copied += 1;
-        console.log(`  + @/${rel}`);
-      }
-    }
-
-    if (copied === 0) {
-      console.log(`  import closure stable after ${pass + 1} pass(es)`);
-      return;
-    }
-  }
-
-  throw new Error("Admin export import closure did not stabilize; check circular/missing modules.");
-}
-
-function collectExternalPackagesFromTree() {
-  const packages = new Set();
-  const files = walkFiles(OUT, (_full, name) => /\.(ts|tsx|js|mjs)$/.test(name));
-
-  for (const file of files) {
-    const content = readFileSync(file, "utf8");
-    for (const match of content.matchAll(/from\s+["']([^./][^"']*)["']/g)) {
-      const spec = match[1];
-      if (spec.startsWith("@/")) continue;
-      if (spec.startsWith("next/") || spec === "next") {
-        packages.add("next");
-        continue;
-      }
-      if (spec.startsWith("react/") || spec === "react" || spec === "react-dom") {
-        packages.add(spec.startsWith("react-dom") ? "react-dom" : "react");
-        continue;
-      }
-      if (spec.startsWith("@")) {
-        const parts = spec.split("/");
-        packages.add(parts.slice(0, 2).join("/"));
-        continue;
-      }
-      packages.add(spec.split("/")[0]);
-    }
-  }
-
-  return packages;
-}
-
-function pickDeps(rootSection, keys) {
-  const out = {};
-  for (const key of keys) {
-    if (rootSection[key]) out[key] = rootSection[key];
-  }
-  return out;
 }
 
 function writeAdminPackageJson() {
   const rootPkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-  const discovered = collectExternalPackagesFromTree();
-
-  const dependencyKeys = new Set(REQUIRED_ADMIN_DEPENDENCIES);
-  for (const pkg of discovered) {
-    if (rootPkg.dependencies?.[pkg]) dependencyKeys.add(pkg);
-  }
-
   const adminPkg = {
     name: "lectrax-admin",
     version: rootPkg.version,
@@ -220,14 +148,45 @@ function writeAdminPackageJson() {
       lint: "eslint . --max-warnings 0",
       typecheck: "tsc --noEmit",
     },
-    dependencies: pickDeps(rootPkg.dependencies ?? {}, [...dependencyKeys].sort()),
-    devDependencies: pickDeps(
-      rootPkg.devDependencies ?? {},
-      REQUIRED_ADMIN_DEV_DEPENDENCIES
-    ),
+    dependencies: {
+      "@hookform/resolvers": rootPkg.dependencies["@hookform/resolvers"],
+      "@radix-ui/react-dialog": rootPkg.dependencies["@radix-ui/react-dialog"],
+      "@radix-ui/react-dropdown-menu": rootPkg.dependencies["@radix-ui/react-dropdown-menu"],
+      "@radix-ui/react-label": rootPkg.dependencies["@radix-ui/react-label"],
+      "@radix-ui/react-select": rootPkg.dependencies["@radix-ui/react-select"],
+      "@radix-ui/react-slot": rootPkg.dependencies["@radix-ui/react-slot"],
+      "@radix-ui/react-tabs": rootPkg.dependencies["@radix-ui/react-tabs"],
+      "@radix-ui/react-toast": rootPkg.dependencies["@radix-ui/react-toast"],
+      "@supabase/ssr": rootPkg.dependencies["@supabase/ssr"],
+      "@supabase/supabase-js": rootPkg.dependencies["@supabase/supabase-js"],
+      "class-variance-authority": rootPkg.dependencies["class-variance-authority"],
+      "clsx": rootPkg.dependencies["clsx"],
+      "date-fns": rootPkg.dependencies["date-fns"],
+      "framer-motion": rootPkg.dependencies["framer-motion"],
+      "lucide-react": rootPkg.dependencies["lucide-react"],
+      next: rootPkg.dependencies.next,
+      react: rootPkg.dependencies.react,
+      "react-dom": rootPkg.dependencies["react-dom"],
+      "react-hook-form": rootPkg.dependencies["react-hook-form"],
+      recharts: rootPkg.dependencies.recharts,
+      "react-is": rootPkg.dependencies["react-is"],
+      "tailwind-merge": rootPkg.dependencies["tailwind-merge"],
+      zod: rootPkg.dependencies.zod,
+      zustand: rootPkg.dependencies.zustand,
+    },
+    devDependencies: {
+      "@tailwindcss/postcss": rootPkg.devDependencies["@tailwindcss/postcss"],
+      "@types/node": rootPkg.devDependencies["@types/node"],
+      "@types/react": rootPkg.devDependencies["@types/react"],
+      "@types/react-dom": rootPkg.devDependencies["@types/react-dom"],
+      "@typescript-eslint/parser": rootPkg.devDependencies["@typescript-eslint/parser"],
+      eslint: rootPkg.devDependencies.eslint,
+      "eslint-config-next": rootPkg.devDependencies["eslint-config-next"],
+      tailwindcss: rootPkg.devDependencies.tailwindcss,
+      typescript: rootPkg.devDependencies.typescript,
+    },
     overrides: rootPkg.overrides,
   };
-
   writeFileSync(join(OUT, "package.json"), `${JSON.stringify(adminPkg, null, 2)}\n`);
 }
 
@@ -237,64 +196,26 @@ function writeAdminPwaAssets() {
 }
 
 function writeAdminConfigs() {
-  // Root next-env.d.ts is gitignored and often absent in CI. Write a stable
-  // admin copy instead of copying from the main app working tree.
-  writeFileSync(
-    join(OUT, "next-env.d.ts"),
-    `/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
-`
-  );
-
   writeFileSync(
     join(OUT, "next.config.ts"),
     `import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
 import { getAdminSecurityHeaderRoutes } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
-  productionBrowserSourceMaps: false,
   images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 86_400,
     remotePatterns: [
       {
         protocol: "https",
         hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
       },
     ],
-  },
-  turbopack: {
-    resolveAlias: {
-      "@hookform/resolvers/zod": "./node_modules/@hookform/resolvers/zod/dist/zod.js",
-      "@hookform/resolvers": "./node_modules/@hookform/resolvers/dist/resolvers.js",
-    },
   },
   async headers() {
     return getAdminSecurityHeaderRoutes();
   },
 };
 
-const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN?.trim();
-
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: sentryAuthToken,
-  silent: !sentryAuthToken,
-  widenClientFileUpload: true,
-  tunnelRoute: "/monitoring",
-  disableLogger: true,
-  automaticVercelMonitors: true,
-  sourcemaps: {
-    disable: !sentryAuthToken,
-    deleteSourcemapsAfterUpload: true,
-  },
-});
+export default nextConfig;
 `
   );
 
@@ -345,21 +266,6 @@ NEXT_PUBLIC_MAIN_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Observability (Sentry) — optional until monitoring is enabled
-# NEXT_PUBLIC_SENTRY_DSN=https://<key>@o<org>.ingest.sentry.io/<project>
-# SENTRY_DSN=https://<key>@o<org>.ingest.sentry.io/<project>
-# SENTRY_AUTH_TOKEN=
-# SENTRY_ORG=
-# SENTRY_PROJECT=
-
-# Distributed rate limiting (Upstash Redis) — required for multi-instance production enforcement.
-# UPSTASH_REDIS_REST_URL=https://xxxxx.upstash.io
-# UPSTASH_REDIS_REST_TOKEN=
-
-# Content-Security-Policy mode (nonce + strict-dynamic; no script 'unsafe-inline')
-# report-only (default) | enforce | off
-# CSP_MODE=report-only
 `
   );
 
@@ -533,7 +439,7 @@ function pruneAdminOnlyPaths() {
   for (const relativePath of ADMIN_PRUNE_PATHS) {
     const target = join(OUT, relativePath);
     if (existsSync(target)) {
-      rmSync(target, { force: true, recursive: true });
+      rmSync(target, { force: true });
     }
   }
 }
@@ -563,76 +469,52 @@ function applyAdminTemplates() {
   }
 }
 
-function publishStagedExport(stageDir) {
-  mkdirSync(FINAL_OUT, { recursive: true });
-
-  for (const entry of EXPORT_OWNED_ROOT_ENTRIES) {
-    const staged = join(stageDir, entry);
-    if (!existsSync(staged)) continue;
-
-    const destination = join(FINAL_OUT, entry);
-    console.log(`  publish ${entry}`);
-    removePathWithRetry(destination);
-
-    mkdirSync(dirname(destination), { recursive: true });
-    try {
-      renameSync(staged, destination);
-    } catch {
-      cpSync(staged, destination, { recursive: true });
-      removePathWithRetry(staged);
-    }
-  }
-}
-
 function main() {
-  const stageDir = mkdtempSync(join(tmpdir(), "lectrax-admin-export-"));
-  OUT = stageDir;
+  console.log("Exporting Lectrax platform admin to deploy/lectrax-admin ...");
 
-  console.log(`Exporting Lectrax platform admin to ${FINAL_OUT}`);
-  console.log(`  staging in ${stageDir}`);
-
-  try {
-    const dirs = [...new Set([...COPY_DIRS, ...INFRASTRUCTURE_DIRS])];
-    for (const dir of dirs) {
-      copyFromRoot(dir);
+  if (existsSync(OUT)) {
+    for (const entry of ["src", "public", "package.json", "next.config.ts", "tsconfig.json", ".env.example", ".gitignore"]) {
+      const target = join(OUT, entry);
+      if (existsSync(target)) {
+        rmSync(target, { recursive: true, force: true });
+      }
     }
+  } else {
+    mkdirSync(OUT, { recursive: true });
+  }
 
-    for (const file of COPY_FILES) {
-      copyFromRoot(file);
-    }
+  for (const dir of COPY_DIRS) {
+    copyFromRoot(dir);
+  }
 
-    for (const file of COPY_SHARED_FILES) {
-      copyFromRoot(file);
-    }
+  for (const file of COPY_FILES) {
+    copyFromRoot(file);
+  }
 
-    for (const file of COPY_UI_FILES) {
-      copyFromRoot(file);
-    }
+  for (const file of COPY_SHARED_FILES) {
+    copyFromRoot(file);
+  }
 
-    console.log("  writing admin configs/shell...");
-    writeAdminConfigs();
-    writeAdminPwaAssets();
-    writeAdminAppShell();
-    applyAdminTemplates();
-    patchAdminValidations();
-    pruneAdminOnlyPaths();
-    copyMissingLocalImports();
-    console.log("  writing package.json from main versions...");
-    writeAdminPackageJson();
+  for (const file of COPY_UI_FILES) {
+    copyFromRoot(file);
+  }
 
-    // Next.js 16 uses `src/proxy.ts`. Drop any stale middleware entry.
-    const staleMiddleware = join(OUT, "src/middleware.ts");
-    if (existsSync(staleMiddleware)) {
-      rmSync(staleMiddleware, { force: true });
-    }
+  writeAdminPackageJson();
+  writeAdminConfigs();
+  writeAdminPwaAssets();
+  writeAdminAppShell();
+  applyAdminTemplates();
+  patchAdminValidations();
+  pruneAdminOnlyPaths();
 
-    publishStagedExport(stageDir);
-  } finally {
-    removePathWithRetry(stageDir);
+  // Next.js 16 uses `src/proxy.ts` (`export async function proxy`). Drop any stale middleware entry.
+  const staleMiddleware = join(OUT, "src/middleware.ts");
+  if (existsSync(staleMiddleware)) {
+    rmSync(staleMiddleware, { force: true });
   }
 
   console.log("Done. Next steps:");
-  console.log(`  cd ${FINAL_OUT}`);
+  console.log("  cd deploy/lectrax-admin");
   console.log("  npm install");
   console.log("  cp .env.example .env.local");
   console.log("  npm run dev");

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth/require-page-user";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,8 +23,8 @@ export default async function SessionAssignmentsPage({
   const { id } = await params;
   const user = await requireAuthenticatedUser();
 
-  const supabase = await createClient();
-  const { data: session } = await supabase
+  const service = await createServiceClient();
+  const { data: session } = await service
     .from("class_sessions")
     .select("id")
     .eq("id", id)
@@ -36,7 +36,7 @@ export default async function SessionAssignmentsPage({
   const subscription = await refreshSubscriptionLifecycle(user.id);
   const plan = subscription?.plan ?? "free";
 
-  const { count } = await supabase
+  const { count } = await service
     .from("assignments")
     .select("*", { count: "exact", head: true })
     .eq("class_session_id", id);

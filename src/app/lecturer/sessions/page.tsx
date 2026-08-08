@@ -5,26 +5,15 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TablePagination } from "@/components/shared/table-pagination";
 import { Plus } from "@/components/lucide-icons";
 import { SEMESTER_LABELS } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
-import { PAGINATION, clampPage } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
-export default async function SessionsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
+export default async function SessionsPage() {
   const user = await requireAuthenticatedUser();
-  const params = await searchParams;
-  const page = clampPage(Number(params.page ?? undefined));
 
-  const { sessions, total } = await getLecturerClassSessions(user.id, {
-    page,
-    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
-  });
+  const sessions = await getLecturerClassSessions(user.id);
 
   return (
     <DashboardShell
@@ -32,14 +21,8 @@ export default async function SessionsPage({
       title="Class Sessions"
       description="Manage your class sessions, attendance, assignments, and assessments from a single academic workspace."
     >
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <TablePagination
-          basePath="/lecturer/sessions"
-          page={page}
-          pageSize={PAGINATION.DEFAULT_PAGE_SIZE}
-          total={total}
-        />
-        <Button asChild className="sm:ml-auto">
+      <div className="mb-6 flex justify-end">
+        <Button asChild>
           <Link href="/lecturer/sessions/new">
             <Plus className="mr-2 h-4 w-4" />
             New Session
@@ -47,7 +30,7 @@ export default async function SessionsPage({
         </Button>
       </div>
       <div className="portal-stat-grid">
-        {sessions.map((s) => (
+        {(sessions ?? []).map((s) => (
           <Link key={s.id} href={`/lecturer/sessions/${s.id}`}>
             <Card className={cn(lecturerPortalCardClass, "h-full transition-shadow hover:shadow-[0_8px_28px_-6px_rgba(15,23,42,0.14)]")}>
               <CardHeader>

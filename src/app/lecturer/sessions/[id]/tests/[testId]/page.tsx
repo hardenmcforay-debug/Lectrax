@@ -4,7 +4,6 @@ import { getTestGradeEntryData } from "@/lib/lecturer/class-tests";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { BackLink } from "@/components/ui/back-link";
 import { TestGradesClient } from "@/components/lecturer/test-grades-client";
-import { PAGINATION } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +18,7 @@ export default async function TestGradesPage({
   let data: Awaited<ReturnType<typeof getTestGradeEntryData>> | null = null;
   let loadFailed = false;
   try {
-    data = await getTestGradeEntryData(testId, user.id, {
-      page: 1,
-      pageSize: PAGINATION.MAX_PAGE_SIZE,
-    });
+    data = await getTestGradeEntryData(testId, user.id);
   } catch (error) {
     loadFailed = true;
     if (process.env.NODE_ENV === "development") {

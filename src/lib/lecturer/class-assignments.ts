@@ -1,13 +1,8 @@
 import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import type { Assignment, ClassSession } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  PAGINATION,
-  toRangeBounds,
-  type OffsetPaginationInput,
-} from "@/lib/pagination";
 
 export interface DeleteClassAssignmentResult {
   deletedAssignmentId: string;
@@ -29,14 +24,13 @@ export interface AssignmentGradeEntryData {
   assignment: Pick<Assignment, "id" | "title" | "max_score" | "deadline" | "class_session_id">;
   session: Pick<ClassSession, "id" | "course_code" | "title" | "class_name" | "semester" | "academic_year">;
   rows: AssignmentGradeRow[];
-  total: number;
 }
 
 export async function getClassAssignmentForLecturer(
   assignmentId: string,
   lecturerId: string
 ): Promise<Assignment | null> {
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { data } = await supabase
     .from("assignments")
@@ -118,7 +112,7 @@ export async function deleteClassAssignment(
   assignmentId: string,
   lecturerId: string
 ): Promise<DeleteClassAssignmentResult | null> {
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
   const assignment = await getClassAssignmentForLecturer(assignmentId, lecturerId);
   if (!assignment) return null;
 
@@ -153,16 +147,12 @@ export async function deleteClassAssignment(
 
 export async function getAssignmentGradeEntryData(
   assignmentId: string,
-  lecturerId: string,
-  pagination: OffsetPaginationInput = {
-    page: PAGINATION.DEFAULT_PAGE,
-    pageSize: PAGINATION.MAX_PAGE_SIZE,
-  }
+  lecturerId: string
 ): Promise<AssignmentGradeEntryData | null> {
   const assignment = await getClassAssignmentForLecturer(assignmentId, lecturerId);
   if (!assignment) return null;
 
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { data: session } = await supabase
     .from("class_sessions")
@@ -172,28 +162,16 @@ export async function getAssignmentGradeEntryData(
 
   if (!session) return null;
 
-  const pageSize = Math.min(pagination.pageSize, PAGINATION.MAX_PAGE_SIZE);
-  const { from, to } = toRangeBounds(pagination.page, pageSize);
-
-  const { data: enrollments, count: enrollmentCount } = await supabase
+  const { data: enrollments } = await supabase
     .from("enrollments")
-    .select(
-      "id, is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id)",
-      { count: "exact" }
-    )
+    .select("id, is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id)")
     .eq("class_session_id", assignment.class_session_id)
-    .order("joined_at", { ascending: true })
-    .range(from, to);
+    .order("joined_at", { ascending: true });
 
-  const enrollmentIds = (enrollments ?? []).map((e) => e.id);
-
-  const { data: submissions } = enrollmentIds.length
-    ? await supabase
-        .from("assignment_submissions")
-        .select("id, enrollment_id, file_name, file_size, storage_path, submitted_at")
-        .eq("assignment_id", assignment.id)
-        .in("enrollment_id", enrollmentIds)
-    : { data: [] };
+  const { data: submissions } = await supabase
+    .from("assignment_submissions")
+    .select("id, enrollment_id, file_name, file_size, storage_path, submitted_at")
+    .eq("assignment_id", assignment.id);
 
   const submissionIds = (submissions ?? []).map((s) => s.id);
 
@@ -259,7 +237,6 @@ export async function getAssignmentGradeEntryData(
     },
     session: session as AssignmentGradeEntryData["session"],
     rows,
-    total: enrollmentCount ?? 0,
   };
 }
 

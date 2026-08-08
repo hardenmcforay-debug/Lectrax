@@ -28,8 +28,7 @@ function generateUuid(): string {
   });
 }
 
-/** Legacy 32-bit hash — only used when SubtleCrypto is unavailable. */
-function hashStringLegacy(raw: string): string {
+function hashString(raw: string): string {
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const chr = raw.charCodeAt(i);
@@ -39,30 +38,7 @@ function hashStringLegacy(raw: string): string {
   return Math.abs(hash).toString(36);
 }
 
-async function sha256Hex(raw: string): Promise<string> {
-  if (typeof crypto !== "undefined" && crypto.subtle) {
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
-    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(
-      ""
-    );
-  }
-
-  // FNV-1a 64-bit style fallback (much stronger than 32-bit legacy).
-  let h1 = 0x811c9dc5;
-  let h2 = 0x811c9dc5 ^ 0x9e3779b9;
-  for (let i = 0; i < raw.length; i++) {
-    const c = raw.charCodeAt(i);
-    h1 ^= c;
-    h1 = Math.imul(h1, 0x01000193);
-    h2 ^= c + i;
-    h2 = Math.imul(h2, 0x01000193);
-  }
-  const a = (h1 >>> 0).toString(16).padStart(8, "0");
-  const b = (h2 >>> 0).toString(16).padStart(8, "0");
-  return `${a}${b}${a}${b}${a}${b}${a}${b}`;
-}
-
-function getCanvasFingerprintRaw(): string {
+function getCanvasFingerprint(): string {
   try {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -75,13 +51,13 @@ function getCanvasFingerprintRaw(): string {
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px Arial";
     ctx.fillText("lectrax-attendance-device", 12, 32);
-    return canvas.toDataURL();
+    return hashString(canvas.toDataURL());
   } catch {
     return "canvas_unavailable";
   }
 }
 
-function getWebGlFingerprintRaw(): string {
+function getWebGlFingerprint(): string {
   try {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl") ?? canvas.getContext("experimental-webgl");
@@ -93,7 +69,7 @@ function getWebGlFingerprintRaw(): string {
     const renderer = debugInfo
       ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
       : gl.getParameter(gl.RENDERER);
-    return `${vendor}|${renderer}`;
+    return hashString(`${vendor}|${renderer}`);
   } catch {
     return "webgl_unavailable";
   }
@@ -108,11 +84,7 @@ export function getOrCreateDeviceIdentifier(): string {
   return id;
 }
 
-/**
- * Stable device identity for attendance binding.
- * Primary binding is the local UUID (`deviceIdentifier`); fingerprints are secondary signals.
- */
-export async function getAttendanceDeviceIdentity(): Promise<AttendanceDeviceIdentity> {
+export function getAttendanceDeviceIdentity(): AttendanceDeviceIdentity {
   if (typeof window === "undefined") {
     return {
       deviceFingerprint: "server",
@@ -142,20 +114,15 @@ export async function getAttendanceDeviceIdentity(): Promise<AttendanceDeviceIde
     nav.userAgent,
     nav.language,
     nav.languages?.join(",") ?? "",
-    getCanvasFingerprintRaw(),
-    getWebGlFingerprintRaw(),
+    getCanvasFingerprint(),
+    getWebGlFingerprint(),
     nav.cookieEnabled,
     typeof nav.doNotTrack === "string" ? nav.doNotTrack : "",
   ].join("|");
 
-  const [deviceHash, browserHash] = await Promise.all([
-    sha256Hex(hardwareRaw),
-    sha256Hex(browserRaw),
-  ]);
-
   return {
-    deviceFingerprint: `dev_${deviceHash}`,
-    browserFingerprint: `br_${browserHash}`,
+    deviceFingerprint: `dev_${hashString(hardwareRaw)}`,
+    browserFingerprint: `br_${hashString(browserRaw)}`,
     deviceIdentifier,
     deviceMetadata: {
       platform: nav.platform,
@@ -165,9 +132,6 @@ export async function getAttendanceDeviceIdentity(): Promise<AttendanceDeviceIde
       screenHeight: screen.height,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       hardwareConcurrency: nav.hardwareConcurrency ?? null,
-      fingerprintAlgo: crypto.subtle ? "sha256" : "fnv1a64-fallback",
-      // Keep a legacy digest for diagnostics only (never used as auth alone).
-      legacyDeviceHint: hashStringLegacy(hardwareRaw),
     },
   };
 }

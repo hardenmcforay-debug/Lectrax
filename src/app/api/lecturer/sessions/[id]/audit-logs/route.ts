@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function deleteHandler(
+export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -25,7 +25,8 @@ async function deleteHandler(
     return NextResponse.json({ error: "Class session not found." }, { status: 404 });
   }
 
-  const { error: deleteError } = await auth.supabase
+  const service = await createServiceClient();
+  const { error: deleteError } = await service
     .from("audit_logs")
     .delete()
     .eq("class_session_id", classSessionId);
@@ -39,5 +40,3 @@ async function deleteHandler(
 
   return NextResponse.json({ message: "All activity logs deleted." });
 }
-
-export const DELETE = withApiObservability("lecturer.sessions.audit-logs.delete", deleteHandler);

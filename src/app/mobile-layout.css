@@ -436,146 +436,50 @@ html[data-portal-mobile="true"] .admin-portal-content {
 /* Landing safe areas */
 .landing-nav-safe {
   padding-top: env(safe-area-inset-top, 0px);
-  --landing-nav-fg: rgba(255, 255, 255, 0.9);
-  --landing-nav-fg-strong: #ffffff;
-  --landing-nav-logo: #ffffff;
-}
-
-@property --landing-nav-fg {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(255, 255, 255, 0.9);
-}
-
-@property --landing-nav-fg-strong {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #ffffff;
-}
-
-@property --landing-nav-logo {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #ffffff;
 }
 
 /* Home hero: transparent over blue. Scrolled / inner pages: solid white bar. */
-.landing-nav--hero {
+.landing-nav--hero,
+header[data-nav-mode="hero"],
+html[data-landing-nav="hero"] header.landing-nav-safe {
   background-color: transparent;
   background-image: none;
   border-bottom: 1px solid transparent;
   box-shadow: none;
-  --landing-nav-fg: rgba(255, 255, 255, 0.9);
-  --landing-nav-fg-strong: #ffffff;
-  --landing-nav-logo: #ffffff;
 }
 
 .landing-nav--solid,
-header[data-nav-mode="solid"].landing-nav-safe,
+header[data-nav-mode="solid"],
 html[data-landing-nav="solid"] header.landing-nav-safe {
   background-color: #ffffff !important;
   background-image: none !important;
-  border-bottom: 1px solid rgb(226 232 240) !important;
-  box-shadow: 0 1px 0 rgb(15 23 42 / 0.04) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  --landing-nav-fg: #1e293b;
-  --landing-nav-fg-strong: #0b3d91;
-  --landing-nav-logo: #0b3d91;
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /*
-  Scroll-driven bg + foreground together so the bar never becomes white
-  while labels are still white (which made links "disappear").
+  CSS-only home nav fill on scroll. Avoid !important on the home hero state
+  so this animation can paint the white bar even if JS is delayed.
 */
 @supports (animation-timeline: scroll()) {
-  header.landing-nav-safe.landing-nav-home:not(.landing-nav--solid) {
-    animation: lectrax-landing-nav-scroll linear both;
+  header.landing-nav-safe.landing-nav-home:not([data-nav-mode="solid"]) {
+    animation: landing-nav-scroll-solid linear both;
     animation-timeline: scroll(root block);
-    animation-range: 0 32px;
+    animation-range: 0 24px;
   }
 
-  @keyframes lectrax-landing-nav-scroll {
+  @keyframes landing-nav-scroll-solid {
     from {
       background-color: transparent;
       border-bottom-color: transparent;
       box-shadow: none;
-      --landing-nav-fg: rgba(255, 255, 255, 0.9);
-      --landing-nav-fg-strong: #ffffff;
-      --landing-nav-logo: #ffffff;
     }
     to {
       background-color: #ffffff;
-      border-bottom-color: rgb(226 232 240);
-      box-shadow: 0 1px 0 rgb(15 23 42 / 0.04);
-      --landing-nav-fg: #1e293b;
-      --landing-nav-fg-strong: #0b3d91;
-      --landing-nav-logo: #0b3d91;
-    }
-  }
-}
-
-/* Nav labels always follow the header foreground token */
-header.landing-nav-safe nav[aria-label="Main"] > a,
-header.landing-nav-safe nav[aria-label="Main"] > div > button {
-  color: var(--landing-nav-fg) !important;
-}
-
-header.landing-nav-safe nav[aria-label="Main"] > a:hover,
-header.landing-nav-safe nav[aria-label="Main"] > div > button:hover {
-  color: var(--landing-nav-fg-strong) !important;
-}
-
-header.landing-nav-safe .landing-nav-signin {
-  color: var(--landing-nav-fg) !important;
-}
-
-header.landing-nav-safe .landing-nav-signin:hover {
-  color: var(--landing-nav-fg-strong) !important;
-}
-
-header.landing-nav-safe.landing-nav--solid .landing-nav-signin:hover,
-header.landing-nav-safe[data-nav-mode="solid"] .landing-nav-signin:hover {
-  background-color: #f1f5f9 !important;
-}
-
-header.landing-nav-safe .landing-nav-menu-toggle {
-  color: var(--landing-nav-fg) !important;
-}
-
-header.landing-nav-safe.landing-nav--solid .landing-nav-menu-toggle:hover,
-header.landing-nav-safe[data-nav-mode="solid"] .landing-nav-menu-toggle:hover {
-  background-color: #f1f5f9 !important;
-}
-
-header.landing-nav-safe .landing-nav-inner > a {
-  color: var(--landing-nav-logo) !important;
-}
-
-/* Lectrax wordmark only — white on hero, blue when scrolled */
-header.landing-nav-safe .landing-nav-inner > a .landing-nav-brand-label {
-  color: var(--landing-nav-logo) !important;
-}
-
-header.landing-nav-safe.landing-nav--solid .landing-nav-inner > a img,
-header.landing-nav-safe[data-nav-mode="solid"] .landing-nav-inner > a img {
-  filter: none !important;
-}
-
-/* Undo inverted logo mark as the bar fills white (before React swaps variant). */
-@supports (animation-timeline: scroll()) {
-  header.landing-nav-safe.landing-nav-home:not(.landing-nav--solid) .landing-nav-inner > a img {
-    animation: lectrax-landing-nav-logo-filter linear both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 32px;
-  }
-
-  @keyframes lectrax-landing-nav-logo-filter {
-    from {
-      filter: brightness(0) invert(1);
-    }
-    to {
-      filter: none;
+      border-bottom-color: transparent;
+      box-shadow: none;
     }
   }
 }

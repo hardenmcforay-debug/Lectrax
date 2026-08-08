@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { classSessionSchema } from "@/lib/validations";
 import {
@@ -9,9 +9,8 @@ import {
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,8 +53,9 @@ async function postHandler(request: Request) {
   }
 
   const data = parsed.data;
+  const service = await createServiceClient();
 
-  const { data: session, error: sessionError } = await supabase
+  const { data: session, error: sessionError } = await service
     .from("class_sessions")
     .insert({
       lecturer_id: user.id,
@@ -77,5 +77,3 @@ async function postHandler(request: Request) {
 
   return NextResponse.json({ session });
 }
-
-export const POST = withApiObservability("lecturer.sessions.post", postHandler);

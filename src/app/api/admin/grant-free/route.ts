@@ -5,10 +5,9 @@ import { adminActivatePremium } from "@/lib/subscription/lifecycle";
 import { adminGrantFreeSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 /** Legacy route — delegates to profile-based premium activation */
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -59,5 +58,3 @@ async function postHandler(request: Request) {
     );
   }
 }
-
-export const POST = withApiObservability("admin.grant-free.post", postHandler);

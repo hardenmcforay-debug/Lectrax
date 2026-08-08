@@ -18,8 +18,7 @@ export function formatPercent(value: number, decimals = 1) {
   return `${value.toFixed(decimals)}%`;
 }
 
-export async function generateDeviceFingerprint(): Promise<string> {
+export function generateDeviceFingerprint(): string {
   if (typeof window === "undefined") return "server";
-  const identity = await getAttendanceDeviceIdentity();
-  return identity.deviceFingerprint;
+  return getAttendanceDeviceIdentity().deviceFingerprint;
 }

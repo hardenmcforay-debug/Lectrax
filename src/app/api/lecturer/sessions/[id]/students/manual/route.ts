@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { manualStudentSchema } from "@/lib/validations";
@@ -10,9 +10,8 @@ import {
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -66,8 +65,9 @@ async function postHandler(
 
   const fullName = parsed.data.fullName.trim();
   const collegeId = parsed.data.collegeId?.trim() || null;
+  const service = await createServiceClient();
 
-  const { data: manual, error: manualError } = await supabase
+  const { data: manual, error: manualError } = await service
     .from("manual_students")
     .insert({
       class_session_id: classSessionId,
@@ -84,7 +84,7 @@ async function postHandler(
     );
   }
 
-  const { data: enrollment, error: enrollError } = await supabase
+  const { data: enrollment, error: enrollError } = await service
     .from("enrollments")
     .insert({
       class_session_id: classSessionId,
@@ -96,7 +96,7 @@ async function postHandler(
     .single();
 
   if (enrollError || !enrollment) {
-    await supabase.from("manual_students").delete().eq("id", manual.id);
+    await service.from("manual_students").delete().eq("id", manual.id);
     return NextResponse.json(
       { error: sanitizeErrorMessage(enrollError?.message ?? "Could not enroll manual student") },
       { status: 500 }
@@ -112,5 +112,3 @@ async function postHandler(
     },
   });
 }
-
-export const POST = withApiObservability("lecturer.sessions.students.manual.post", postHandler);

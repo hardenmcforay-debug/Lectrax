@@ -3,11 +3,6 @@ import {
   batchAssignmentsBeforeDeadline,
   isAssignmentBeforeDeadline,
 } from "@/lib/assignments/deadline-server";
-import {
-  PAGINATION,
-  toRangeBounds,
-  type OffsetPaginationInput,
-} from "@/lib/pagination";
 
 export type StudentAssignmentListItem = {
   id: string;
@@ -46,46 +41,34 @@ export type StudentAssignmentDetailData = {
 };
 
 export async function getStudentAssignmentsList(
-  studentId: string,
-  pagination: OffsetPaginationInput = {
-    page: PAGINATION.DEFAULT_PAGE,
-    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
-  }
-): Promise<{ assignments: StudentAssignmentListItem[]; total: number }> {
+  studentId: string
+): Promise<StudentAssignmentListItem[]> {
   const supabase = await createClient();
 
   const { data: enrollments } = await supabase
     .from("enrollments")
     .select("id, class_session_id")
-    .eq("student_id", studentId)
-    .order("joined_at", { ascending: false })
-    .limit(PAGINATION.MAX_PAGE_SIZE);
+    .eq("student_id", studentId);
 
-  if (!enrollments?.length) return { assignments: [], total: 0 };
+  if (!enrollments?.length) return [];
 
   const enrollmentBySessionId = new Map(
     enrollments.map((e) => [e.class_session_id as string, e.id as string])
   );
   const classSessionIds = enrollments.map((e) => e.class_session_id as string);
 
-  const { from, to } = toRangeBounds(pagination.page, pagination.pageSize);
-
   const [, assignmentsResult] = await Promise.all([
     supabase.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
     supabase
       .from("assignments")
-      .select("id, title, deadline, max_score, class_session_id, class_sessions(course_code)", {
-        count: "exact",
-      })
+      .select("id, title, deadline, max_score, class_session_id, class_sessions(course_code)")
       .in("class_session_id", classSessionIds)
       .eq("is_published", true)
-      .order("deadline", { ascending: true })
-      .range(from, to),
+      .order("deadline", { ascending: true }),
   ]);
 
   const assignmentList = assignmentsResult.data ?? [];
-  const total = assignmentsResult.count ?? 0;
-  if (!assignmentList.length) return { assignments: [], total };
+  if (!assignmentList.length) return [];
 
   const assignmentIds = assignmentList.map((a) => a.id as string);
   const enrollmentIds = Array.from(enrollmentBySessionId.values());
@@ -116,7 +99,7 @@ export async function getStudentAssignmentsList(
     }))
   );
 
-  const assignments = assignmentList.map((a, index) => {
+  return assignmentList.map((a, index) => {
     const session = a.class_sessions as unknown as { course_code: string } | null;
     const courseCode = session?.course_code ?? "—";
     const enrollmentId = enrollmentBySessionId.get(a.class_session_id as string);
@@ -179,8 +162,6 @@ export async function getStudentAssignmentsList(
       pastDeadline,
     };
   });
-
-  return { assignments, total };
 }
 
 export async function getStudentAssignmentDetail(

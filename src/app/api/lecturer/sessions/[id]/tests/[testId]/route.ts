@@ -3,9 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassTestForLecturer, deleteClassTest } from "@/lib/lecturer/class-tests";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function deleteHandler(
+export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; testId: string }> }
 ) {
@@ -44,5 +43,3 @@ async function deleteHandler(
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
-
-export const DELETE = withApiObservability("lecturer.sessions.tests.delete", deleteHandler);

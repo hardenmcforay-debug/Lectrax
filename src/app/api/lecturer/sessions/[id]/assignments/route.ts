@@ -14,9 +14,8 @@ import {
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -62,7 +61,8 @@ async function postHandler(
     );
   }
 
-  const { data: session } = await supabase
+  const service = await createServiceClient();
+  const { data: session } = await service
     .from("class_sessions")
     .select("id, semester, academic_year")
     .eq("id", classSessionId)
@@ -80,7 +80,7 @@ async function postHandler(
     return NextResponse.json({ error: "Invalid assignment deadline." }, { status: 400 });
   }
 
-  const { data: assignment, error } = await supabase
+  const { data: assignment, error } = await service
     .from("assignments")
     .insert({
       class_session_id: classSessionId,
@@ -102,8 +102,6 @@ async function postHandler(
     );
   }
 
-  // Student notification fan-out requires service (cross-user inserts).
-  const service = await createServiceClient();
   const classLabel = await getClassSessionLabel(service, classSessionId);
   void notifyEnrolledStudentsInClass(service, classSessionId, {
     type: "assignment",
@@ -114,5 +112,3 @@ async function postHandler(
 
   return NextResponse.json({ assignment });
 }
-
-export const POST = withApiObservability("lecturer.sessions.assignments.post", postHandler);

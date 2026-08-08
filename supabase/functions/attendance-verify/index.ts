@@ -8,7 +8,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
 
-  const { token, deviceFingerprint } = await req.json();
+  const { token, deviceFingerprint, latitude, longitude } = await req.json();
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ received: true, userId: user.id, token, deviceFingerprint }),
+    JSON.stringify({ received: true, userId: user.id, token, deviceFingerprint, latitude, longitude }),
     { headers: { "Content-Type": "application/json" } }
   );
 });

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSignedSubmissionUrl } from "@/lib/assignments/submissions";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function getHandler(
+export async function GET(
   _request: Request,
   { params }: { params: Promise<{ assignmentId: string }> }
 ) {
@@ -30,5 +29,3 @@ async function getHandler(
 
   return NextResponse.json({ url: signedUrl, fileName: submission.file_name });
 }
-
-export const GET = withApiObservability("student.assignments.download.get", getHandler);

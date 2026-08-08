@@ -1,7 +1,7 @@
 import "server-only";
 
 import { ASSIGNMENT_SUBMISSIONS_BUCKET } from "@/lib/assignments/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 
 export type RemoveEnrollmentResult = {
@@ -25,9 +25,9 @@ export async function removeEnrollmentFromSession(
   const session = await getClassSessionForLecturer(classSessionId, lecturerId);
   if (!session) return null;
 
-  const supabase = await createClient();
+  const service = await createServiceClient();
 
-  const { data: enrollment, error: enrollmentError } = await supabase
+  const { data: enrollment, error: enrollmentError } = await service
     .from("enrollments")
     .select(
       "id, is_manual, manual_student_id, student_id, profiles(full_name), manual_students(full_name)"
@@ -50,7 +50,7 @@ export async function removeEnrollmentFromSession(
   )?.full_name;
   const studentName = manualName ?? profileName ?? "Student";
 
-  const { data: submissions } = await supabase
+  const { data: submissions } = await service
     .from("assignment_submissions")
     .select("storage_path")
     .eq("enrollment_id", enrollmentId)
@@ -61,11 +61,11 @@ export async function removeEnrollmentFromSession(
     .filter((path): path is string => Boolean(path));
 
   if (storagePaths.length > 0) {
-    await supabase.storage.from(ASSIGNMENT_SUBMISSIONS_BUCKET).remove(storagePaths);
+    await service.storage.from(ASSIGNMENT_SUBMISSIONS_BUCKET).remove(storagePaths);
   }
 
   if (enrollment.is_manual && enrollment.manual_student_id) {
-    const { error: manualDeleteError } = await supabase
+    const { error: manualDeleteError } = await service
       .from("manual_students")
       .delete()
       .eq("id", enrollment.manual_student_id)
@@ -75,7 +75,7 @@ export async function removeEnrollmentFromSession(
       throw new Error(manualDeleteError.message);
     }
   } else {
-    const { error: enrollDeleteError } = await supabase
+    const { error: enrollDeleteError } = await service
       .from("enrollments")
       .delete()
       .eq("id", enrollmentId)

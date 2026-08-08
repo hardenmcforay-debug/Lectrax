@@ -54,30 +54,28 @@ export default async function LecturerDashboard() {
   let attendanceData: Awaited<ReturnType<typeof getLecturerAttendanceAnalytics>> = [];
 
   try {
-    const [sessionCountResult, recentSessionsResult, analyticsResult, enrollmentCountResult] =
-      await Promise.all([
-        supabase
-          .from("class_sessions")
-          .select("id", { count: "exact", head: true })
-          .eq("lecturer_id", user.id),
-        supabase
-          .from("class_sessions")
-          .select("id, title, course_code, session_code")
-          .eq("lecturer_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(5),
-        getLecturerAttendanceAnalytics(user.id),
-        // Count enrollments for this lecturer's classes via RLS-scoped join path.
-        supabase
-          .from("enrollments")
-          .select("id, class_sessions!inner(lecturer_id)", { count: "exact", head: true })
-          .eq("class_sessions.lecturer_id", user.id),
-      ]);
+    const [allSessionsResult, analyticsResult] = await Promise.all([
+      supabase
+        .from("class_sessions")
+        .select("id, title, course_code, session_code")
+        .eq("lecturer_id", user.id)
+        .order("created_at", { ascending: false }),
+      getLecturerAttendanceAnalytics(user.id),
+    ]);
 
-    sessionCount = sessionCountResult.count ?? 0;
-    sessions = recentSessionsResult.data ?? [];
+    const allSessions = allSessionsResult.data ?? [];
+    sessionCount = allSessions.length;
+    sessions = allSessions.slice(0, 5);
     attendanceData = analyticsResult;
-    studentCount = enrollmentCountResult.count ?? 0;
+
+    const allSessionIds = allSessions.map((s) => s.id);
+    if (allSessionIds.length) {
+      const studentResult = await supabase
+        .from("enrollments")
+        .select("id", { count: "exact", head: true })
+        .in("class_session_id", allSessionIds);
+      studentCount = studentResult.count ?? 0;
+    }
   } catch {
     // Keep dashboard usable when data fetch fails transiently.
   }

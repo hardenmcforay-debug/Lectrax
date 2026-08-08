@@ -4,16 +4,13 @@ import { logAudit } from "@/lib/audit";
 import {
   attendanceDeviceIdentitySchema,
   DEVICE_MESSAGES,
-  DEVICE_VERIFICATION_CODES,
   deviceBoundToOtherAccountResponse,
   isDeviceOwnedByOtherError,
 } from "@/lib/attendance/device-verification";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody } from "@/lib/security/parse-request";
-import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,13 +19,6 @@ async function postHandler(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const userRateLimit = await rejectIfUserRateLimited(
-    user.id,
-    "attendanceScanPerUser",
-    "attendance-device-transfer"
-  );
-  if (userRateLimit) return userRateLimit;
 
   const parsedBody = await parseJsonBody(request);
   if (!parsedBody.ok) return parsedBody.response;
@@ -52,16 +42,6 @@ async function postHandler(request: Request) {
     if (isDeviceOwnedByOtherError(error.message)) {
       return NextResponse.json(deviceBoundToOtherAccountResponse(), { status: 403 });
     }
-    if (/ATTENDANCE_DEVICE_TRANSFER_LIMIT/i.test(error.message)) {
-      return NextResponse.json(
-        {
-          error: DEVICE_MESSAGES.transferLimit.title,
-          code: DEVICE_VERIFICATION_CODES.TRANSFER_LIMIT,
-          message: DEVICE_MESSAGES.transferLimit.description,
-        },
-        { status: 429 }
-      );
-    }
     return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
@@ -82,5 +62,3 @@ async function postHandler(request: Request) {
     message: DEVICE_MESSAGES.transferSuccess,
   });
 }
-
-export const POST = withApiObservability("attendance.device.transfer.post", postHandler);

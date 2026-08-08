@@ -22,12 +22,9 @@ type ActivityLog = Pick<AuditLog, "id" | "action" | "entity_type" | "created_at"
 export function SessionActivityLogList({
   classSessionId,
   initialLogs,
-  total,
 }: {
   classSessionId: string;
   initialLogs: ActivityLog[];
-  /** Full activity-log count (may exceed the current page). */
-  total?: number;
 }) {
   const router = useRouter();
   const [logs, setLogs] = useState(initialLogs);
@@ -104,11 +101,7 @@ export function SessionActivityLogList({
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {typeof total === "number" ? total : logs.length}{" "}
-          {(typeof total === "number" ? total : logs.length) === 1 ? "entry" : "entries"}
-          {typeof total === "number" && total > logs.length
-            ? ` (showing ${logs.length})`
-            : ""}
+          {logs.length} {logs.length === 1 ? "entry" : "entries"}
         </p>
         <Button
           type="button"
@@ -173,8 +166,7 @@ export function SessionActivityLogList({
             <DialogTitle>Delete all activity logs?</DialogTitle>
             <DialogDescription className="space-y-2 pt-2 text-left">
               <span className="block">
-                Remove all {typeof total === "number" ? total : logs.length} activity log
-                entries for this session?
+                Remove all {logs.length} activity log entries for this session?
               </span>
               <span className="block">
                 Attendance session records will not be affected.

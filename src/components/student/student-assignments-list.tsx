@@ -84,9 +84,6 @@ export function StudentAssignmentsList({
   assignments,
 }: {
   assignments: StudentAssignmentListItem[];
-  total?: number;
-  /** Reserved for callers that already render TablePagination above. */
-  pageSize?: number;
 }) {
   if (assignments.length === 0) {
     return <p className="text-muted-foreground">No assignments yet.</p>;

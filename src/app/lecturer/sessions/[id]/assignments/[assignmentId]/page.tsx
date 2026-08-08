@@ -4,7 +4,6 @@ import { getAssignmentGradeEntryData } from "@/lib/lecturer/class-assignments";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { BackLink } from "@/components/ui/back-link";
 import { AssignmentGradesClient } from "@/components/lecturer/assignment-grades-client";
-import { PAGINATION } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +19,7 @@ export default async function AssignmentGradesPage({
   let data: Awaited<ReturnType<typeof getAssignmentGradeEntryData>> | null = null;
   let loadFailed = false;
   try {
-    data = await getAssignmentGradeEntryData(assignmentId, user.id, {
-      page: 1,
-      pageSize: PAGINATION.MAX_PAGE_SIZE,
-    });
+    data = await getAssignmentGradeEntryData(assignmentId, user.id);
   } catch (error) {
     loadFailed = true;
     if (process.env.NODE_ENV === "development") {

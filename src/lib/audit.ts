@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logServerError } from "@/lib/errors/logger";
-import { trackBusinessEventFromAudit } from "@/lib/observability/business-events";
 
 export async function logAudit(params: {
   action: string;
@@ -31,10 +30,7 @@ export async function logAudit(params: {
       entityType: params.entityType,
       message: error.message,
     });
-    return;
   }
-
-  trackBusinessEventFromAudit(params.action, params.metadata ?? {}, user.id);
 }
 
 /** Machine-auth audit entries (webhooks, cron) via service role. */
@@ -60,8 +56,5 @@ export async function logSystemAudit(params: {
       action: params.action,
       message: error.message,
     });
-    return;
   }
-
-  trackBusinessEventFromAudit(params.action, params.metadata ?? {}, null);
 }

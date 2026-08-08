@@ -12,9 +12,8 @@ import {
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { brandingExtensionMatchesMime, readBrandingFileBytes } from "@/lib/security/file-validation";
 import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -107,7 +106,7 @@ async function postHandler(request: Request) {
   });
 }
 
-async function deleteHandler() {
+export async function DELETE() {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -136,7 +135,3 @@ async function deleteHandler() {
 
   return NextResponse.json({ success: true });
 }
-
-export const POST = withApiObservability("admin.site-logo.post", postHandler);
-
-export const DELETE = withApiObservability("admin.site-logo.delete", deleteHandler);

@@ -7,7 +7,6 @@ import { normalizePhoneNumber } from "@/lib/auth/phone-number";
 import { applyRecoveryEmailUpdate } from "@/lib/auth/recovery-email";
 import { canEditRecoveryEmail, getRecoveryEmailDisplay } from "@/lib/auth/phone-number";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 type ProfileResponse = {
   id: string;
@@ -47,7 +46,7 @@ function buildProfileResponse(
   };
 }
 
-async function getHandler() {
+export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -57,7 +56,8 @@ async function getHandler() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { data: profile, error } = await supabase
+  const service = await createServiceClient();
+  const { data: profile, error } = await service
     .from("profiles")
     .select("id, full_name, phone, college_id, role, email, created_at, updated_at")
     .eq("id", user.id)
@@ -75,7 +75,7 @@ async function getHandler() {
   });
 }
 
-async function patchHandler(request: Request) {
+export async function PATCH(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -112,7 +112,8 @@ async function patchHandler(request: Request) {
     }
   }
 
-  const { data: existing, error: readError } = await supabase
+  const service = await createServiceClient();
+  const { data: existing, error: readError } = await service
     .from("profiles")
     .select("id, role, phone, email")
     .eq("id", user.id)
@@ -136,8 +137,6 @@ async function patchHandler(request: Request) {
   }
 
   if (trimmedPhone) {
-    // Cross-user phone uniqueness check requires service (other profiles not visible via RLS).
-    const service = await createServiceClient();
     const { data: phoneConflict, error: phoneConflictError } = await service
       .from("profiles")
       .select("id")
@@ -172,8 +171,6 @@ async function patchHandler(request: Request) {
   });
 
   if (recoveryEmail && recoveryEmailEditable) {
-    // Auth Admin APIs for recovery email require service.
-    const service = await createServiceClient();
     const recoveryResult = await applyRecoveryEmailUpdate(user.id, recoveryEmail, service);
     if (!recoveryResult.ok) {
       return NextResponse.json(
@@ -195,7 +192,7 @@ async function patchHandler(request: Request) {
     payload.college_id = collegeId ?? null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await service
     .from("profiles")
     .update(payload)
     .eq("id", user.id)
@@ -238,7 +235,3 @@ async function patchHandler(request: Request) {
     profile: buildProfileResponse(savedProfile, user.email, user.user_metadata),
   });
 }
-
-export const GET = withApiObservability("profile.get", getHandler);
-
-export const PATCH = withApiObservability("profile.patch", patchHandler);

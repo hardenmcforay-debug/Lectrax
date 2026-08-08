@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { manualStudentSchema } from "@/lib/validations";
@@ -10,13 +10,12 @@ import {
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody, parseRouteUuid } from "@/lib/security/parse-request";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const updateManualStudentCollegeIdSchema = manualStudentSchema.pick({
   collegeId: true,
 });
 
-async function patchHandler(
+export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; manualStudentId: string }> }
 ) {
@@ -65,8 +64,9 @@ async function patchHandler(
   }
 
   const collegeId = parsed.data.collegeId?.trim() || null;
+  const service = await createServiceClient();
 
-  const { data: existing, error: existingError } = await supabase
+  const { data: existing, error: existingError } = await service
     .from("manual_students")
     .select("id, full_name, college_id, class_session_id")
     .eq("id", manualIdParsed.id)
@@ -84,7 +84,7 @@ async function patchHandler(
     return NextResponse.json({ error: "Manual student not found" }, { status: 404 });
   }
 
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await service
     .from("manual_students")
     .update({ college_id: collegeId })
     .eq("id", manualIdParsed.id)
@@ -104,7 +104,7 @@ async function patchHandler(
   }
 
   // Keep enrollment snapshots in sync so attendance/grades tables update immediately.
-  const { error: enrollError } = await supabase
+  const { error: enrollError } = await service
     .from("enrollments")
     .update({ college_id: collegeId })
     .eq("manual_student_id", manualIdParsed.id)
@@ -125,5 +125,3 @@ async function patchHandler(
     },
   });
 }
-
-export const PATCH = withApiObservability("lecturer.sessions.students.manual.patch", patchHandler);

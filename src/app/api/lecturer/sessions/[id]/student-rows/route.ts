@@ -8,8 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { parseRouteUuid } from "@/lib/security/parse-request";
 import { studentRowsWeightQuerySchema } from "@/lib/validations";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
-import { buildOffsetPaginationMeta, parseOffsetPagination } from "@/lib/pagination";
 
 function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefined {
   const attendance = searchParams.get("attendanceWeight");
@@ -37,7 +35,7 @@ function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefin
   };
 }
 
-async function getHandler(
+export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -65,24 +63,16 @@ async function getHandler(
   }
 
   try {
-    const searchParams = new URL(request.url).searchParams;
-    const pagination = parseOffsetPagination(searchParams);
-    const { rows, total } = await getStudentTableRows(
+    const { rows } = await getStudentTableRows(
       routeId.id,
       classSession.semester,
       classSession.academic_year,
       user.id,
-      parseWeightOverride(searchParams),
-      pagination
+      parseWeightOverride(new URL(request.url).searchParams)
     );
 
-    return NextResponse.json({
-      rows,
-      pagination: buildOffsetPaginationMeta(pagination.page, pagination.pageSize, total),
-    });
+    return NextResponse.json({ rows });
   } catch (error) {
     return handleApiRouteError("lecturer.student-rows", error);
   }
 }
-
-export const GET = withApiObservability("lecturer.sessions.student-rows.get", getHandler);

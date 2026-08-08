@@ -40,7 +40,6 @@ import { StudentPerformanceExportButton } from "@/components/lecturer/student-pe
 import {
   AttendanceSessionPanel,
   type ActiveAttendanceSession,
-  type AttendanceRosterStudent,
 } from "@/components/lecturer/attendance-session-panel";
 import type { SubscriptionTier } from "@/lib/subscription/constants";
 import {
@@ -55,11 +54,6 @@ import { isPastDeadline } from "@/lib/assignments/deadline";
 import { manualStudentSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
-import {
-  PAGINATION,
-  buildOffsetPaginationMeta,
-  type OffsetPaginationMeta,
-} from "@/lib/pagination";
 
 const SESSION_TAB_ITEMS = [
   { value: "info", label: "Info" },
@@ -110,8 +104,6 @@ export type SessionAssignmentSummary = {
 export function SessionPageClient({
   session,
   rows,
-  studentRowsTotal,
-  attendanceRows = [],
   semester,
   caWeights: initialCaWeights,
   testCount,
@@ -119,12 +111,8 @@ export function SessionPageClient({
   initialClassAssignments,
   sessionAssignments = [],
   attendanceAuditSessions = [],
-  attendanceSessionsTotal,
-  attendancePage = 1,
   attendancePresentBySession = {},
   sessionAuditLogs = [],
-  auditLogsTotal,
-  auditPage = 1,
   initialActiveSession = null,
   initialSessionNumber = null,
   defaultTab = "students",
@@ -134,8 +122,6 @@ export function SessionPageClient({
 }: {
   session: ClassSession;
   rows: StudentTableRow[];
-  studentRowsTotal?: number;
-  attendanceRows?: AttendanceRosterStudent[];
   semester: SemesterType;
   caWeights?: { attendance: number; assignment: number; test: number };
   testCount: number;
@@ -143,12 +129,8 @@ export function SessionPageClient({
   initialClassAssignments: { id: string; max_score: number }[];
   sessionAssignments?: SessionAssignmentSummary[];
   attendanceAuditSessions?: SessionAttendanceAudit[];
-  attendanceSessionsTotal?: number;
-  attendancePage?: number;
   attendancePresentBySession?: Record<string, AttendancePresentStudent[]>;
   sessionAuditLogs?: Pick<AuditLog, "id" | "action" | "entity_type" | "created_at">[];
-  auditLogsTotal?: number;
-  auditPage?: number;
   initialActiveSession?: ActiveAttendanceSession | null;
   initialSessionNumber?: number | null;
   defaultTab?: string;
@@ -177,13 +159,6 @@ export function SessionPageClient({
   const [closeSessionError, setCloseSessionError] = useState<string | null>(null);
   const [studentRows, setStudentRows] = useState(rows);
   const [prevRows, setPrevRows] = useState(rows);
-  const [studentPage, setStudentPage] = useState(1);
-  const [studentPagination, setStudentPagination] = useState<OffsetPaginationMeta | null>(() =>
-    studentRowsTotal != null
-      ? buildOffsetPaginationMeta(1, PAGINATION.DEFAULT_PAGE_SIZE, studentRowsTotal)
-      : null
-  );
-  const studentPageRef = useRef(1);
   const studentRowsRefreshTimerRef = useRef<number | null>(null);
   const caPreviewTimerRef = useRef<number | null>(null);
   const savedCaWeightsRef = useRef<CAWeights | undefined>(initialCaWeights);
@@ -191,17 +166,7 @@ export function SessionPageClient({
   if (rows !== prevRows) {
     setPrevRows(rows);
     setStudentRows(rows);
-    setStudentPage(1);
-    if (studentRowsTotal != null) {
-      setStudentPagination(
-        buildOffsetPaginationMeta(1, PAGINATION.DEFAULT_PAGE_SIZE, studentRowsTotal)
-      );
-    }
   }
-
-  useEffect(() => {
-    studentPageRef.current = studentPage;
-  }, [studentPage]);
 
   useEffect(() => {
     savedCaWeightsRef.current = initialCaWeights;
@@ -252,34 +217,24 @@ export function SessionPageClient({
     }
   }
 
-  const refreshStudentRows = useCallback(async (previewWeights?: CAWeights, page?: number) => {
-    const targetPage = page ?? studentPageRef.current;
+  const refreshStudentRows = useCallback(async (previewWeights?: CAWeights) => {
     try {
-      const params = new URLSearchParams({
-        page: String(targetPage),
-        pageSize: String(PAGINATION.DEFAULT_PAGE_SIZE),
-      });
-      if (previewWeights != null) {
-        params.set("attendanceWeight", String(previewWeights.attendance));
-        params.set("assignmentWeight", String(previewWeights.assignment));
-        params.set("testWeight", String(previewWeights.test));
-      }
-      const res = await appFetch(
-        `/api/lecturer/sessions/${session.id}/student-rows?${params.toString()}`
-      );
-      const data = (await res.json()) as {
-        rows?: StudentTableRow[];
-        pagination?: OffsetPaginationMeta;
-        error?: string;
-      };
+      const params =
+        previewWeights != null
+          ? new URLSearchParams({
+              attendanceWeight: String(previewWeights.attendance),
+              assignmentWeight: String(previewWeights.assignment),
+              testWeight: String(previewWeights.test),
+            })
+          : null;
+      const url = params
+        ? `/api/lecturer/sessions/${session.id}/student-rows?${params.toString()}`
+        : `/api/lecturer/sessions/${session.id}/student-rows`;
+      const res = await appFetch(url);
+      const data = (await res.json()) as { rows?: StudentTableRow[]; error?: string };
 
       if (res.ok && data.rows) {
         setStudentRows(data.rows);
-        if (data.pagination) {
-          setStudentPagination(data.pagination);
-          setStudentPage(data.pagination.page);
-          studentPageRef.current = data.pagination.page;
-        }
         return;
       }
 
@@ -641,7 +596,7 @@ export function SessionPageClient({
           rows={studentRows}
           testCount={testCount}
           assignmentCount={initialClassAssignments.length}
-          disabled={(studentPagination?.total ?? studentRows.length) === 0}
+          disabled={studentRows.length === 0}
         />
         <div className="w-full overflow-x-auto rounded-lg border bg-white">
           <Table className="w-full min-w-[52rem]">
@@ -707,7 +662,7 @@ export function SessionPageClient({
                   }}
                 >
                   <TableCell className="px-3 py-3 text-center align-middle tabular-nums text-sm text-muted-foreground">
-                    {(studentPagination?.offset ?? 0) + index + 1}
+                    {index + 1}
                   </TableCell>
                   <TableCell className="px-4 py-3 align-middle">
                     <span className="font-medium">{r.name}</span>
@@ -753,46 +708,6 @@ export function SessionPageClient({
             </TableBody>
           </Table>
         </div>
-        {studentPagination && studentPagination.totalPages > 1 && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-            <span>
-              Page {studentPagination.page} of {studentPagination.totalPages}
-              {studentPagination.total > 0
-                ? ` · ${studentPagination.total} students`
-                : null}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={studentPage <= 1}
-                onClick={() => {
-                  const next = studentPage - 1;
-                  setStudentPage(next);
-                  studentPageRef.current = next;
-                  void refreshStudentRows(undefined, next);
-                }}
-              >
-                Previous
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!studentPagination.hasMore}
-                onClick={() => {
-                  const next = studentPage + 1;
-                  setStudentPage(next);
-                  studentPageRef.current = next;
-                  void refreshStudentRows(undefined, next);
-                }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
 
         <Dialog
           open={removeStudentTarget !== null}
@@ -846,8 +761,7 @@ export function SessionPageClient({
       <TabsContent value="attendance">
         <AttendanceSessionPanel
           session={session}
-          rows={attendanceRows}
-          totalStudents={studentRowsTotal ?? studentPagination?.total}
+          rows={studentRows}
           initialActiveSession={initialActiveSession}
           initialSessionNumber={initialSessionNumber}
           onAttendanceChange={scheduleRefreshStudentRows}
@@ -992,12 +906,8 @@ export function SessionPageClient({
           <SessionAuditPanel
             classSessionId={session.id}
             attendanceSessions={attendanceAuditSessions}
-            attendanceSessionsTotal={attendanceSessionsTotal}
-            attendancePage={attendancePage}
             presentBySession={attendancePresentBySession}
             auditLogs={sessionAuditLogs}
-            auditLogsTotal={auditLogsTotal}
-            auditPage={auditPage}
           />
         ) : null}
       </TabsContent>

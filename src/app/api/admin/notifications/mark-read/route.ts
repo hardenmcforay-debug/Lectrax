@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { logServerError } from "@/lib/errors/logger";
 import { uuidField } from "@/lib/security/zod-helpers";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const PARTNERSHIP_NOTIFICATION_TYPES = [
   "partnership_inquiry",
@@ -19,7 +18,7 @@ const markReadSchema = z
     error: "Provide ids or types",
   });
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -57,5 +56,3 @@ async function postHandler(request: Request) {
 
   return NextResponse.json({ success: true, updated: data?.length ?? 0 });
 }
-
-export const POST = withApiObservability("admin.notifications.mark-read.post", postHandler);

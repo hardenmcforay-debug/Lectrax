@@ -9,14 +9,13 @@ import {
 import type { BillingPlan } from "@/types/database";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const activateSchema = z.object({
   lecturerId: uuidField(),
   billingPlan: z.enum(["monthly", "semester", "annual"]).default("monthly"),
 });
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -53,7 +52,7 @@ const extendSchema = z.object({
   days: z.coerce.number().min(1).max(730).default(30),
 });
 
-async function patchHandler(request: Request) {
+export async function PATCH(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -89,7 +88,7 @@ const revokeSchema = z.object({
   lecturerId: uuidField(),
 });
 
-async function deleteHandler(request: Request) {
+export async function DELETE(request: Request) {
   const auth = await requirePlatformAdmin();
   if (auth.error) return auth.error;
 
@@ -115,9 +114,3 @@ async function deleteHandler(request: Request) {
     return NextResponse.json({ error: message }, { status: 409 });
   }
 }
-
-export const POST = withApiObservability("admin.subscriptions.post", postHandler);
-
-export const PATCH = withApiObservability("admin.subscriptions.patch", patchHandler);
-
-export const DELETE = withApiObservability("admin.subscriptions.delete", deleteHandler);

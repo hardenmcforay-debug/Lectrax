@@ -13,9 +13,8 @@ import {
   getClassSessionLabel,
   notifyStudentsByEnrollmentIds,
 } from "@/lib/student/notifications";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function putHandler(
+export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
 ) {
@@ -80,8 +79,10 @@ async function putHandler(
 
   const touchedEnrollmentIds = [...new Set([...scores.map((s) => s.enrollmentId), ...deleteEnrollmentIds])];
 
+  const service = await createServiceClient();
+
   if (touchedEnrollmentIds.length > 0) {
-    const { data: enrollments } = await supabase
+    const { data: enrollments } = await service
       .from("enrollments")
       .select("id")
       .eq("class_session_id", classSessionId)
@@ -94,7 +95,7 @@ async function putHandler(
     }
   }
 
-  const { data: assignmentSubmissions } = await supabase
+  const { data: assignmentSubmissions } = await service
     .from("assignment_submissions")
     .select("id, enrollment_id")
     .eq("assignment_id", assignmentId)
@@ -108,17 +109,9 @@ async function putHandler(
     (enrollmentId) => !submissionByEnrollmentId.has(enrollmentId)
   );
 
-  // Lecturer may lack INSERT on assignment_submissions for grade-only rows — service required.
-  if (missingSubmissionEnrollmentIds.length > 0) {
-    const service = await createServiceClient();
-    for (const enrollmentId of missingSubmissionEnrollmentIds) {
-      const submissionId = await ensureAssignmentSubmissionForGrading(
-        service,
-        assignment,
-        enrollmentId
-      );
-      submissionByEnrollmentId.set(enrollmentId, submissionId);
-    }
+  for (const enrollmentId of missingSubmissionEnrollmentIds) {
+    const submissionId = await ensureAssignmentSubmissionForGrading(service, assignment, enrollmentId);
+    submissionByEnrollmentId.set(enrollmentId, submissionId);
   }
 
   // Upsert before delete so concurrent writers cannot clear a row another request just saved.
@@ -130,7 +123,7 @@ async function putHandler(
       graded_by: user.id,
     }));
 
-    const { error: upsertError } = await supabase.from("assignment_grades").upsert(gradeRows, {
+    const { error: upsertError } = await service.from("assignment_grades").upsert(gradeRows, {
       onConflict: "assignment_submission_id",
     });
 
@@ -141,8 +134,6 @@ async function putHandler(
       );
     }
 
-    // Student notification fan-out requires service (cross-user inserts).
-    const service = await createServiceClient();
     const classLabel = await getClassSessionLabel(service, classSessionId);
     void notifyStudentsByEnrollmentIds(
       service,
@@ -162,7 +153,7 @@ async function putHandler(
       .map((enrollmentId) => submissionByEnrollmentId.get(enrollmentId))
       .filter((id): id is string => Boolean(id));
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await service
       .from("assignment_grades")
       .delete()
       .in("assignment_submission_id", submissionIdsToDelete);
@@ -175,25 +166,9 @@ async function putHandler(
     }
   }
 
-  const { trackBusinessEvent, BUSINESS_EVENTS } = await import(
-    "@/lib/observability/business-events"
-  );
-  trackBusinessEvent(
-    BUSINESS_EVENTS.GRADE_PUBLISHED,
-    {
-      assignmentId,
-      classSessionId,
-      saved: scores.length,
-      deleted: deleteEnrollmentIds.length,
-    },
-    { userId: user.id }
-  );
-
   return NextResponse.json({
     saved: scores.length,
     deleted: deleteEnrollmentIds.length,
   });
 }
 
-
-export const PUT = withApiObservability("lecturer.sessions.assignments.grades.put", putHandler);

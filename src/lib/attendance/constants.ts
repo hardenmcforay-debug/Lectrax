@@ -1,16 +1,6 @@
 /** How long each QR token remains valid (seconds). Matches refresh interval — only one token valid at a time. */
 export const QR_TOKEN_TTL_SECONDS = 5;
 
-/**
- * Server-side skew tolerance when comparing QR expiry timestamps.
- * Absorbs minor API↔DB clock drift and near-expiry network latency without
- * meaningfully widening the replay window (tokens still rotate every 5s).
- */
-export const QR_TOKEN_CLOCK_SKEW_MS = 1_500;
-
-/** Max attendance-device transfers per student in a rolling 24h window. */
-export const MAX_ATTENDANCE_DEVICE_TRANSFERS_PER_24H = 3;
-
 /** How often the lecturer UI refreshes the displayed QR code (milliseconds). */
 export const QR_REFRESH_INTERVAL_MS = QR_TOKEN_TTL_SECONDS * 1000;
 

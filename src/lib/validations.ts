@@ -182,6 +182,8 @@ export const attendanceScanSchema = attendanceDeviceIdentitySchema.extend({
     .string()
     .min(1, { error: "QR token is required" })
     .max(2048, { error: "QR token is too long" }),
+  latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
+  longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
 });
 
 export const attendanceStartSchema = z.object({
@@ -193,6 +195,7 @@ export const attendanceStartSchema = z.object({
     .min(MIN_SESSION_DURATION_MINUTES)
     .max(MAX_SESSION_DURATION_MINUTES)
     .default(DEFAULT_SESSION_DURATION_MINUTES),
+  requireGps: z.boolean().optional().default(false),
 });
 
 export const exportStudentPerformanceSchema = z

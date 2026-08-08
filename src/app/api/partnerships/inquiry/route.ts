@@ -5,9 +5,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { isServiceRoleConfigured } from "@/lib/env";
 import { PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
 import { logServerError } from "@/lib/errors/logger";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
@@ -88,5 +87,3 @@ async function postHandler(request: Request) {
 
   return NextResponse.json({ success: true });
 }
-
-export const POST = withApiObservability("partnerships.inquiry.post", postHandler);

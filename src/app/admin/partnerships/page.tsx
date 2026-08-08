@@ -1,8 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { getDataPageSize } from "@/lib/low-data/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/shared/stat-card";
-import { TablePagination } from "@/components/shared/table-pagination";
 import { AdminPartnershipsTable } from "@/components/admin/admin-partnerships-table";
 import { AdminPartnershipNotifications } from "@/components/admin/admin-partnership-notifications";
 import { AdminPartnershipPaymentsTable } from "@/components/admin/admin-partnership-payments-table";
@@ -14,68 +12,36 @@ import type {
 } from "@/types/database";
 
 const PARTNERSHIP_NOTIFICATION_TYPES = ["partnership_inquiry", "partnership_payment"] as const;
-const PARTNERSHIP_PAYMENTS_CAP = 50;
 
-export default async function AdminPartnershipsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const params = await searchParams;
-  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
-  const pageSize = await getDataPageSize();
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  const supabase = await createClient();
+export default async function AdminPartnershipsPage() {
+  const service = await createServiceClient();
 
   const [
-    { data: inquiries, error: inquiriesError, count: inquiriesCount },
+    { data: inquiries, error: inquiriesError },
     { data: notifications, error: notificationsError },
     { count: unreadNotifications },
     { data: payments, error: paymentsError },
-    { count: newCount },
-    { count: inDiscussionCount },
-    { count: approvedCount },
-    { count: completedPaymentsCount },
   ] = await Promise.all([
-    supabase
+    service
       .from("university_partnership_inquiries")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to),
-    supabase
+      .select("*")
+      .order("created_at", { ascending: false }),
+    service
       .from("platform_admin_notifications")
       .select("*")
       .in("type", [...PARTNERSHIP_NOTIFICATION_TYPES])
       .order("created_at", { ascending: false })
       .limit(40),
-    supabase
+    service
       .from("platform_admin_notifications")
       .select("id", { count: "exact", head: true })
       .in("type", [...PARTNERSHIP_NOTIFICATION_TYPES])
       .eq("is_read", false),
-    supabase
+    service
       .from("university_partnership_payments")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(PARTNERSHIP_PAYMENTS_CAP),
-    supabase
-      .from("university_partnership_inquiries")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "new"),
-    supabase
-      .from("university_partnership_inquiries")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["in_discussion", "contacted"]),
-    supabase
-      .from("university_partnership_inquiries")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "approved"),
-    supabase
-      .from("university_partnership_payments")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "completed"),
+      .limit(100),
   ]);
 
   if (inquiriesError && process.env.NODE_ENV === "development") {
@@ -88,10 +54,15 @@ export default async function AdminPartnershipsPage({
     console.error("Failed to load partnership payments:", paymentsError);
   }
 
-  const pageInquiries = (inquiries ?? []) as UniversityPartnershipInquiry[];
-  const totalInquiries = inquiriesCount ?? 0;
+  const all = (inquiries ?? []) as UniversityPartnershipInquiry[];
   const allNotifications = (notifications ?? []) as PlatformAdminNotification[];
   const allPayments = (payments ?? []) as UniversityPartnershipPayment[];
+  const newInquiries = all.filter((inquiry) => inquiry.status === "new");
+  const inDiscussion = all.filter(
+    (inquiry) => inquiry.status === "in_discussion" || inquiry.status === "contacted"
+  );
+  const approved = all.filter((inquiry) => inquiry.status === "approved");
+  const completedPayments = allPayments.filter((payment) => payment.status === "completed");
   const paidInquiryIds = new Set(
     allPayments
       .filter((payment) => payment.status === "completed" && payment.inquiry_id)
@@ -113,17 +84,17 @@ export default async function AdminPartnershipsPage({
       ) : null}
 
       <div className="mb-6 admin-stat-grid admin-stat-grid--cols-4">
-        <StatCard title="Total Inquiries" value={totalInquiries} icon={Building2} />
-        <StatCard title="New" value={newCount ?? 0} icon={Bell} />
-        <StatCard title="In Progress" value={inDiscussionCount ?? 0} icon={MessageSquare} />
+        <StatCard title="Total Inquiries" value={all.length} icon={Building2} />
+        <StatCard title="New" value={newInquiries.length} icon={Bell} />
+        <StatCard title="In Progress" value={inDiscussion.length} icon={MessageSquare} />
         <StatCard
           title="Approved / Paid"
-          value={approvedCount ?? 0}
+          value={approved.length}
           subtitle={
             unreadNotifications
               ? `${unreadNotifications} unread notification${unreadNotifications === 1 ? "" : "s"}`
-              : completedPaymentsCount
-                ? `${completedPaymentsCount} paid partnership${completedPaymentsCount === 1 ? "" : "s"}`
+              : completedPayments.length
+                ? `${completedPayments.length} paid partnership${completedPayments.length === 1 ? "" : "s"}`
                 : undefined
           }
           icon={CircleCheckBig}
@@ -154,15 +125,7 @@ export default async function AdminPartnershipsPage({
           Form submissions and records created from successful online partnership payments.
         </p>
       </div>
-      <div className="mb-4">
-        <TablePagination
-          basePath="/admin/partnerships"
-          page={page}
-          pageSize={pageSize}
-          total={totalInquiries}
-        />
-      </div>
-      <AdminPartnershipsTable inquiries={pageInquiries} paidInquiryIds={[...paidInquiryIds]} />
+      <AdminPartnershipsTable inquiries={all} paidInquiryIds={[...paidInquiryIds]} />
     </DashboardShell>
   );
 }

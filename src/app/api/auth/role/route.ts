@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { apiServiceUnavailableResponse, apiUnauthorizedResponse } from "@/lib/errors/api";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function getHandler() {
+export async function GET() {
   const auth = await getCachedAuthUser();
 
   if (auth.status === "service_unavailable") {
@@ -16,8 +15,9 @@ async function getHandler() {
     return apiUnauthorizedResponse();
   }
 
+  const service = await createServiceClient();
   const supabase = await createClient();
-  const roleResult = await getRoleForUserSafe(supabase, auth.user);
+  const roleResult = await getRoleForUserSafe(supabase, auth.user, service);
 
   if (roleResult.status === "service_unavailable") {
     return apiServiceUnavailableResponse();
@@ -32,5 +32,3 @@ async function getHandler() {
 
   return NextResponse.json({ role: roleResult.role, userId: auth.user.id });
 }
-
-export const GET = withApiObservability("auth.role.get", getHandler);

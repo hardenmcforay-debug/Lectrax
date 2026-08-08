@@ -7,11 +7,6 @@ import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 export const IOS_PWA_INSTALL_QUERY = "pwa_install";
 
-function readIosInstallQuery(): boolean {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get(IOS_PWA_INSTALL_QUERY) === "1";
-}
-
 /**
  * Opens the iOS Add-to-Home-Screen guide when landed on the app entry URL
  * with `?pwa_install=1` (e.g. after Install App on the marketing site).
@@ -26,16 +21,14 @@ export function IosPwaInstallGate() {
       return;
     }
 
-    if (!readIosInstallQuery()) return;
-
     const params = new URLSearchParams(window.location.search);
+    if (params.get(IOS_PWA_INSTALL_QUERY) !== "1") return;
+
+    setOpen(true);
     params.delete(IOS_PWA_INSTALL_QUERY);
     const next = params.toString();
     const cleanUrl = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`;
     window.history.replaceState(null, "", cleanUrl);
-
-    const frame = window.requestAnimationFrame(() => setOpen(true));
-    return () => window.cancelAnimationFrame(frame);
   }, [hydrated, isInstalled, isIOSInstallable]);
 
   if (!hydrated || isInstalled || !isIOSInstallable) {

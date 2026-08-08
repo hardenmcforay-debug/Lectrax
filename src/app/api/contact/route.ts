@@ -3,9 +3,8 @@ import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { contactInquirySchema } from "@/lib/validations";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logServerError } from "@/lib/errors/logger";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
@@ -70,5 +69,3 @@ async function postHandler(request: Request) {
 
   return NextResponse.json({ success: true });
 }
-
-export const POST = withApiObservability("contact.post", postHandler);

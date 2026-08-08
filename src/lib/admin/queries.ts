@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { PLATFORM_TRANSACTION_AUDIT_ACTIONS } from "@/lib/admin/platform-transaction-audit";
-import { PAGINATION } from "@/lib/pagination";
 
 type LecturerPlanRow = {
   subscription_plan: string | null;
@@ -33,32 +32,19 @@ export function classifyLecturerSubscription(
   return "free";
 }
 
-/** Head-count subscription buckets (approximate; ignores stale active past end date). */
-async function countLecturerPlanBuckets(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const [active, free, expiredish] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "lecturer")
-      .eq("subscription_plan", "premium")
-      .eq("subscription_status", "active"),
-    supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "lecturer")
-      .eq("subscription_plan", "free"),
-    supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "lecturer")
-      .in("subscription_status", ["grace_period", "expired"]),
-  ]);
+function countLecturerPlans(lecturers: LecturerPlanRow[]) {
+  let activeSubscriptions = 0;
+  let freeSubscriptions = 0;
+  let expiredSubscriptions = 0;
 
-  return {
-    activeSubscriptions: active.count ?? 0,
-    freeSubscriptions: free.count ?? 0,
-    expiredSubscriptions: expiredish.count ?? 0,
-  };
+  for (const lecturer of lecturers) {
+    const bucket = classifyLecturerSubscription(lecturer);
+    if (bucket === "active") activeSubscriptions += 1;
+    else if (bucket === "expired") expiredSubscriptions += 1;
+    else freeSubscriptions += 1;
+  }
+
+  return { activeSubscriptions, freeSubscriptions, expiredSubscriptions };
 }
 
 export async function getAdminOverview() {
@@ -68,22 +54,22 @@ export async function getAdminOverview() {
     lecturersRes,
     studentsRes,
     sessionsRes,
-    paymentTotals,
-    pendingAmountsRes,
-    planCounts,
+    paymentsRes,
+    lecturerPlansRes,
     recentLogsRes,
     recentPaymentsRes,
   ] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "lecturer"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student"),
     supabase.from("class_sessions").select("id", { count: "exact", head: true }),
-    supabase.rpc("admin_completed_payment_totals"),
     supabase
       .from("payments")
-      .select("amount")
-      .eq("status", "pending")
-      .limit(PAGINATION.MAX_PAGE_SIZE * 20),
-    countLecturerPlanBuckets(supabase),
+      .select("amount, status")
+      .in("status", ["completed", "pending"]),
+    supabase
+      .from("profiles")
+      .select("subscription_plan, subscription_status, subscription_end_date")
+      .eq("role", "lecturer"),
     supabase
       .from("audit_logs")
       .select("id, action, created_at, entity_type, profiles(full_name)")
@@ -98,12 +84,14 @@ export async function getAdminOverview() {
       .limit(5),
   ]);
 
-  const totalsPayload = paymentTotals.data as { total_revenue?: number } | null;
-  const revenue = Number(totalsPayload?.total_revenue ?? 0);
-  const pendingRevenue = (pendingAmountsRes.data ?? []).reduce(
-    (sum, row) => sum + Number(row.amount),
-    0
-  );
+  const payments = paymentsRes.data ?? [];
+  const completed = payments.filter((p) => p.status === "completed");
+  const revenue = completed.reduce((s, p) => s + Number(p.amount), 0);
+  const pendingRevenue = payments
+    .filter((p) => p.status === "pending")
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const planCounts = countLecturerPlans((lecturerPlansRes.data ?? []) as LecturerPlanRow[]);
 
   return {
     totalLecturers: lecturersRes.count ?? 0,
@@ -133,13 +121,16 @@ export type AdminAnalyticsData = {
 export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
   const supabase = await createClient();
 
-  const [lecturers, students, sessions, paymentTotals, planCounts, pending] =
+  const [lecturers, students, sessions, paymentTotals, lecturerPlansRes, pending] =
     await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "lecturer"),
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student"),
       supabase.from("class_sessions").select("id", { count: "exact", head: true }),
       supabase.rpc("admin_completed_payment_totals"),
-      countLecturerPlanBuckets(supabase),
+      supabase
+        .from("profiles")
+        .select("subscription_plan, subscription_status, subscription_end_date")
+        .eq("role", "lecturer"),
       supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
     ]);
 
@@ -153,6 +144,8 @@ export async function getAdminAnalytics(): Promise<AdminAnalyticsData> {
     plan: plan.replace("_", " "),
     revenue: Number(rev),
   }));
+
+  const planCounts = countLecturerPlans((lecturerPlansRes.data ?? []) as LecturerPlanRow[]);
 
   return {
     totals: {

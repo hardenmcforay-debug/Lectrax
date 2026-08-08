@@ -1,14 +1,13 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { caConfigSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function putHandler(
+export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -47,7 +46,8 @@ async function putHandler(
     );
   }
 
-  const { error } = await supabase.from("ca_configurations").upsert(
+  const service = await createServiceClient();
+  const { error } = await service.from("ca_configurations").upsert(
     {
       class_session_id: classSessionId,
       semester: session.semester,
@@ -70,5 +70,3 @@ async function putHandler(
 
   return NextResponse.json({ message: "CA configuration saved." });
 }
-
-export const PUT = withApiObservability("lecturer.sessions.ca-config.put", putHandler);

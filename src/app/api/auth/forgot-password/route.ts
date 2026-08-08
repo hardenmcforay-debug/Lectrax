@@ -10,7 +10,6 @@ import {
 } from "@/lib/auth/password-reset";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -30,11 +29,11 @@ function getClientIp(request: Request): string {
  * The recovery email is sent from the browser after this returns (PKCE requires
  * the code_verifier cookie). This route never calls resetPasswordForEmail.
  */
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const startedAt = Date.now();
 
   try {
-    const identifierLimitKey = async (identifier: string) =>
+    const identifierLimitKey = (identifier: string) =>
       rejectIfKeyRateLimited(
         buildPasswordResetRateLimitKey(identifier),
         "passwordResetEmail",
@@ -57,7 +56,7 @@ async function postHandler(request: Request) {
     }
 
     const identifier = parsed.data.identifier;
-    const identifierLimited = await identifierLimitKey(identifier);
+    const identifierLimited = identifierLimitKey(identifier);
     if (identifierLimited) return identifierLimited;
 
     const service = await createServiceClient();
@@ -90,5 +89,3 @@ async function postHandler(request: Request) {
     await waitForMinimumResponseTime(startedAt);
   }
 }
-
-export const POST = withApiObservability("auth.forgot-password.post", postHandler);

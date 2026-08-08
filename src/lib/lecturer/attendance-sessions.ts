@@ -1,9 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import {
-  PAGINATION,
-  toRangeBounds,
-  type OffsetPaginationInput,
-} from "@/lib/pagination";
+import { createServiceClient } from "@/lib/supabase/server";
 
 export interface AttendancePresentStudent {
   enrollmentId: string;
@@ -16,10 +11,9 @@ export interface AttendancePresentStudent {
 export async function getAttendanceSessionPresentStudents(
   classSessionId: string,
   attendanceSessionId: string,
-  lecturerId: string,
-  pagination?: OffsetPaginationInput
-): Promise<{ students: AttendancePresentStudent[]; total: number } | null> {
-  const supabase = await createClient();
+  lecturerId: string
+): Promise<AttendancePresentStudent[] | null> {
+  const supabase = await createServiceClient();
 
   const { data: attendanceSession } = await supabase
     .from("attendance_sessions")
@@ -35,56 +29,19 @@ export async function getAttendanceSessionPresentStudents(
     return null;
   }
 
-  const selectCols =
-    "enrollment_id, marked_at, mark_method, enrollments(is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id))";
-
-  if (pagination) {
-    const { count, error: countError } = await supabase
-      .from("attendance_records")
-      .select("*", { count: "exact", head: true })
-      .eq("attendance_session_id", attendanceSessionId);
-
-    if (countError) {
-      throw new Error(countError.message);
-    }
-
-    const { from, to } = toRangeBounds(pagination.page, pagination.pageSize);
-    const { data: records, error } = await supabase
-      .from("attendance_records")
-      .select(selectCols)
-      .eq("attendance_session_id", attendanceSessionId)
-      .order("marked_at", { ascending: true })
-      .range(from, to);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return {
-      students: (records ?? []).map((record) => mapPresentStudentRecord(record)),
-      total: count ?? 0,
-    };
-  }
-
-  // Unpaginated callers still get a hard safety cap.
-  const { count } = await supabase
-    .from("attendance_records")
-    .select("*", { count: "exact", head: true })
-    .eq("attendance_session_id", attendanceSessionId);
-
   const { data: records, error } = await supabase
     .from("attendance_records")
-    .select(selectCols)
+    .select(
+      "enrollment_id, marked_at, mark_method, enrollments(is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id))"
+    )
     .eq("attendance_session_id", attendanceSessionId)
-    .order("marked_at", { ascending: true })
-    .limit(PAGINATION.MAX_PRESENT_PAGE_SIZE);
+    .order("marked_at", { ascending: true });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  const students = (records ?? []).map((record) => mapPresentStudentRecord(record));
-  return { students, total: count ?? students.length };
+  return (records ?? []).map((record) => mapPresentStudentRecord(record));
 }
 
 function mapPresentStudentRecord(record: {
@@ -124,7 +81,7 @@ export async function getBulkAttendanceSessionPresentStudents(
   classSessionId: string,
   lecturerId: string
 ): Promise<Record<string, AttendancePresentStudent[]>> {
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { data: ownedSession } = await supabase
     .from("class_sessions")
@@ -139,24 +96,20 @@ export async function getBulkAttendanceSessionPresentStudents(
     .from("attendance_sessions")
     .select("id")
     .eq("class_session_id", classSessionId)
-    .eq("lecturer_id", lecturerId)
-    .order("created_at", { ascending: false })
-    .limit(PAGINATION.MAX_PAGE_SIZE);
+    .eq("lecturer_id", lecturerId);
 
   const sessionIds = (attendanceSessions ?? []).map((s) => s.id);
   if (sessionIds.length === 0) return {};
 
   const bySession = Object.fromEntries(sessionIds.map((id) => [id, [] as AttendancePresentStudent[]]));
 
-  // Hard cap across all sessions to avoid unbounded fan-out (MAX_PAGE_SIZE * 20).
   const { data: records, error } = await supabase
     .from("attendance_records")
     .select(
       "attendance_session_id, enrollment_id, marked_at, mark_method, enrollments(is_manual, college_id, profiles(full_name, college_id), manual_students(full_name, college_id))"
     )
     .in("attendance_session_id", sessionIds)
-    .order("marked_at", { ascending: true })
-    .limit(PAGINATION.MAX_PAGE_SIZE * 20);
+    .order("marked_at", { ascending: true });
 
   if (error) {
     throw new Error(error.message);

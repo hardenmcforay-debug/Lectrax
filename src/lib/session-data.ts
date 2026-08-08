@@ -1,12 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { computeCourseCA, resolveAttendanceClassTotal } from "@/lib/ca/course-ca";
 import type { ClassTest, SemesterType, StudentTableRow } from "@/types/database";
 import { parseCaWeights, type CAWeights } from "@/lib/ca/constants";
-import {
-  PAGINATION,
-  toRangeBounds,
-  type OffsetPaginationInput,
-} from "@/lib/pagination";
 
 export type ClassTestSummary = Pick<ClassTest, "id" | "title" | "test_number" | "max_score">;
 
@@ -15,24 +10,19 @@ export type ClassAssignmentSummary = {
   max_score: number;
 };
 
-/** Safety cap when loading all enrollments for export (no pagination). */
-const EXPORT_ENROLLMENT_CAP = PAGINATION.MAX_PAGE_SIZE * 20;
-
 export async function getStudentTableRows(
   classSessionId: string,
   semester: SemesterType,
   academicYear: string,
   lecturerId: string,
-  weightOverride?: CAWeights,
-  pagination?: OffsetPaginationInput
+  weightOverride?: CAWeights
 ): Promise<{
   rows: StudentTableRow[];
   testCount: number;
   classTests: ClassTestSummary[];
   classAssignments: ClassAssignmentSummary[];
-  total: number;
 }> {
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { data: ownedSession } = await supabase
     .from("class_sessions")
@@ -41,43 +31,24 @@ export async function getStudentTableRows(
     .eq("lecturer_id", lecturerId)
     .maybeSingle();
 
-  if (!ownedSession) {
-    return { rows: [], testCount: 0, classTests: [], classAssignments: [], total: 0 };
-  }
+  if (!ownedSession) return { rows: [], testCount: 0, classTests: [], classAssignments: [] };
 
-  const { count: enrollmentCount } = await supabase
-    .from("enrollments")
-    .select("*", { count: "exact", head: true })
-    .eq("class_session_id", classSessionId);
-
-  const total = enrollmentCount ?? 0;
-
-  let enrollmentsQuery = supabase
+  const { data: enrollments } = await supabase
     .from("enrollments")
     .select(
       "id, student_id, manual_student_id, college_id, is_manual, profiles(full_name, college_id), manual_students(full_name, college_id)"
     )
-    .eq("class_session_id", classSessionId)
-    .order("created_at", { ascending: true });
-
-  if (pagination) {
-    const { from, to } = toRangeBounds(pagination.page, pagination.pageSize);
-    enrollmentsQuery = enrollmentsQuery.range(from, to);
-  } else {
-    // Export / full-load path: no offset pagination, but hard-cap for safety.
-    enrollmentsQuery = enrollmentsQuery.limit(EXPORT_ENROLLMENT_CAP);
-  }
-
-  const { data: enrollments } = await enrollmentsQuery;
-
-  const { count: attendanceSessionCount } = await supabase
-    .from("attendance_sessions")
-    .select("id", { count: "exact", head: true })
     .eq("class_session_id", classSessionId);
 
-  const totalSessions = attendanceSessionCount ?? 0;
+  const { data: attendanceSessions } = await supabase
+    .from("attendance_sessions")
+    .select("id")
+    .eq("class_session_id", classSessionId);
 
-  const [{ data: caConfig }, { data: classTests }] = await Promise.all([
+  const sessionIds = attendanceSessions?.map((s) => s.id) ?? [];
+  const totalSessions = sessionIds.length;
+
+  const [{ data: caConfig }, { data: classTests }, { data: allTestScores }] = await Promise.all([
     supabase
       .from("ca_configurations")
       .select("attendance_weight, assignment_weight, test_weight, expected_class_count")
@@ -92,6 +63,12 @@ export async function getStudentTableRows(
       .eq("semester", semester)
       .eq("academic_year", academicYear)
       .order("test_number", { ascending: true }),
+    supabase
+      .from("test_scores")
+      .select("enrollment_id, class_test_id, test_number, score, max_score")
+      .eq("class_session_id", classSessionId)
+      .eq("semester", semester)
+      .eq("academic_year", academicYear),
   ]);
 
   const storedWeights = parseCaWeights(
@@ -114,18 +91,6 @@ export async function getStudentTableRows(
   );
 
   const tests = classTests ?? [];
-  const enrollmentIds = (enrollments ?? []).map((e) => e.id);
-
-  const { data: allTestScores } = enrollmentIds.length
-    ? await supabase
-        .from("test_scores")
-        .select("enrollment_id, class_test_id, test_number, score, max_score")
-        .eq("class_session_id", classSessionId)
-        .eq("semester", semester)
-        .eq("academic_year", academicYear)
-        .in("enrollment_id", enrollmentIds)
-    : { data: [] as { enrollment_id: string; class_test_id: string | null; test_number: number | null; score: number; max_score: number }[] };
-
   const scoresByEnrollment = new Map<string, typeof allTestScores>();
   for (const score of allTestScores ?? []) {
     const list = scoresByEnrollment.get(score.enrollment_id) ?? [];
@@ -138,22 +103,21 @@ export async function getStudentTableRows(
     .select("id, max_score")
     .eq("class_session_id", classSessionId)
     .eq("is_published", true)
-    .order("created_at", { ascending: true })
-    .limit(PAGINATION.MAX_PAGE_SIZE);
+    .order("created_at", { ascending: true });
 
   const classAssignments = (assignmentsData ?? []) as { id: string; max_score: number }[];
 
   const assignmentIds = classAssignments.map((a) => a.id);
+  const enrollmentIds = (enrollments ?? []).map((e) => e.id);
 
-  // Fetch submissions + grades only for this page's enrollments (avoids N+1 and unbounded fan-out).
-  const { data: assignmentSubmissions } =
-    assignmentIds.length && enrollmentIds.length
-      ? await supabase
-          .from("assignment_submissions")
-          .select("id, enrollment_id, assignment_id")
-          .in("enrollment_id", enrollmentIds)
-          .in("assignment_id", assignmentIds)
-      : { data: [] };
+  // Fetch all submissions + grades in bulk to avoid N+1 queries in the UI table.
+  const { data: assignmentSubmissions } = assignmentIds.length
+    ? await supabase
+        .from("assignment_submissions")
+        .select("id, enrollment_id, assignment_id")
+        .in("enrollment_id", enrollmentIds)
+        .in("assignment_id", assignmentIds)
+    : { data: [] };
 
   const submissionIds = (assignmentSubmissions ?? []).map((s) => s.id);
 
@@ -173,13 +137,12 @@ export async function getStudentTableRows(
   );
 
   const attendedByEnrollment = new Map<string, number>();
-  if (enrollmentIds.length && totalSessions > 0) {
+  if (enrollmentIds.length && sessionIds.length) {
     const { data: attendanceRecords } = await supabase
       .from("attendance_records")
       .select("enrollment_id")
-      .eq("class_session_id", classSessionId)
       .in("enrollment_id", enrollmentIds)
-      .limit(EXPORT_ENROLLMENT_CAP);
+      .in("attendance_session_id", sessionIds);
 
     for (const record of attendanceRecords ?? []) {
       attendedByEnrollment.set(
@@ -263,6 +226,5 @@ export async function getStudentTableRows(
     testCount: tests.length,
     classTests: tests as ClassTestSummary[],
     classAssignments: classAssignments as ClassAssignmentSummary[],
-    total,
   };
 }

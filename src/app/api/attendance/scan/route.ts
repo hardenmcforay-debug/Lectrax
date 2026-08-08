@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { verifyQRToken, hashQRToken } from "@/lib/qr-token";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
-import { rejectIfUserRateLimited, rejectIfDeviceRateLimited } from "@/lib/security/enforce-rate-limit";
+import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { logAudit } from "@/lib/audit";
 import {
@@ -13,7 +13,6 @@ import {
   EXPIRED_QR_MESSAGE,
   EXPIRED_QR_TITLE,
   isAttendanceSessionOpen,
-  QR_TOKEN_CLOCK_SKEW_MS,
 } from "@/lib/attendance/constants";
 import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -25,7 +24,6 @@ import {
 } from "@/lib/attendance/device-verification";
 import { attendanceScanSchema } from "@/lib/validations";
 import { parseJsonBody } from "@/lib/security/parse-request";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 type DuplicateScanContext = {
   userId: string;
@@ -37,12 +35,6 @@ type DuplicateScanContext = {
   deviceIdentifier: string;
   existingRecordId?: string;
   existingMarkedAt?: string | null;
-};
-
-type MarkAttendanceRpcRow = {
-  record_id: string;
-  marked_at: string;
-  already_recorded: boolean;
 };
 
 async function respondDuplicateAttendance(
@@ -93,32 +85,11 @@ async function respondDuplicateAttendance(
   );
 }
 
-function mapMarkRpcError(message: string): NextResponse | null {
-  const lower = message.toLowerCase();
-  if (lower.includes("qr token is no longer valid") || lower.includes("collection has ended")) {
-    return NextResponse.json(
-      {
-        error: EXPIRED_QR_TITLE,
-        message: EXPIRED_QR_MESSAGE,
-        code: "QR_EXPIRED",
-      },
-      { status: 410 }
-    );
-  }
-  if (lower.includes("class mismatch")) {
-    return NextResponse.json({ error: "Invalid attendance token binding." }, { status: 400 });
-  }
-  if (lower.includes("not enrolled")) {
-    return NextResponse.json({ error: "You are not enrolled in this class." }, { status: 403 });
-  }
-  return null;
-}
-
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
 
-  const userRateLimit = await rejectIfUserRateLimited(
+  const userRateLimit = rejectIfUserRateLimited(
     auth.userId,
     "attendanceScanPerUser",
     "attendance-scan-user"
@@ -138,25 +109,13 @@ async function postHandler(request: Request) {
 
   const {
     token,
+    latitude,
+    longitude,
     deviceFingerprint,
     browserFingerprint,
     deviceIdentifier,
     deviceMetadata,
   } = scanParsed.data;
-
-  const deviceRateLimit = await rejectIfDeviceRateLimited(
-    deviceIdentifier,
-    "attendanceScanPerDevice",
-    "attendance-scan-device"
-  );
-  if (deviceRateLimit) return deviceRateLimit;
-
-  const qrVerifyLimit = await rejectIfDeviceRateLimited(
-    deviceIdentifier,
-    "qrVerification",
-    "attendance-qr-verify"
-  );
-  if (qrVerifyLimit) return qrVerifyLimit;
 
   const payload = verifyQRToken(token);
 
@@ -181,23 +140,6 @@ async function postHandler(request: Request) {
     return NextResponse.json({ error: "Attendance session not found" }, { status: 400 });
   }
 
-  // Cryptographic payload must bind to the live session's class — prevents
-  // splicing a valid HMAC onto a different class's attendance session id.
-  if (attSession.class_session_id !== payload.classSessionId) {
-    await logAudit({
-      action: "attendance_scan_class_binding_mismatch",
-      entityType: "attendance_session",
-      entityId: payload.attendanceSessionId,
-      classSessionId: payload.classSessionId,
-      metadata: {
-        student_id: user.id,
-        token_class_session_id: payload.classSessionId,
-        session_class_session_id: attSession.class_session_id,
-      },
-    });
-    return NextResponse.json({ error: "Invalid attendance token binding." }, { status: 400 });
-  }
-
   if (
     !isAttendanceSessionOpen(attSession) ||
     (await closeAttendanceSessionIfAbandoned(await createServiceClient(), attSession))
@@ -208,10 +150,18 @@ async function postHandler(request: Request) {
     );
   }
 
+  if (attSession.require_gps) {
+    if (latitude == null || longitude == null) {
+      return NextResponse.json(
+        { error: "Location is required to mark attendance for this session." },
+        { status: 400 }
+      );
+    }
+  }
+
   const tokenHash = hashQRToken(token);
   const isCurrentToken = attSession.qr_token_hash === tokenHash;
-  const tokenNotExpired =
-    new Date(attSession.qr_expires_at).getTime() + QR_TOKEN_CLOCK_SKEW_MS >= Date.now();
+  const tokenNotExpired = new Date(attSession.qr_expires_at) >= new Date();
 
   if (!isCurrentToken || !tokenNotExpired) {
     return NextResponse.json(
@@ -364,53 +314,52 @@ async function postHandler(request: Request) {
     });
   }
 
-  // Atomic mark via SECURITY DEFINER RPC — students have no direct INSERT policy.
-  const { data: markRows, error: markError } = await supabase.rpc(
-    "mark_attendance_from_verified_scan",
-    {
-      p_attendance_session_id: payload.attendanceSessionId,
-      p_class_session_id: payload.classSessionId,
-      p_enrollment_id: enrollment.id,
-      p_device_fingerprint: deviceFingerprint,
-      p_browser_fingerprint: browserFingerprint,
-      p_device_identifier: deviceIdentifier,
-      p_qr_token_hash: tokenHash,
+  await supabase
+    .from("device_registrations")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("student_id", user.id)
+    .eq("device_fingerprint", deviceFingerprint)
+    .eq("is_attendance_authority", true)
+    .is("archived_at", null);
+
+  const { data: record, error } = await supabase
+    .from("attendance_records")
+    .insert({
+      attendance_session_id: payload.attendanceSessionId,
+      enrollment_id: enrollment.id,
+      class_session_id: payload.classSessionId,
+      mark_method: "device_verified",
+      device_fingerprint: deviceFingerprint,
+      latitude,
+      longitude,
+      scan_metadata: {
+        scanned_at: new Date().toISOString(),
+        browser_fingerprint: browserFingerprint,
+        device_identifier: deviceIdentifier,
+      },
+    })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return respondDuplicateAttendance(supabase, {
+        userId: user.id,
+        attendanceSessionId: payload.attendanceSessionId,
+        classSessionId: payload.classSessionId,
+        enrollmentId: enrollment.id,
+        deviceFingerprint,
+        browserFingerprint,
+        deviceIdentifier,
+      });
     }
-  );
-
-  if (markError) {
-    const mapped = mapMarkRpcError(markError.message);
-    if (mapped) return mapped;
-    return NextResponse.json({ error: sanitizeErrorMessage(markError.message) }, { status: 400 });
-  }
-
-  const markResult = (Array.isArray(markRows) ? markRows[0] : markRows) as
-    | MarkAttendanceRpcRow
-    | null
-    | undefined;
-
-  if (!markResult?.record_id) {
-    return NextResponse.json({ error: "Could not record attendance." }, { status: 500 });
-  }
-
-  if (markResult.already_recorded) {
-    return respondDuplicateAttendance(supabase, {
-      userId: user.id,
-      attendanceSessionId: payload.attendanceSessionId,
-      classSessionId: payload.classSessionId,
-      enrollmentId: enrollment.id,
-      deviceFingerprint,
-      browserFingerprint,
-      deviceIdentifier,
-      existingRecordId: markResult.record_id,
-      existingMarkedAt: markResult.marked_at,
-    });
+    return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 400 });
   }
 
   await logAudit({
     action: "attendance_marked_present",
     entityType: "attendance_record",
-    entityId: markResult.record_id,
+    entityId: record.id,
     classSessionId: payload.classSessionId,
     metadata: {
       enrollment_id: enrollment.id,
@@ -425,16 +374,7 @@ async function postHandler(request: Request) {
     success: true,
     message: ATTENDANCE_RECORDED_TITLE,
     description: ATTENDANCE_RECORDED_MESSAGE,
-    recordedAt: markResult.marked_at,
-    record: {
-      id: markResult.record_id,
-      marked_at: markResult.marked_at,
-      attendance_session_id: payload.attendanceSessionId,
-      enrollment_id: enrollment.id,
-      class_session_id: payload.classSessionId,
-      mark_method: "device_verified",
-    },
+    recordedAt: record.marked_at,
+    record,
   });
 }
-
-export const POST = withApiObservability("attendance.scan.post", postHandler);

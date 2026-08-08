@@ -21,20 +21,17 @@ function clearDomBootSplash() {
   document.getElementById("lectrax-pwa-boot-splash")?.remove();
 }
 
-/**
- * Gates `/` only when the document is actually running as an installed PWA
- * (display-mode standalone / iOS home-screen). Normal browser tabs — including
- * authenticated sessions and devices that previously installed the PWA — always
- * keep the public landing page.
- */
 export function AuthLaunchGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const hydrated = useHydrated();
   const [state, setState] = useState<LaunchState>("idle");
   const onHome = pathname === "/";
   const pwaStandalone = hydrated && isRunningAsInstalledPwa();
+  const hasCookies = hydrated && onHome && hasClientSupabaseAuthCookies();
 
-  if (onHome && state === "idle" && hydrated && pwaStandalone) {
+  // Browser: only gate when auth cookies suggest a restore is needed.
+  // Installed PWA: always gate `/` so the marketing landing never paints.
+  if (onHome && state === "idle" && hydrated && (hasCookies || pwaStandalone)) {
     setState("checking");
   }
 
@@ -44,9 +41,10 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
     }
 
     const standalone = isRunningAsInstalledPwa();
+    const cookies = hasClientSupabaseAuthCookies();
 
-    // Normal browser visit → keep the marketing site (auth or not).
-    if (!standalone) {
+    // Normal browser visit with no session cookies → keep the marketing site.
+    if (!standalone && !cookies) {
       clearDomBootSplash();
       return;
     }
@@ -55,8 +53,6 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
 
     async function resolveLaunch() {
       try {
-        const cookies = hasClientSupabaseAuthCookies();
-
         if (cookies) {
           const supabase = createClient();
           const {
@@ -67,7 +63,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
 
           if (session) {
             setState("redirecting");
-            const { role } = await resolveClientRoleAfterAuth(supabase);
+            const { role, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
             if (cancelled) return;
 
@@ -75,16 +71,34 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
               window.location.replace(getDashboardPath(role));
               return;
             }
+
+            if (networkFailure && !standalone) {
+              setState("guest");
+              clearDomBootSplash();
+              return;
+            }
           }
         }
 
-        setState("redirecting");
-        window.location.replace(PWA_AUTH_ENTRY);
+        if (standalone) {
+          setState("redirecting");
+          window.location.replace(PWA_AUTH_ENTRY);
+          return;
+        }
+
+        setState("guest");
+        clearDomBootSplash();
       } catch {
         if (cancelled) return;
 
-        setState("redirecting");
-        window.location.replace(PWA_AUTH_ENTRY);
+        if (isRunningAsInstalledPwa()) {
+          setState("redirecting");
+          window.location.replace(PWA_AUTH_ENTRY);
+          return;
+        }
+
+        setState("guest");
+        clearDomBootSplash();
       }
     }
 
@@ -99,7 +113,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
     return children;
   }
 
-  // Installed PWA only: keep the app splash while routing into the app.
+  // Installed PWA / session restore: keep the app splash (CSS already hides landing).
   if (state === "checking" || state === "redirecting" || pwaStandalone) {
     return <AppLaunchSplash />;
   }

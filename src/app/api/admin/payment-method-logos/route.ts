@@ -17,7 +17,6 @@ import {
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { brandingExtensionMatchesMime, readBrandingFileBytes } from "@/lib/security/file-validation";
 import { logPlatformAdminAudit } from "@/lib/admin/platform-admin-audit";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 type AdminSupabase = Extract<
   Awaited<ReturnType<typeof requirePlatformAdmin>>,
@@ -45,7 +44,7 @@ async function savePaymentMethodLogosSetting(
   return { error, updatedAt };
 }
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -151,7 +150,7 @@ async function postHandler(request: Request) {
   });
 }
 
-async function deleteHandler(request: Request) {
+export async function DELETE(request: Request) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth && auth.error) return auth.error;
 
@@ -196,7 +195,3 @@ async function deleteHandler(request: Request) {
 
   return NextResponse.json({ success: true, method_id: methodId });
 }
-
-export const POST = withApiObservability("admin.payment-method-logos.post", postHandler);
-
-export const DELETE = withApiObservability("admin.payment-method-logos.delete", deleteHandler);

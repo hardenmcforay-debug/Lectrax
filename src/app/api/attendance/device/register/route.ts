@@ -7,9 +7,8 @@ import {
 } from "@/lib/attendance/device-verification";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody } from "@/lib/security/parse-request";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,5 +64,3 @@ async function postHandler(request: Request) {
 
   return NextResponse.json({ success: true, status: "registered" });
 }
-
-export const POST = withApiObservability("attendance.device.register.post", postHandler);

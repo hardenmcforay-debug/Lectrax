@@ -12,18 +12,14 @@ export function AttendanceDeviceRegistrar() {
     if (registeredRef.current) return;
     registeredRef.current = true;
 
-    void (async () => {
-      try {
-        const identity = await getAttendanceDeviceIdentity();
-        await appFetch("/api/attendance/device/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(identity),
-        });
-      } catch {
-        registeredRef.current = false;
-      }
-    })();
+    const identity = getAttendanceDeviceIdentity();
+    void appFetch("/api/attendance/device/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(identity),
+    }).catch(() => {
+      registeredRef.current = false;
+    });
   }, []);
 
   return null;

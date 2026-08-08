@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { isAttendanceSessionOpen } from "@/lib/attendance/constants";
 import { closeAttendanceSessionIfAbandoned } from "@/lib/attendance/close-session";
@@ -10,7 +10,6 @@ import {
 } from "@/lib/attendance/sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const refreshSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -20,7 +19,7 @@ function resolveAppUrl(request: Request): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(request.url).origin;
 }
 
-async function postHandler(request: Request) {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -57,7 +56,8 @@ async function postHandler(request: Request) {
   }
 
   if (!isAttendanceSessionOpen(attendanceSession)) {
-    await closeAttendanceSessionIfAbandoned(supabase, attendanceSession);
+    const service = await createServiceClient();
+    await closeAttendanceSessionIfAbandoned(service, attendanceSession);
     return NextResponse.json({ error: "Attendance session is closed" }, { status: 410 });
   }
 
@@ -77,8 +77,9 @@ async function postHandler(request: Request) {
     );
   }
 
+  const service = await createServiceClient();
   // Atomic single-token policy: replacing qr_token_hash immediately invalidates the previous QR.
-  const { error: updateError } = await supabase
+  const { error: updateError } = await service
     .from("attendance_sessions")
     .update({
       qr_token_hash: rotation.tokenHash,
@@ -99,5 +100,3 @@ async function postHandler(request: Request) {
     sessionExpiresAt: attendanceSession.session_expires_at,
   });
 }
-
-export const POST = withApiObservability("attendance.refresh.post", postHandler);

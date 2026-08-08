@@ -11,7 +11,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    logClientCrash("GlobalError", error, { digest: error.digest });
+    logClientCrash("GlobalError", error);
   }, [error]);
 
   return (

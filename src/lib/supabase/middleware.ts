@@ -51,12 +51,7 @@ function withSessionCookies(
 }
 
 export async function updateSession(request: NextRequest) {
-  // Forward request headers (incl. x-nonce / CSP) into the RSC render pipeline.
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   let url: string;
   let anonKey: string;
@@ -143,11 +138,6 @@ export async function updateSession(request: NextRequest) {
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) ||
     PUBLIC_API_ROUTES.some((r) => pathname === r) ||
     isPublicAuthApiRoute(pathname) ||
-    pathname === "/api/health" ||
-    pathname === "/api/ready" ||
-    pathname === "/api/live" ||
-    pathname === "/monitoring" ||
-    pathname.startsWith("/monitoring/") ||
     /^\/api\/partnerships\/payments\/[^/]+\/status$/.test(pathname) ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron");
@@ -266,9 +256,15 @@ export async function updateSession(request: NextRequest) {
       return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
     }
 
-    // `/` is always the public marketing landing in normal browsers.
-    // Do not redirect authenticated sessions (or PWA installs) away from `/`.
-    // Standalone PWA entry uses manifest start_url `/login` + client launch gate.
+    if (pathname === "/") {
+      const redirectUrl = request.nextUrl.clone();
+      if (isAbsoluteUrl(roleHome)) {
+        return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
+      }
+      redirectUrl.pathname = roleHome;
+      redirectUrl.search = "";
+      return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
+    }
 
     if (AUTH_ROUTES.includes(pathname)) {
       if (isAbsoluteUrl(roleHome)) {

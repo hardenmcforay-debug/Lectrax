@@ -200,13 +200,15 @@ export function QRScanner() {
       setStatus({ title: "Verifying attendance...", variant: "loading" });
 
       try {
-        const identity = await getAttendanceDeviceIdentity();
+        const identity = getAttendanceDeviceIdentity();
         const res = await appFetch("/api/attendance/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             token: normalized,
             ...identity,
+            latitude: null,
+            longitude: null,
           }),
           signal: controller.signal,
         });
@@ -375,7 +377,7 @@ export function QRScanner() {
     if (transferring) return;
     setTransferring(true);
     try {
-      const identity = await getAttendanceDeviceIdentity();
+      const identity = getAttendanceDeviceIdentity();
       const res = await appFetch("/api/attendance/device/transfer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

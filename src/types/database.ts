@@ -76,6 +76,8 @@ export interface AttendanceSession {
   session_expires_at: string;
   ended_at: string | null;
   is_active: boolean;
+  require_gps: boolean;
+  gps_radius_meters: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +90,8 @@ export interface AttendanceRecord {
   mark_method: AttendanceMarkMethod;
   marked_at: string;
   device_fingerprint: string | null;
+  latitude: number | null;
+  longitude: number | null;
   scan_metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

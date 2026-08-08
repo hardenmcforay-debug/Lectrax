@@ -1,23 +1,6 @@
 import { validateProductionEnv } from "@/lib/env";
 
-function hasSentryDsn(): boolean {
-  return Boolean(
-    process.env.SENTRY_DSN?.trim() ||
-      process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()
-  );
-}
-
 export async function register() {
-  if (hasSentryDsn()) {
-    if (process.env.NEXT_RUNTIME === "nodejs") {
-      await import("../sentry.server.config");
-    }
-
-    if (process.env.NEXT_RUNTIME === "edge") {
-      await import("../sentry.edge.config");
-    }
-  }
-
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.NODE_ENV !== "production") return;
   // Skip during `next build`; validate when the production server starts.
@@ -40,20 +23,4 @@ export async function register() {
   }
 
   console.info("[env] Production environment validated successfully");
-}
-
-export async function onRequestError(
-  error: unknown,
-  request: unknown,
-  context: unknown
-) {
-  if (!hasSentryDsn()) return;
-  const Sentry = await import("@sentry/nextjs");
-  return (
-    Sentry.captureRequestError as (
-      error: unknown,
-      request: unknown,
-      context: unknown
-    ) => unknown
-  )(error, request, context);
 }

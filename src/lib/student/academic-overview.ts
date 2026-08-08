@@ -1,12 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getDisplayName } from "@/lib/auth/display-name";
 import { computeCourseCA, resolveAttendanceClassTotal } from "@/lib/ca/course-ca";
-import { PAGINATION } from "@/lib/pagination";
 import type { SemesterType } from "@/types/database";
-
-/** Hard caps for CA fan-out queries across a student's enrolled courses. */
-const OVERVIEW_ROW_CAP = PAGINATION.MAX_PAGE_SIZE * 5;
 
 export interface AssessmentScore {
   label: string;
@@ -62,12 +58,13 @@ export async function getStudentAcademicOverview(
   const studentName = getDisplayName(user, profile);
   const collegeId = profile?.college_id ?? null;
 
-  const { data: enrollments } = await supabase
+  const db = await createServiceClient();
+
+  const { data: enrollments } = await db
     .from("enrollments")
     .select("id, class_session_id, college_id")
     .eq("student_id", studentId)
-    .order("joined_at", { ascending: false })
-    .limit(50);
+    .order("joined_at", { ascending: false });
 
   if (!enrollments?.length) {
     return { studentName, collegeId, courses: [], submittedCount: 0, totalAssignments: 0 };
@@ -76,7 +73,7 @@ export async function getStudentAcademicOverview(
   const enrollmentIds = enrollments.map((e) => e.id);
   const classSessionIds = enrollments.map((e) => e.class_session_id);
 
-  const { data: classSessions } = await supabase
+  const { data: classSessions } = await db
     .from("class_sessions")
     .select("id, title, course_code, semester, academic_year, class_name")
     .in("id", classSessionIds);
@@ -91,44 +88,35 @@ export async function getStudentAcademicOverview(
     { data: classTests },
     { data: caConfigs },
   ] = await Promise.all([
-    supabase
-      .from("attendance_sessions")
-      .select("id, class_session_id")
-      .in("class_session_id", classSessionIds)
-      .limit(OVERVIEW_ROW_CAP),
-    supabase
+    db.from("attendance_sessions").select("id, class_session_id").in("class_session_id", classSessionIds),
+    db
       .from("attendance_records")
       .select("enrollment_id, attendance_session_id")
-      .in("enrollment_id", enrollmentIds)
-      .limit(OVERVIEW_ROW_CAP),
-    supabase
+      .in("enrollment_id", enrollmentIds),
+    db
       .from("assignments")
       .select("id, class_session_id, title, max_score, created_at")
       .in("class_session_id", classSessionIds)
       .eq("is_published", true)
-      .order("created_at", { ascending: true })
-      .limit(OVERVIEW_ROW_CAP),
-    supabase
+      .order("created_at", { ascending: true }),
+    db
       .from("test_scores")
       .select(
         "enrollment_id, class_session_id, class_test_id, test_number, score, max_score, title"
       )
       .in("enrollment_id", enrollmentIds)
-      .order("test_number", { ascending: true })
-      .limit(OVERVIEW_ROW_CAP),
-    supabase
+      .order("test_number", { ascending: true }),
+    db
       .from("class_tests")
       .select("id, class_session_id, test_number, title, max_score, weight_percent, semester, academic_year")
       .in("class_session_id", classSessionIds)
-      .order("test_number", { ascending: true })
-      .limit(PAGINATION.MAX_PAGE_SIZE),
-    supabase
+      .order("test_number", { ascending: true }),
+    db
       .from("ca_configurations")
       .select(
         "class_session_id, semester, academic_year, attendance_weight, assignment_weight, test_weight, expected_class_count"
       )
-      .in("class_session_id", classSessionIds)
-      .limit(PAGINATION.MAX_PAGE_SIZE),
+      .in("class_session_id", classSessionIds),
   ]);
 
   const sessionsByClass = new Map<string, string[]>();
@@ -167,7 +155,7 @@ export async function getStudentAcademicOverview(
   const enrollmentIdSet = new Set(enrollmentIds);
 
   const { data: assignmentSubmissions } = assignmentIds.length
-    ? await supabase
+    ? await db
         .from("assignment_submissions")
         .select("id, enrollment_id, assignment_id")
         .in("assignment_id", assignmentIds)
@@ -176,7 +164,7 @@ export async function getStudentAcademicOverview(
 
   const submissionIds = (assignmentSubmissions ?? []).map((s) => s.id);
   const { data: assignmentGrades } = submissionIds.length
-    ? await supabase
+    ? await db
         .from("assignment_grades")
         .select("assignment_submission_id, grade")
         .in("assignment_submission_id", submissionIds)

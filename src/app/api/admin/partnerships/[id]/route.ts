@@ -3,13 +3,12 @@ import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin/require-platform-admin";
 import { PARTNERSHIP_INQUIRY_STATUSES } from "@/lib/partnerships/constants";
 import { logServerError } from "@/lib/errors/logger";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 const updateSchema = z.object({
   status: z.enum(PARTNERSHIP_INQUIRY_STATUSES),
 });
 
-async function patchHandler(
+export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -52,7 +51,7 @@ async function patchHandler(
   return NextResponse.json({ success: true, inquiry: data });
 }
 
-async function deleteHandler(
+export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -123,7 +122,3 @@ async function deleteHandler(
 
   return NextResponse.json({ success: true });
 }
-
-export const PATCH = withApiObservability("admin.partnerships.patch", patchHandler);
-
-export const DELETE = withApiObservability("admin.partnerships.delete", deleteHandler);

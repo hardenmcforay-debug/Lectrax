@@ -28,7 +28,6 @@ import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { getAuthNetworkMessage } from "@/lib/errors/auth-messages";
 import { sanitizeQueryParam } from "@/lib/security/sanitize";
-import { BUSINESS_EVENTS, trackBusinessEvent } from "@/lib/observability/business-events";
 import { REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY } from "@/lib/security/client-storage";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
@@ -462,10 +461,6 @@ export function SignupForm() {
             retryable: true,
           }
         );
-        trackBusinessEvent(BUSINESS_EVENTS.REGISTRATION_FAILURE, {
-          reason: "supabase_signup_error",
-          role: data.role,
-        });
         return;
       }
 
@@ -478,10 +473,6 @@ export function SignupForm() {
             true
           )
         );
-        trackBusinessEvent(BUSINESS_EVENTS.REGISTRATION_FAILURE, {
-          reason: "missing_user",
-          role: data.role,
-        });
         return;
       }
 
@@ -494,12 +485,6 @@ export function SignupForm() {
           // Login will retry activation for phone-only accounts.
         });
       }
-
-      trackBusinessEvent(
-        BUSINESS_EVENTS.REGISTRATION_SUCCESS,
-        { role: data.role, identifierType: signupId.type },
-        { userId: user.id }
-      );
 
       if (signUpData.session) {
         await syncStudentCollegeIdFromSignupMetadata(supabase, user);
@@ -521,17 +506,13 @@ export function SignupForm() {
         }
 
         if (resolvedRole === "student") {
-          void getAttendanceDeviceIdentity()
-            .then((identity) =>
-              appFetch("/api/attendance/device/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(identity),
-              })
-            )
-            .catch(() => {
-              // Device registration is best-effort after signup.
-            });
+          void appFetch("/api/attendance/device/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(getAttendanceDeviceIdentity()),
+          }).catch(() => {
+            // Device registration is best-effort after signup.
+          });
         }
 
         redirectAfterAuth(resolvedRole);

@@ -15,7 +15,7 @@ Lectrax already used a **strong Zod validation baseline** (`src/lib/validations.
 This review audited **60 API route handlers**, auth flows, upload paths, and RPC callers. Gaps addressed in this review:
 
 1. **Student performance export** — stopped trusting client-supplied row data; server re-queries via `getStudentTableRows`
-2. **Attendance scan** — full-body Zod schema (token + device identity) + safe JSON parse; GPS not used
+2. **Attendance scan** — full-body Zod schema + `require_gps` enforcement + safe JSON parse
 3. **Attendance start** — centralized schema with sanitized/bounded `title`
 4. **Bulk grade saves** — max 500 entries per request
 5. **Monime webhook** — Zod event schema + safe `JSON.parse`
@@ -80,7 +80,7 @@ This review audited **60 API route handlers**, auth flows, upload paths, and RPC
 | ID | Weakness | Severity | Status |
 |----|----------|----------|--------|
 | V1 | Export trusted client `rows` (grades/CA tampering) | **High** | **Fixed** — server-side `getStudentTableRows` |
-| V2 | Attendance scan partial validation | **High** | **Fixed** — `attendanceScanSchema` (token + device identity; no GPS) |
+| V2 | Attendance scan partial validation; GPS not enforced | **High** | **Fixed** — `attendanceScanSchema` + `require_gps` |
 | V3 | Webhook `JSON.parse` without schema | **Medium** | **Fixed** — `monimeWebhookEventSchema` |
 | V4 | Bulk grade arrays unbounded (DoS) | **Medium** | **Fixed** — `BULK_GRADE_ENTRY_MAX = 500` |
 | V5 | Site logo missing extension/MIME cross-check | **Medium** | **Fixed** |
@@ -110,7 +110,7 @@ This review audited **60 API route handlers**, auth flows, upload paths, and RPC
 | File | Change |
 |------|--------|
 | `src/app/api/lecturer/sessions/[id]/export-student-performance/route.ts` | Server fetch; optional validated CA weight overrides; UUID param |
-| `src/app/api/attendance/scan/route.ts` | Full scan schema (auth, enrollment, QR, device); safe JSON; no GPS |
+| `src/app/api/attendance/scan/route.ts` | Full scan schema; GPS required when session `require_gps`; safe JSON |
 | `src/app/api/attendance/start/route.ts` | `attendanceStartSchema`; sanitized title |
 | `src/app/api/webhooks/monime/route.ts` | Webhook Zod + safe parse |
 | `src/app/api/admin/site-logo/route.ts` | `brandingExtensionMatchesMime` |
@@ -205,7 +205,7 @@ This review audited **60 API route handlers**, auth flows, upload paths, and RPC
 | Invalid UUID route params | 400 Invalid … ID |
 | Oversized bulk grade array (>500) | 400 Zod max error |
 | Export with tampered client rows | Ignored — server data used |
-| Scan without GPS fields | Accepted — location not part of attendance contract |
+| Scan without GPS when `require_gps` | 400 Location required |
 | Webhook invalid JSON after valid signature | 400 or graceful `received: true` |
 | Lecturer PATCH with `collegeId` | `college_id` not updated |
 | Typecheck (`npm run typecheck`) | Pass |

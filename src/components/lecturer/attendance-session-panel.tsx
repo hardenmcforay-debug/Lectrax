@@ -48,8 +48,7 @@ import {
   removePresentRecord,
   type PresentRecordMap,
 } from "@/lib/attendance/present-records";
-import { fetchAllPresentStudents } from "@/lib/attendance/fetch-all-present-students";
-import type { ClassSession } from "@/types/database";
+import type { ClassSession, StudentTableRow } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { QR_SIZE } from "@/lib/low-data/constants";
 import { cn } from "@/lib/utils";
@@ -86,25 +85,16 @@ function formatStudentNameWithId(name: string, collegeId: string | null): string
   return `${name} (${trimmedId})`;
 }
 
-export type AttendanceRosterStudent = {
-  enrollmentId: string;
-  name: string;
-  collegeId: string | null;
-};
-
 export function AttendanceSessionPanel({
   session,
   rows,
-  totalStudents: totalStudentsProp,
   initialActiveSession = null,
   initialSessionNumber = null,
   onAttendanceChange,
   readOnly = false,
 }: {
   session: ClassSession;
-  rows: AttendanceRosterStudent[];
-  /** Prefer enrollment count when roster is capped separately from the CA table page. */
-  totalStudents?: number;
+  rows: StudentTableRow[];
   initialActiveSession?: ActiveAttendanceSession | null;
   initialSessionNumber?: number | null;
   onAttendanceChange?: () => void;
@@ -154,7 +144,7 @@ export function AttendanceSessionPanel({
   const endingOnUnloadRef = useRef(false);
 
   const presentCount = presentRecords.size;
-  const totalStudents = totalStudentsProp ?? rows.length;
+  const totalStudents = rows.length;
   const notMarkedCount = Math.max(0, totalStudents - presentCount);
 
   useEffect(() => {
@@ -196,9 +186,14 @@ export function AttendanceSessionPanel({
 
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
     try {
-      const students = await fetchAllPresentStudents(session.id, attendanceSessionId);
-      if (!students) return null;
-      return presentRecordMapFromStudents(students);
+      const res = await appFetch(
+        `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present`
+      );
+      const data = (await res.json()) as {
+        students?: { enrollmentId: string; markMethod: string }[];
+      };
+      if (!res.ok || !data.students) return null;
+      return presentRecordMapFromStudents(data.students);
     } catch (error) {
       if (isAbortError(error)) return null;
       throw error;

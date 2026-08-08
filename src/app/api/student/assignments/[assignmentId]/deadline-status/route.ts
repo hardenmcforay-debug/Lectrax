@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAssignmentDeadlineStatus } from "@/lib/assignments/deadline-server";
 import { requireStudentRole } from "@/lib/auth/require-api-role";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-async function getHandler(
+export async function GET(
   _request: Request,
   { params }: { params: Promise<{ assignmentId: string }> }
 ) {
@@ -51,5 +50,3 @@ async function getHandler(
     pastDeadline: !status.beforeDeadline,
   });
 }
-
-export const GET = withApiObservability("student.assignments.deadline-status.get", getHandler);

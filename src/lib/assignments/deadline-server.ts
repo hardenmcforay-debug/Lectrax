@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPastDeadline } from "@/lib/assignments/deadline";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 function parseRpcBoolean(value: unknown): boolean | null {
   if (value === true || value === false) return value;
@@ -33,8 +33,8 @@ function coerceTimestamp(value: unknown): string | null {
   return null;
 }
 
-async function getDeadlineSupabase(): Promise<SupabaseClient> {
-  return createClient();
+async function getServiceSupabase(): Promise<SupabaseClient> {
+  return createServiceClient();
 }
 
 async function resolveDeadline(
@@ -102,43 +102,43 @@ export async function isAssignmentBeforeDeadline(
   assignmentId: string,
   fallbackDeadline?: string
 ): Promise<boolean> {
-  const supabase = await getDeadlineSupabase();
+  const service = await getServiceSupabase();
 
-  const rpcBeforeDeadline = await readBeforeDeadlineFromRpc(supabase, assignmentId);
+  const rpcBeforeDeadline = await readBeforeDeadlineFromRpc(service, assignmentId);
   if (rpcBeforeDeadline !== null) {
     return rpcBeforeDeadline;
   }
 
-  const status = await readDeadlineStatusFromRpc(supabase, assignmentId, fallbackDeadline);
+  const status = await readDeadlineStatusFromRpc(service, assignmentId, fallbackDeadline);
   if (status) {
     return status.beforeDeadline;
   }
 
   const deadline =
     coerceTimestamp(fallbackDeadline) ??
-    (await resolveDeadline(supabase, assignmentId, fallbackDeadline));
+    (await resolveDeadline(service, assignmentId, fallbackDeadline));
 
   if (!deadline) return false;
 
   return !isPastDeadline(deadline);
 }
 
-/** Batch deadline checks with a single user client and parallel RPC calls. */
+/** Batch deadline checks with a single service client and parallel RPC calls. */
 export async function batchAssignmentsBeforeDeadline(
   assignments: { id: string; deadline: string }[]
 ): Promise<boolean[]> {
   if (assignments.length === 0) return [];
 
-  const supabase = await createClient();
+  const service = await createServiceClient();
 
   return Promise.all(
     assignments.map(async (assignment) => {
-      const rpcBeforeDeadline = await readBeforeDeadlineFromRpc(supabase, assignment.id);
+      const rpcBeforeDeadline = await readBeforeDeadlineFromRpc(service, assignment.id);
       if (rpcBeforeDeadline !== null) {
         return rpcBeforeDeadline;
       }
 
-      const status = await readDeadlineStatusFromRpc(supabase, assignment.id, assignment.deadline);
+      const status = await readDeadlineStatusFromRpc(service, assignment.id, assignment.deadline);
       if (status) {
         return status.beforeDeadline;
       }
@@ -154,12 +154,12 @@ export async function getAssignmentDeadlineStatus(
   assignmentId: string,
   fallbackDeadline?: string
 ): Promise<AssignmentDeadlineStatus | null> {
-  const supabase = await getDeadlineSupabase();
+  const service = await getServiceSupabase();
 
-  const status = await readDeadlineStatusFromRpc(supabase, assignmentId, fallbackDeadline);
+  const status = await readDeadlineStatusFromRpc(service, assignmentId, fallbackDeadline);
   if (status) return status;
 
-  const beforeDeadline = await readBeforeDeadlineFromRpc(supabase, assignmentId);
+  const beforeDeadline = await readBeforeDeadlineFromRpc(service, assignmentId);
   if (beforeDeadline === null) {
     console.error("Assignment deadline status RPC failed for assignment", assignmentId);
     return null;
@@ -167,11 +167,11 @@ export async function getAssignmentDeadlineStatus(
 
   const deadline =
     coerceTimestamp(fallbackDeadline) ??
-    (await resolveDeadline(supabase, assignmentId, fallbackDeadline));
+    (await resolveDeadline(service, assignmentId, fallbackDeadline));
 
   if (!deadline) return null;
 
-  const { data: serverTime } = await supabase.rpc("get_server_time");
+  const { data: serverTime } = await service.rpc("get_server_time");
   const resolvedServerTime = coerceTimestamp(serverTime) ?? new Date().toISOString();
 
   return {

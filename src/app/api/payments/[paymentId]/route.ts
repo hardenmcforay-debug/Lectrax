@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseRouteUuid } from "@/lib/security/parse-request";
-import { withApiObservability } from "@/lib/observability/with-api-observability";
-import { createServiceClient } from "@/lib/supabase/server";
 
-async function deleteHandler(
+export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
@@ -17,10 +15,7 @@ async function deleteHandler(
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
-  // Payments DELETE has no lecturer RLS policy — service required.
-  const service = await createServiceClient();
-
-  const { data: payment } = await service
+  const { data: payment } = await auth.service
     .from("payments")
     .select("id, lecturer_id, status")
     .eq("id", paymentId)
@@ -38,7 +33,7 @@ async function deleteHandler(
     );
   }
 
-  const { error } = await service.from("payments").delete().eq("id", paymentId);
+  const { error } = await auth.service.from("payments").delete().eq("id", paymentId);
 
   if (error) {
     return NextResponse.json({ error: sanitizeErrorMessage(error.message) }, { status: 500 });
@@ -46,5 +41,3 @@ async function deleteHandler(
 
   return NextResponse.json({ message: "Payment record deleted." });
 }
-
-export const DELETE = withApiObservability("payments.by-id.delete", deleteHandler);
