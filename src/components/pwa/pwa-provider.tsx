@@ -37,6 +37,7 @@ export function PwaProvider() {
       };
     }
 
+    // Register ASAP so Chromium can fire beforeinstallprompt before the hero CTA waits.
     const register = async () => {
       try {
         await navigator.serviceWorker.register("/sw.js", { scope: "/" });
@@ -45,11 +46,7 @@ export function PwaProvider() {
       }
     };
 
-    if (document.readyState === "complete") {
-      void register();
-    } else {
-      window.addEventListener("load", register, { once: true });
-    }
+    void register();
 
     return () => {
       window.removeEventListener("pageshow", handleResume);
