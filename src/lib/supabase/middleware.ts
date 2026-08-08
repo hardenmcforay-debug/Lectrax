@@ -51,7 +51,12 @@ function withSessionCookies(
 }
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  // Forward request headers (incl. x-nonce / CSP) into the RSC render pipeline.
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
   let url: string;
   let anonKey: string;
@@ -84,7 +89,11 @@ export async function updateSession(request: NextRequest) {
           headers: Record<string, string>
         ) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, withSecureCookieOptions(options))
           );

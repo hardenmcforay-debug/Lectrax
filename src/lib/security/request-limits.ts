@@ -26,8 +26,15 @@ function isAssignmentSubmitPath(pathname: string): boolean {
   );
 }
 
+/** Browser CSP reports are small JSON payloads. */
+export const MAX_CSP_REPORT_BODY_BYTES = 8 * 1024;
+
 export function getMaxBodyBytesForPath(pathname: string): number | null {
   if (!pathname.startsWith("/api/")) return null;
+
+  if (pathname === "/api/csp-report") {
+    return MAX_CSP_REPORT_BODY_BYTES;
+  }
 
   if (BRANDING_UPLOAD_PATHS.has(pathname)) {
     return MAX_BRANDING_UPLOAD_BODY_BYTES;

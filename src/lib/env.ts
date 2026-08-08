@@ -212,5 +212,18 @@ export function validateProductionEnv(): EnvValidationResult {
     }
   }
 
+  const cspMode = readEnv("CSP_MODE")?.toLowerCase();
+  if (!cspMode || cspMode === "report-only") {
+    warnings.push(
+      "CSP_MODE is report-only (default) — violations are logged but not blocked; set CSP_MODE=enforce after Report-Only is clean"
+    );
+  } else if (cspMode === "off" || cspMode === "disabled") {
+    warnings.push("CSP_MODE=off — Content-Security-Policy headers are disabled");
+  } else if (cspMode !== "enforce" && cspMode !== "enforcing") {
+    warnings.push(
+      `CSP_MODE='${cspMode}' is unrecognized — falling back to report-only`
+    );
+  }
+
   return { ok: errors.length === 0, errors, warnings };
 }

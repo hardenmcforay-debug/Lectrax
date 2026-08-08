@@ -1,16 +1,38 @@
-import { type NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { rejectIfCsrfViolation } from "@/lib/security/csrf";
+import {
+  applyCspHeaders,
+  attachCspRequestHeaders,
+  createCspNonce,
+  getCspMode,
+} from "@/lib/security/csp";
 
 export async function proxy(request: NextRequest) {
-  const abuseResponse = rejectIfAbusiveRequest(request);
-  if (abuseResponse) return abuseResponse;
+  const nonce = createCspNonce();
+  const cspMode = getCspMode();
 
-  const csrfResponse = rejectIfCsrfViolation(request);
-  if (csrfResponse) return csrfResponse;
+  const requestHeaders = new Headers(request.headers);
+  if (cspMode !== "off") {
+    attachCspRequestHeaders(requestHeaders, nonce);
+  }
 
-  return updateSession(request);
+  // Clone preserves body/cookies; overlay CSP nonce headers for RSC.
+  const observedRequest = new NextRequest(request, { headers: requestHeaders });
+
+  const abuseResponse = rejectIfAbusiveRequest(observedRequest);
+  if (abuseResponse) {
+    return applyCspHeaders(abuseResponse, nonce, cspMode);
+  }
+
+  const csrfResponse = rejectIfCsrfViolation(observedRequest);
+  if (csrfResponse) {
+    return applyCspHeaders(csrfResponse, nonce, cspMode);
+  }
+
+  const response = await updateSession(observedRequest);
+  return applyCspHeaders(response, nonce, cspMode);
 }
 
 export const config = {

@@ -25,6 +25,7 @@ const COPY_DIRS = [
   "src/app/admin",
   "src/app/api/admin",
   "src/app/api/auth",
+  "src/app/api/csp-report",
   "src/app/auth",
   "src/app/offline",
   "src/components/admin",
@@ -147,6 +148,8 @@ function writeAdminPackageJson() {
       start: "next start -p 3001",
       lint: "eslint . --max-warnings 0",
       typecheck: "tsc --noEmit",
+      "audit:deps": "npm audit --omit=dev",
+      "audit:all": "npm audit --audit-level=high",
     },
     dependencies: {
       "@hookform/resolvers": rootPkg.dependencies["@hookform/resolvers"],
@@ -266,6 +269,10 @@ NEXT_PUBLIC_MAIN_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Content-Security-Policy mode (nonce + strict-dynamic; no script 'unsafe-inline')
+# report-only (default) | enforce | off
+# CSP_MODE=report-only
 `
   );
 
@@ -296,7 +303,9 @@ import { SiteBrandingProvider } from "@/components/layout/site-branding-provider
 import { getSiteLogoUrl } from "@/lib/landing/site-branding";
 import { PortalChromeSync } from "@/components/pwa/portal-chrome-sync";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
+import { getRequestCspNonce } from "@/lib/security/get-request-nonce";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -341,6 +350,8 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cspNonce = await getRequestCspNonce();
+
   let logoUrl: string | null = null;
   try {
     logoUrl = await getSiteLogoUrl();
@@ -352,6 +363,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" className="low-data-mode" suppressHydrationWarning>
       <head>
         <PwaHeadLinks />
+        <PwaBootstrapScripts nonce={cspNonce} />
       </head>
       <body className={\`\${geistSans.variable} \${geistMono.variable} antialiased\`}>
         <PwaProvider />
@@ -512,6 +524,52 @@ function main() {
   if (existsSync(staleMiddleware)) {
     rmSync(staleMiddleware, { force: true });
   }
+
+  // Keep admin repo dependency audits aligned with the main Lectrax security workflow.
+  const securityWorkflowDir = join(OUT, ".github", "workflows");
+  mkdirSync(securityWorkflowDir, { recursive: true });
+  writeFileSync(
+    join(securityWorkflowDir, "security.yml"),
+    `name: Security
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: security-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: npm audit (production + full)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production security audit
+        run: npm run audit:deps -- --audit-level=high
+
+      - name: Full dependency vulnerability scan
+        run: npm run audit:all
+`
+  );
 
   console.log("Done. Next steps:");
   console.log("  cd deploy/lectrax-admin");

@@ -41,6 +41,7 @@ export const PUBLIC_API_ROUTES = [
   "/api/partnerships/inquiry",
   "/api/partnerships/checkout",
   "/api/contact",
+  "/api/csp-report",
 ] as const;
 
 /** Auth API routes callable without a session (login, signup helpers, password reset). */
