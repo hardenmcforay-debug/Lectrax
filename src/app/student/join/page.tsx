@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { studentDashboardCardClass } from "@/components/student/student-dashboard-styles";
 import { joinSessionSchema } from "@/lib/validations";
@@ -70,13 +69,13 @@ export default function JoinClassPage() {
         <CardHeader><CardTitle>Session Code</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Code</Label>
             <Input
               value={code}
               onChange={(e) => setCode(sanitizeSessionCode(e.target.value))}
               placeholder="e.g. A3F9B2"
               className="font-mono text-lg tracking-widest"
               maxLength={10}
+              aria-label="Session code"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

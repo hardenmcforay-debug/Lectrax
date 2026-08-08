@@ -51,7 +51,7 @@ type ScanStatus = {
 };
 
 const READY_STATUS: ScanStatus = {
-  title: "Ready to scan",
+  title: "",
   variant: "idle",
 };
 
@@ -65,12 +65,14 @@ function extractToken(urlOrToken: string): string {
 }
 
 function ScanResultNotice({ status }: { status: ScanStatus }) {
-  if (status.variant === "idle" || status.variant === "loading") {
+  if (status.variant === "idle") {
+    return null;
+  }
+
+  if (status.variant === "loading") {
     return (
       <div className="flex items-start gap-2">
-        {status.variant === "loading" && (
-          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
-        )}
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">{status.title}</p>
       </div>
     );
@@ -457,10 +459,10 @@ export function QRScanner() {
               onClick={() => void startScanner()}
               disabled={submitting}
             >
-              Open Camera Scanner
+              Open Camera
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => stopScannerInstance()}>
+            <Button variant="destructive" onClick={() => stopScannerInstance()}>
               Stop Scanner
             </Button>
           )}
