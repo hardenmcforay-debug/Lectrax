@@ -265,15 +265,9 @@ export async function updateSession(request: NextRequest) {
       return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
     }
 
-    if (pathname === "/") {
-      const redirectUrl = request.nextUrl.clone();
-      if (isAbsoluteUrl(roleHome)) {
-        return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
-      }
-      redirectUrl.pathname = roleHome;
-      redirectUrl.search = "";
-      return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
-    }
+    // `/` is always the public marketing landing in normal browsers.
+    // Do not redirect authenticated sessions (or PWA installs) away from `/`.
+    // Standalone PWA entry uses manifest start_url `/login` + client launch gate.
 
     if (AUTH_ROUTES.includes(pathname)) {
       if (isAbsoluteUrl(roleHome)) {

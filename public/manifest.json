@@ -6,6 +6,10 @@
   "start_url": "/login",
   "scope": "/",
   "display": "standalone",
+  "handle_links": "not_preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "background_color": "#FFFFFF",
   "theme_color": "#0B3D91",
   "lang": "en",
