@@ -88,7 +88,19 @@ export function resolvePostLoginRedirect(
 
 export function redirectAfterAuth(role: UserRole, redirectParam?: string | null) {
   if (typeof window !== "undefined") {
-    window.location.replace(resolvePostLoginRedirect(role, redirectParam));
+    const destination = resolvePostLoginRedirect(role, redirectParam);
+    // Installed PWA must stay under `/go/*` so marketing stays out of app scope.
+    if (
+      !/^https?:\/\//i.test(destination) &&
+      typeof window.matchMedia === "function" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true)
+    ) {
+      const scoped = destination.startsWith("/go") ? destination : `/go${destination === "/" ? "/login" : destination}`;
+      window.location.replace(scoped);
+      return;
+    }
+    window.location.replace(destination);
   }
 }
 

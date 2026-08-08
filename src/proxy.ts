@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { rejectIfCsrfViolation } from "@/lib/security/csrf";
@@ -8,6 +8,11 @@ import {
   createCspNonce,
   getCspMode,
 } from "@/lib/security/csp";
+import {
+  isMarketingPath,
+  isPwaScopePath,
+  stripPwaScopePrefix,
+} from "@/lib/pwa/scope";
 
 export async function proxy(request: NextRequest) {
   const nonce = createCspNonce();
@@ -18,8 +23,27 @@ export async function proxy(request: NextRequest) {
     attachCspRequestHeaders(requestHeaders, nonce);
   }
 
-  // Clone preserves body/cookies; overlay CSP nonce headers for RSC.
-  const observedRequest = new NextRequest(request, { headers: requestHeaders });
+  const originalPath = request.nextUrl.pathname;
+  const pwaScoped = isPwaScopePath(originalPath);
+
+  // /go/about → real /about (outside PWA scope → browser UI / not captured)
+  if (pwaScoped) {
+    const stripped = stripPwaScopePrefix(originalPath);
+    if (isMarketingPath(stripped) && stripped !== "/") {
+      const marketingUrl = request.nextUrl.clone();
+      marketingUrl.pathname = stripped;
+      return applyCspHeaders(NextResponse.redirect(marketingUrl), nonce, cspMode);
+    }
+  }
+
+  const internalPath = pwaScoped ? stripPwaScopePrefix(originalPath) : originalPath;
+  const internalUrl = request.nextUrl.clone();
+  internalUrl.pathname = internalPath;
+
+  // Session / auth logic sees unprefixed routes; browser URL can stay under /go/*.
+  const observedRequest = new NextRequest(internalUrl, {
+    headers: requestHeaders,
+  });
 
   const abuseResponse = rejectIfAbusiveRequest(observedRequest);
   if (abuseResponse) {
@@ -31,7 +55,8 @@ export async function proxy(request: NextRequest) {
     return applyCspHeaders(csrfResponse, nonce, cspMode);
   }
 
-  const response = await updateSession(observedRequest);
+  const response = await updateSession(observedRequest, { pwaScoped });
+
   return applyCspHeaders(response, nonce, cspMode);
 }
 

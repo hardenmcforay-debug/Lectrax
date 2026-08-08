@@ -9,17 +9,16 @@ export function getPwaShortName(): string {
   return isAdminDeployment() ? "Lectrax Admin" : APP_NAME;
 }
 
-/** Installed PWA entry — auth/app shell, never the marketing landing page. */
+/** Installed PWA entry — under `/go` scope so marketing `/` is never in the app. */
 export function getPwaStartUrl(): string {
-  return isAdminDeployment() ? "/admin" : "/login";
+  return isAdminDeployment() ? "/admin" : "/go/login";
 }
 
 export const PWA_MANIFEST_PATH = "/manifest.json";
 export const PWA_SERVICE_WORKER_PATH = "/sw.js";
 
-/** Bump when regenerating icons (`npm run sync-icons-from-site-logo` / generate:pwa-icons). */
-/** Bump to force browsers/WebAPKs to re-fetch icons + manifest (link-handling updates). */
-export const PWA_ICON_ASSET_VERSION = "20260808m";
+/** Bump to force browsers/WebAPKs to re-fetch icons + manifest (scope / link-handling). */
+export const PWA_ICON_ASSET_VERSION = "20260808pwa";
 
 export function pwaIconUrl(path: string): string {
   const separator = path.includes("?") ? "&" : "?";

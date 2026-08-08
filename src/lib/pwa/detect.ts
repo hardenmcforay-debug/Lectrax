@@ -6,15 +6,16 @@ export const PWA_BACKGROUND_COLOR = BRAND.white;
 /** Persisted when the user installs the PWA or we detect standalone mode. */
 export const PWA_INSTALLED_STORAGE_KEY = "lectrax-pwa-installed";
 
+/**
+ * Only true installed-app display modes used for routing.
+ * Do not treat minimal-ui/fullscreen as the Lectrax PWA — those can false-positive
+ * on some mobile browsers and would hide the marketing site.
+ */
 function matchesInstalledDisplayMode(): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: fullscreen)").matches ||
-      window.matchMedia("(display-mode: minimal-ui)").matches
-    );
+    return window.matchMedia("(display-mode: standalone)").matches;
   } catch {
     return false;
   }
@@ -78,8 +79,7 @@ export function clearInstalledPwaShellMarks(): void {
 export function isStandaloneMode(): boolean {
   if (typeof window === "undefined") return false;
 
-  const standalone =
-    isRunningAsInstalledPwa() || wasPwaInstalled();
+  const standalone = isRunningAsInstalledPwa() || wasPwaInstalled();
 
   if (standalone) {
     markPwaInstalled();

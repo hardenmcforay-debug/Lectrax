@@ -11,6 +11,7 @@ import { PasswordRecoverySessionBootstrap } from "@/components/auth/password-rec
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { PwaBootstrapScripts } from "@/components/pwa/pwa-bootstrap-scripts";
 import { PwaHeadLinks } from "@/components/pwa/pwa-head-links";
+import { PwaScopeNavigator } from "@/components/pwa/pwa-scope-navigator";
 import { PWA_BOOT_CRITICAL_CSS } from "@/lib/pwa/boot-critical-css";
 import { pwaIconUrl } from "@/lib/pwa/config";
 import { getRequestCspNonce } from "@/lib/security/get-request-nonce";
@@ -100,6 +101,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <PwaProvider />
+        <PwaScopeNavigator />
         <AuthSessionSync />
         <PasswordRecoverySessionBootstrap />
         <PortalChromeSync />

@@ -2,9 +2,9 @@
   "name": "Lectrax",
   "short_name": "Lectrax",
   "description": "A Modern Academic Management Platform",
-  "id": "/",
-  "start_url": "/login",
-  "scope": "/",
+  "id": "/go",
+  "start_url": "/go/login",
+  "scope": "/go/",
   "display": "standalone",
   "handle_links": "not-preferred",
   "prefer_related_applications": false,
@@ -89,7 +89,7 @@
       "name": "Get Started",
       "short_name": "Sign Up",
       "description": "Create your Lectrax account",
-      "url": "/signup",
+      "url": "/go/signup",
       "icons": [
         {
           "src": "/icons/icon-192x192.png?v=20260718w",
@@ -102,7 +102,7 @@
       "name": "Sign In",
       "short_name": "Login",
       "description": "Sign in to your account",
-      "url": "/login",
+      "url": "/go/login",
       "icons": [
         {
           "src": "/icons/icon-192x192.png?v=20260718w",

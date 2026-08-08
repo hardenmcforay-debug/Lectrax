@@ -26,6 +26,12 @@ import {
 } from "@/lib/errors/classify";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { withSecureCookieOptions } from "@/lib/security/cookies";
+import { toPwaScopePath } from "@/lib/pwa/scope";
+
+export type UpdateSessionOptions = {
+  /** Browser URL is under `/go/*` (installed PWA scope). */
+  pwaScoped?: boolean;
+};
 
 /** Preserve Set-Cookie headers from the Supabase response onto a redirect/JSON response. */
 function withSessionCookies(
@@ -50,13 +56,36 @@ function withSessionCookies(
   return target;
 }
 
-export async function updateSession(request: NextRequest) {
-  // Forward request headers (incl. x-nonce / CSP) into the RSC render pipeline.
-  let supabaseResponse = NextResponse.next({
+function continueResponse(request: NextRequest, pwaScoped: boolean): NextResponse {
+  if (pwaScoped) {
+    // Keep the browser on `/go/...` while rendering the unprefixed App Router path.
+    return NextResponse.rewrite(request.nextUrl, {
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+
+  return NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
+}
+
+function appRedirectPath(pathname: string, pwaScoped: boolean): string {
+  if (!pwaScoped || isAbsoluteUrl(pathname)) return pathname;
+  return toPwaScopePath(pathname);
+}
+
+export async function updateSession(
+  request: NextRequest,
+  options: UpdateSessionOptions = {}
+) {
+  const pwaScoped = Boolean(options.pwaScoped);
+
+  // Forward request headers (incl. x-nonce / CSP) into the RSC render pipeline.
+  let supabaseResponse = continueResponse(request, pwaScoped);
 
   let url: string;
   let anonKey: string;
@@ -89,11 +118,7 @@ export async function updateSession(request: NextRequest) {
           headers: Record<string, string>
         ) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
+          supabaseResponse = continueResponse(request, pwaScoped);
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, withSecureCookieOptions(options))
           );
@@ -117,7 +142,7 @@ export async function updateSession(request: NextRequest) {
     (recoveryType === "recovery" || request.nextUrl.searchParams.has("token_hash"))
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/reset-password";
+    redirectUrl.pathname = appRedirectPath("/reset-password", pwaScoped);
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
@@ -127,7 +152,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.searchParams.get("next") === "/reset-password"
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/reset-password";
+    redirectUrl.pathname = appRedirectPath("/reset-password", pwaScoped);
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
@@ -162,7 +187,7 @@ export async function updateSession(request: NextRequest) {
     if (isDefinitiveAuthError(authError)) {
       if (!isPublic) {
         const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = "/login";
+        redirectUrl.pathname = appRedirectPath("/login", pwaScoped);
         redirectUrl.searchParams.set("redirect", pathname);
         return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
       }
@@ -187,7 +212,7 @@ export async function updateSession(request: NextRequest) {
       }
 
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/login";
+      redirectUrl.pathname = appRedirectPath("/login", pwaScoped);
       redirectUrl.searchParams.set("error", "unavailable");
       return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
     }
@@ -195,7 +220,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublic) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
+    redirectUrl.pathname = appRedirectPath("/login", pwaScoped);
     redirectUrl.searchParams.set("redirect", pathname);
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
@@ -243,7 +268,7 @@ export async function updateSession(request: NextRequest) {
     if (!role) {
       if (!isPublic && pathname !== "/") {
         const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = "/login";
+        redirectUrl.pathname = appRedirectPath("/login", pwaScoped);
         redirectUrl.searchParams.set("error", "auth");
         redirectUrl.searchParams.delete("login_failed");
         return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
@@ -266,15 +291,14 @@ export async function updateSession(request: NextRequest) {
     }
 
     // `/` is always the public marketing landing in normal browsers.
-    // Do not redirect authenticated sessions (or PWA installs) away from `/`.
-    // Standalone PWA entry uses manifest start_url `/login` + client launch gate.
+    // Standalone PWA entry uses manifest start_url `/go/login` + client launch gate.
 
     if (AUTH_ROUTES.includes(pathname)) {
       if (isAbsoluteUrl(roleHome)) {
         return withSessionCookies(supabaseResponse, NextResponse.redirect(roleHome));
       }
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = roleHome;
+      redirectUrl.pathname = appRedirectPath(roleHome, pwaScoped);
       return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
     }
 
@@ -290,7 +314,7 @@ export async function updateSession(request: NextRequest) {
     if (requiredPortalRole && role !== requiredPortalRole) {
       const destination = isAbsoluteUrl(roleHome)
         ? roleHome
-        : new URL(roleHome, request.url).toString();
+        : new URL(appRedirectPath(roleHome, pwaScoped), request.url).toString();
       return withSessionCookies(supabaseResponse, NextResponse.redirect(destination));
     }
   }

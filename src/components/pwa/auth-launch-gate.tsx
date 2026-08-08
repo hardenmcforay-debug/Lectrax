@@ -9,16 +9,16 @@ import { getDashboardPath } from "@/lib/auth/roles";
 import { AppLaunchSplash } from "@/components/pwa/app-launch-splash";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { clearInstalledPwaShellMarks, isRunningAsInstalledPwa } from "@/lib/pwa/detect";
+import { toPwaScopePath } from "@/lib/pwa/scope";
 
 type LaunchState = "idle" | "checking" | "guest" | "redirecting";
 
-const PWA_AUTH_ENTRY = "/login";
+const PWA_AUTH_ENTRY = toPwaScopePath("/login");
 
 /**
- * Gates `/` only when the document is actually running as an installed PWA
- * (display-mode standalone / iOS home-screen). Normal browser tabs on phones,
- * tablets, iPads, and desktop — including authenticated sessions and devices
- * that previously installed the PWA — always keep the public landing page.
+ * Gates `/` only when the document is actually running as an installed PWA.
+ * Normal browser tabs on phones, tablets, iPads, and desktop always keep the
+ * public landing page. Installed-app routing stays under `/go/*`.
  */
 export function AuthLaunchGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -65,7 +65,7 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
             if (cancelled) return;
 
             if (role) {
-              window.location.replace(getDashboardPath(role));
+              window.location.replace(toPwaScopePath(getDashboardPath(role)));
               return;
             }
           }
