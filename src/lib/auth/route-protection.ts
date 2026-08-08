@@ -1,11 +1,13 @@
 import type { UserRole } from "@/types/database";
+import { stripPwaScopePrefix } from "@/lib/pwa/scope";
 
 const PROTECTED_PORTAL_PREFIXES = ["/student", "/lecturer", "/admin"] as const;
 
 /** Page routes that require an authenticated session and role-specific access. */
 export function isProtectedPortalPath(pathname: string): boolean {
+  const path = stripPwaScopePrefix(pathname);
   return PROTECTED_PORTAL_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
 }
 

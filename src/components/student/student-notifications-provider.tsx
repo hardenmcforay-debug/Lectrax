@@ -16,7 +16,8 @@ import {
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isStandaloneMode } from "@/lib/pwa/detect";
-import { pwaIconUrl } from "@/lib/pwa/config";
+import { pwaIconUrl, toClientAppPath } from "@/lib/pwa/config";
+import { stripPwaScopePrefix } from "@/lib/pwa/scope";
 import {
   EMPTY_STUDENT_NOTIFICATION_COUNTS,
   NOTIFICATION_DESTINATION,
@@ -52,7 +53,7 @@ function showBrowserNotification(title: string, body: string, type: StudentNotif
 
   notification.onclick = () => {
     window.focus();
-    window.location.href = destination;
+    window.location.href = toClientAppPath(destination);
     notification.close();
   };
 }
@@ -164,8 +165,9 @@ export function StudentNotificationsProvider({ children }: { children: ReactNode
   }, [refreshCounts]);
 
   useEffect(() => {
+    const appPath = stripPwaScopePrefix(pathname || "/");
     const matchedType = Object.entries(PATH_TO_NOTIFICATION_TYPE).find(([href]) =>
-      pathname === href || pathname.startsWith(`${href}/`)
+      appPath === href || appPath.startsWith(`${href}/`)
     )?.[1];
 
     if (!matchedType) return;

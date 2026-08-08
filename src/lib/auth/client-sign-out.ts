@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuthEntryPath } from "@/lib/pwa/config";
 import { clearSensitiveClientStorage } from "@/lib/security/client-storage";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -17,7 +18,8 @@ export async function signOutAndClearClientStorage(options?: {
   resetInMemoryAuthState();
 
   if (options?.redirectTo !== null) {
-    window.location.replace(options?.redirectTo ?? "/login");
+    // Default to the in-app auth entry so PWA logout never leaves `/go` scope.
+    window.location.replace(options?.redirectTo ?? getClientAuthEntryPath());
   }
 }
 

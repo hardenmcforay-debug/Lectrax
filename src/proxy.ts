@@ -25,6 +25,10 @@ export async function proxy(request: NextRequest) {
 
   const originalPath = request.nextUrl.pathname;
   const pwaScoped = isPwaScopePath(originalPath);
+  if (pwaScoped) {
+    // Let RSC layouts redirect to `/go/login` instead of bare `/login`.
+    requestHeaders.set("x-lectrax-pwa-scoped", "1");
+  }
 
   // /go/about → real /about (outside PWA scope → browser UI / not captured)
   if (pwaScoped) {

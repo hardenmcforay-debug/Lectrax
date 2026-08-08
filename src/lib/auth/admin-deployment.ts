@@ -1,5 +1,7 @@
 import type { UserRole } from "@/types/database";
 import { ROLE_ROUTES } from "@/lib/constants";
+import { isRunningAsInstalledPwa } from "@/lib/pwa/detect";
+import { isPwaScopePath, toPwaScopePath } from "@/lib/pwa/scope";
 import {
   DEV_ADMIN_HTTP_ORIGIN,
   normalizeSecureOrigin,
@@ -136,6 +138,16 @@ export function getPlatformAdminLoginRedirectUrl(origin: string): string {
   return url.toString();
 }
 
+function toInstalledAppPath(pathname: string): string {
+  if (isAbsoluteUrl(pathname) || !pathname.startsWith("/") || isAdminDeployment()) {
+    return pathname;
+  }
+  if (isRunningAsInstalledPwa() || isPwaScopePath(window.location.pathname)) {
+    return toPwaScopePath(pathname);
+  }
+  return pathname;
+}
+
 export function redirectToRoleHome(role: UserRole, redirectParam?: string | null) {
   const home = getRoleHomeUrl(role);
   if (redirectParam && redirectParam !== "/" && redirectParam.startsWith(getRoleHomePath(role))) {
@@ -143,13 +155,13 @@ export function redirectToRoleHome(role: UserRole, redirectParam?: string | null
       window.location.replace(
         isAbsoluteUrl(home)
           ? `${normalizeOrigin(home.split(ROLE_ROUTES[role])[0] ?? home)}${redirectParam}`
-          : redirectParam
+          : toInstalledAppPath(redirectParam)
       );
     }
     return;
   }
 
   if (typeof window !== "undefined") {
-    window.location.replace(home);
+    window.location.replace(isAbsoluteUrl(home) ? home : toInstalledAppPath(home));
   }
 }

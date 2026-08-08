@@ -1,7 +1,9 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { ServiceUnavailableError } from "@/lib/errors/service-unavailable";
+import { toPwaScopePath } from "@/lib/pwa/scope";
 
 export { ServiceUnavailableError };
 
@@ -14,7 +16,8 @@ export async function requireAuthenticatedUser(): Promise<User> {
   }
 
   if (auth.status === "unauthenticated") {
-    redirect("/login");
+    const pwaScoped = (await headers()).get("x-lectrax-pwa-scoped") === "1";
+    redirect(pwaScoped ? toPwaScopePath("/login") : "/login");
   }
 
   throw new ServiceUnavailableError();

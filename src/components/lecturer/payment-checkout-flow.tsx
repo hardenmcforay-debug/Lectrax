@@ -29,6 +29,7 @@ import {
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { platformFetch } from "@/lib/api/fetch";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import { toClientAppPath } from "@/lib/pwa/config";
 
 type CheckoutResponse =
   | { kind: "redirect"; checkoutUrl: string; paymentId: string }
@@ -178,7 +179,7 @@ export function PaymentCheckoutFlow({
           setPolling(false);
           onPaymentComplete?.();
           handleOpenChange(false);
-          window.location.href = `/lecturer/subscription?success=1`;
+          window.location.href = toClientAppPath("/lecturer/subscription?success=1");
         }
       })();
     }, 5000);

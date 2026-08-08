@@ -3,6 +3,7 @@ import {
   getRoleHomePath,
   getRoleHomeUrl,
 } from "@/lib/auth/admin-deployment";
+import { getClientAuthEntryPath, toClientAppPath } from "@/lib/pwa/config";
 import type { UserRole } from "@/types/database";
 
 const VALID_ROLES: UserRole[] = ["platform_admin", "lecturer", "student"];
@@ -51,7 +52,9 @@ export function getSignupFailureUrl(origin: string, message = "signup"): string 
 /** @deprecated Prefer inline errors on /login; kept for any legacy callers. */
 export function redirectToLandingOnLoginFailure() {
   if (typeof window !== "undefined") {
-    window.location.replace(`/login?error=auth`);
+    const url = new URL(getClientAuthEntryPath(), window.location.origin);
+    url.searchParams.set("error", "auth");
+    window.location.replace(`${url.pathname}${url.search}`);
   }
 }
 
@@ -89,18 +92,7 @@ export function resolvePostLoginRedirect(
 export function redirectAfterAuth(role: UserRole, redirectParam?: string | null) {
   if (typeof window !== "undefined") {
     const destination = resolvePostLoginRedirect(role, redirectParam);
-    // Installed PWA must stay under `/go/*` so marketing stays out of app scope.
-    if (
-      !/^https?:\/\//i.test(destination) &&
-      typeof window.matchMedia === "function" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true)
-    ) {
-      const scoped = destination.startsWith("/go") ? destination : `/go${destination === "/" ? "/login" : destination}`;
-      window.location.replace(scoped);
-      return;
-    }
-    window.location.replace(destination);
+    window.location.replace(toClientAppPath(destination));
   }
 }
 

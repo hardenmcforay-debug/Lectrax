@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 import { isProtectedPortalPath } from "@/lib/auth/route-protection";
 import { isDefinitiveAuthError, isTransientError } from "@/lib/errors/classify";
+import { getClientAuthEntryPath } from "@/lib/pwa/config";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -13,12 +14,13 @@ import { createClient } from "@/lib/supabase/client";
  * Transient auth/network failures must never force a logout — e.g. returning from a payment
  * gateway when Supabase Auth briefly fails to fetch.
  */
-export function ProtectedSessionGuard({ loginPath = "/login" }: { loginPath?: string }) {
+export function ProtectedSessionGuard({ loginPath }: { loginPath?: string } = {}) {
   useEffect(() => {
     const supabase = createClient();
 
     async function assertSession() {
       if (!isProtectedPortalPath(window.location.pathname)) return;
+      const destination = loginPath ?? getClientAuthEntryPath();
 
       try {
         const {
@@ -31,13 +33,13 @@ export function ProtectedSessionGuard({ loginPath = "/login" }: { loginPath?: st
             return;
           }
           clearClientStorageAfterAuthReset();
-          window.location.replace(loginPath);
+          window.location.replace(destination);
           return;
         }
 
         if (!user) {
           clearClientStorageAfterAuthReset();
-          window.location.replace(loginPath);
+          window.location.replace(destination);
         }
       } catch (error) {
         // Network outages throw (e.g. TypeError: Failed to fetch) instead of returning
@@ -46,7 +48,7 @@ export function ProtectedSessionGuard({ loginPath = "/login" }: { loginPath?: st
           return;
         }
         clearClientStorageAfterAuthReset();
-        window.location.replace(loginPath);
+        window.location.replace(destination);
       }
     }
 
