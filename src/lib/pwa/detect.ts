@@ -51,11 +51,28 @@ function matchesIosHomeScreenApp(): boolean {
 
 /**
  * True only while the app is actually running in an installed display mode.
- * Does not use the install localStorage flag — browser tabs must keep the marketing site.
+ * Does not use the install localStorage flag — browser tabs must keep the marketing site
+ * on phones, tablets, iPads, and desktop alike.
  */
 export function isRunningAsInstalledPwa(): boolean {
   if (typeof window === "undefined") return false;
   return matchesInstalledDisplayMode() || matchesIosHomeScreenApp();
+}
+
+/**
+ * Clear installed-app shell markers so the marketing site can paint in a normal
+ * browser tab (including mobile Chrome/Safari after a prior PWA install).
+ */
+export function clearInstalledPwaShellMarks(): void {
+  if (typeof document === "undefined") return;
+
+  const root = document.documentElement;
+  root.classList.remove("pwa-booting");
+  root.dataset.pwaReady = "true";
+  if (root.dataset.pwaStandalone !== undefined) {
+    delete root.dataset.pwaStandalone;
+  }
+  document.getElementById("lectrax-pwa-boot-splash")?.remove();
 }
 
 export function isStandaloneMode(): boolean {

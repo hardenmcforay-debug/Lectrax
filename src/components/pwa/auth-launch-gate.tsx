@@ -8,24 +8,17 @@ import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { getDashboardPath } from "@/lib/auth/roles";
 import { AppLaunchSplash } from "@/components/pwa/app-launch-splash";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
-import { isRunningAsInstalledPwa } from "@/lib/pwa/detect";
+import { clearInstalledPwaShellMarks, isRunningAsInstalledPwa } from "@/lib/pwa/detect";
 
 type LaunchState = "idle" | "checking" | "guest" | "redirecting";
 
 const PWA_AUTH_ENTRY = "/login";
 
-function clearDomBootSplash() {
-  if (typeof document === "undefined") return;
-  document.documentElement.classList.remove("pwa-booting");
-  document.documentElement.dataset.pwaReady = "true";
-  document.getElementById("lectrax-pwa-boot-splash")?.remove();
-}
-
 /**
  * Gates `/` only when the document is actually running as an installed PWA
- * (display-mode standalone / iOS home-screen). Normal browser tabs — including
- * authenticated sessions and devices that previously installed the PWA — always
- * keep the public landing page.
+ * (display-mode standalone / iOS home-screen). Normal browser tabs on phones,
+ * tablets, iPads, and desktop — including authenticated sessions and devices
+ * that previously installed the PWA — always keep the public landing page.
  */
 export function AuthLaunchGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -45,9 +38,9 @@ export function AuthLaunchGate({ children }: { children: ReactNode }) {
 
     const standalone = isRunningAsInstalledPwa();
 
-    // Normal browser visit → keep the marketing site (auth or not).
+    // Browser tab (any viewport) → marketing site, never the app shell.
     if (!standalone) {
-      clearDomBootSplash();
+      clearInstalledPwaShellMarks();
       return;
     }
 

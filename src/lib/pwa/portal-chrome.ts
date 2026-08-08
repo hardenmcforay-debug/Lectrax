@@ -1,4 +1,9 @@
-import { isMobileDevice, isRunningAsInstalledPwa, markPwaInstalled } from "@/lib/pwa/detect";
+import {
+  clearInstalledPwaShellMarks,
+  isMobileDevice,
+  isRunningAsInstalledPwa,
+  markPwaInstalled,
+} from "@/lib/pwa/detect";
 
 const MOBILE_LAYOUT_MAX_WIDTH = 1023;
 
@@ -47,9 +52,8 @@ export function applyPortalChromeMarks() {
     return;
   }
 
-  if (root.dataset.pwaStandalone !== undefined) {
-    delete root.dataset.pwaStandalone;
-  }
+  // Browser tabs on phones/tablets/iPads must never keep the installed-app shell.
+  clearInstalledPwaShellMarks();
 
   if (mobile) {
     if (root.dataset.portalMobile !== "true") {
