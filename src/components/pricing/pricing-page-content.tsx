@@ -103,7 +103,7 @@ const lecturerHowItWorks = [
   {
     title: "Pay with a local payment method",
     description:
-      "Pay with Orange Money or Afrimoney via USSD, or card through Monime. Amounts are charged in SLE at checkout.",
+      "Pay with Orange Money or Afrimoney via USSD through Monime. Amounts are charged in SLE at checkout.",
   },
   {
     title: "Activate and keep teaching",

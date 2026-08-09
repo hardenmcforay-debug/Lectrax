@@ -347,7 +347,7 @@ export const partnershipCheckoutSchema = z.object({
     max: 80,
     minMessage: "Country is required",
   }),
-  paymentMethod: z.enum(["orange_money", "afrimoney", "visa_card"]),
+  paymentMethod: z.enum(["orange_money", "afrimoney"]),
 });
 
 export const adminToggleLecturerSchema = z.object({

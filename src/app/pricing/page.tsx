@@ -8,7 +8,7 @@ import "../landing.css";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Lectrax pricing for lecturer subscriptions and university partnerships, including how payments work with Orange Money, Afrimoney, and card via Monime.",
+    "Lectrax pricing for lecturer subscriptions and university partnerships, including how payments work with Orange Money and Afrimoney via Monime.",
 };
 
 export default async function PricingPage() {

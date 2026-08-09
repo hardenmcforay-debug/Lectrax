@@ -1,5 +1,8 @@
 export type LectraxPaymentMethod = "orange_money" | "afrimoney" | "visa_card";
 
+/** Methods shown in Choose payment method (card is not offered). */
+export type SelectablePaymentMethod = Exclude<LectraxPaymentMethod, "visa_card">;
+
 export type MonimeMomoProviderId = "m17" | "m18";
 
 export interface PaymentMethodOption {
@@ -25,15 +28,17 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
     channel: "momo",
     providerId: "m18",
   },
-  {
-    id: "visa_card",
-    label: "Card Payment",
-    description: "Pay securely with debit or credit card",
-    channel: "card",
-  },
 ];
 
 export function getPaymentMethodOption(id: LectraxPaymentMethod): PaymentMethodOption | undefined {
+  if (id === "visa_card") {
+    return {
+      id: "visa_card",
+      label: "Card Payment",
+      description: "Pay securely with debit or credit card",
+      channel: "card",
+    };
+  }
   return PAYMENT_METHOD_OPTIONS.find((option) => option.id === id);
 }
 

@@ -22,7 +22,7 @@ import { sanitizeErrorMessage, isTransientError } from "@/lib/errors/classify";
 
 const checkoutSchema = z.object({
   plan: z.enum(["monthly", "semester", "annual"]),
-  paymentMethod: z.enum(["orange_money", "afrimoney", "visa_card"]),
+  paymentMethod: z.enum(["orange_money", "afrimoney"]),
 });
 
 export async function POST(request: Request) {
