@@ -10,6 +10,7 @@ import {
   LandingStagger,
   LandingStaggerItem,
 } from "@/components/landing/landing-motion";
+import { BillingPlanPriceBlock } from "@/components/pricing/billing-plan-price-block";
 import { BILLING_PLANS } from "@/lib/subscription/constants";
 import { cn } from "@/lib/utils";
 
@@ -134,9 +135,11 @@ export function LandingPricing() {
                 <p className="text-balance text-xs font-semibold leading-tight text-slate-900 sm:text-sm md:text-base">
                   {plan.label}
                 </p>
-                <p className="mt-1.5 text-xl font-bold text-primary sm:mt-2 sm:text-2xl md:text-3xl">
-                  ${plan.price}
-                </p>
+                <BillingPlanPriceBlock
+                  plan={plan.id}
+                  className="mt-1.5 sm:mt-2"
+                  payClassName="text-xl sm:text-2xl md:text-3xl"
+                />
                 <p className="mt-1 text-pretty text-[11px] leading-snug text-slate-500 sm:text-xs md:text-sm">
                   {plan.description}
                 </p>

@@ -27,6 +27,7 @@ import type { SubscriptionPageInitialData } from "@/lib/subscription/subscriptio
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { ClientDateText } from "@/components/shared/client-date-text";
 import { cn } from "@/lib/utils";
+import { BillingPlanPriceBlock } from "@/components/pricing/billing-plan-price-block";
 import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/payment-currency";
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
 import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
@@ -306,13 +307,15 @@ export function SubscriptionPageContent({
                 <CardHeader>
                   {plan.id === "semester" && <Badge variant="accent">Best Value</Badge>}
                   <CardTitle>{plan.label}</CardTitle>
-                  <CardDescription className="text-2xl font-bold text-foreground">
-                    {formatUsdPrice(plan.id)}
-                  </CardDescription>
+                  <BillingPlanPriceBlock
+                    plan={plan.id}
+                    showSle
+                    align="start"
+                    className="mt-1"
+                    payClassName="text-2xl text-foreground"
+                  />
                   <p className="text-xs text-muted-foreground">{plan.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Charged in leones at checkout via Monime
-                  </p>
+                  <p className="text-xs text-muted-foreground">Charged in leones via Monime</p>
                 </CardHeader>
                 <CardFooter>
                   <Button className="w-full" variant="accent" onClick={() => openCheckout(plan.id)}>

@@ -14,6 +14,7 @@ import {
   MarketingPageEnter,
 } from "@/components/landing/landing-motion";
 import { PARTNERSHIP_BENEFITS, PARTNERSHIP_PACKAGES } from "@/lib/partnerships/constants";
+import { BillingPlanPriceBlock } from "@/components/pricing/billing-plan-price-block";
 import { BILLING_PLANS } from "@/lib/subscription/constants";
 import { PAYMENT_METHOD_OPTIONS } from "@/lib/monime/payment-methods";
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
@@ -237,7 +238,7 @@ export function PricingPageContent({
                   <span className="mb-3 block h-6" aria-hidden />
                 )}
                 <p className="font-semibold text-slate-900">{plan.label}</p>
-                <p className="mt-2 text-3xl font-bold text-primary">${plan.price}</p>
+                <BillingPlanPriceBlock plan={plan.id} className="mt-2" />
                 <p className="mt-2 text-sm text-slate-500">{plan.description}</p>
               </LandingStaggerItem>
             ))}

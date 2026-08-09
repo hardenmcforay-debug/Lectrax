@@ -1,5 +1,5 @@
 import type { BillingPlan } from "@/types/database";
-import { BILLING_PLAN_PRICES } from "@/types/database";
+import { BILLING_PLAN_DURATION_DAYS, BILLING_PLAN_PRICES } from "@/types/database";
 
 export type PaymentCurrency = "SLE" | "USD";
 
@@ -9,6 +9,44 @@ export const DEFAULT_SLE_CHARGE_AMOUNTS: Record<BillingPlan, number> = {
   semester: 840,
   annual: 2160,
 };
+
+export type BillingPlanListPayPricing = {
+  months: number;
+  listUsd: number;
+  payUsd: number;
+  listSle: number;
+  paySle: number;
+  /** 0 when list === pay; otherwise percent off list (e.g. 12.5). */
+  discountPercent: number;
+};
+
+/** Covered months from plan duration (30-day months). */
+export function getBillingPlanMonths(plan: BillingPlan): number {
+  return BILLING_PLAN_DURATION_DAYS[plan] / 30;
+}
+
+/**
+ * List price = monthly rate × covered months; pay price = plan charge.
+ * Used for strikethrough + Save X% on pricing cards.
+ */
+export function getBillingPlanListPayPricing(plan: BillingPlan): BillingPlanListPayPricing {
+  const months = getBillingPlanMonths(plan);
+  const listUsd = BILLING_PLAN_PRICES.monthly * months;
+  const payUsd = BILLING_PLAN_PRICES[plan];
+  const listSle = DEFAULT_SLE_CHARGE_AMOUNTS.monthly * months;
+  const paySle = DEFAULT_SLE_CHARGE_AMOUNTS[plan];
+  const discountPercent =
+    listUsd > payUsd ? Math.round(((listUsd - payUsd) / listUsd) * 1000) / 10 : 0;
+
+  return { months, listUsd, payUsd, listSle, paySle, discountPercent };
+}
+
+/** Format discount for badges, e.g. 12.5 → "12.5%", 10 → "10%". */
+export function formatDiscountPercent(discountPercent: number): string {
+  if (discountPercent <= 0) return "0%";
+  const rounded = Math.round(discountPercent * 10) / 10;
+  return `${rounded}%`;
+}
 
 /** Monime expects minor units (e.g. cents: 120 SLE → 12000). */
 export function toMonimeMinorUnits(majorAmount: number): number {
