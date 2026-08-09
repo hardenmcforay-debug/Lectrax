@@ -365,7 +365,7 @@ export interface StudentTableRow {
 export const BILLING_PLAN_PRICES: Record<BillingPlan, number> = {
   monthly: 10,
   semester: 35,
-  annual: 70,
+  annual: 90,
 };
 
 export const BILLING_PLAN_DURATION_DAYS: Record<BillingPlan, number> = {
