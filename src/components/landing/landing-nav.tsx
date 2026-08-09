@@ -418,19 +418,8 @@ export function LandingNav() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            asChild
-            className={cn(
-              transparent
-                ? "text-white hover:bg-white/10 hover:text-white"
-                : "text-slate-700 hover:bg-slate-100 hover:text-primary"
-            )}
-          >
-            <Link href="/login">Sign in</Link>
-          </Button>
           <Button variant="accent" className="rounded-xl" asChild>
-            <Link href="/signup">Get Started</Link>
+            <Link href="/login">Get Started</Link>
           </Button>
         </div>
 
@@ -554,22 +543,8 @@ export function LandingNav() {
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 px-1 py-3">
-          <Button
-            variant="default"
-            asChild
-            className={cn(
-              "h-12 w-full rounded-xl",
-              mobileMenuOnHero
-                ? "bg-white text-primary hover:bg-white/90"
-                : "bg-primary text-white hover:bg-primary/90"
-            )}
-          >
-            <Link href="/login" role="menuitem" onClick={handleRouteNav}>
-              Sign in
-            </Link>
-          </Button>
           <Button variant="accent" asChild className="h-12 w-full rounded-xl">
-            <Link href="/signup" role="menuitem" onClick={handleRouteNav}>
+            <Link href="/login" role="menuitem" onClick={handleRouteNav}>
               Get Started
             </Link>
           </Button>
