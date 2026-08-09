@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { HostedCheckoutFrame } from "@/components/payments/hosted-checkout-frame";
 import type { BillingPlan } from "@/types/database";
 import {
   DEFAULT_SLE_CHARGE_AMOUNTS,
@@ -29,7 +30,9 @@ import {
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { platformFetch } from "@/lib/api/fetch";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import { isLectraxPaymentReturnMessage } from "@/lib/payments/hosted-checkout-bridge";
 import { toClientAppPath } from "@/lib/pwa/config";
+import { cn } from "@/lib/utils";
 
 type CheckoutResponse =
   | { kind: "redirect"; checkoutUrl: string; paymentId: string }
@@ -138,15 +141,20 @@ export function PaymentCheckoutFlow({
   onPaymentComplete?: () => void;
   paymentMethodLogos?: Record<PaymentMethodLogoId, string | null>;
 }) {
-  const [step, setStep] = useState<"method" | "ussd">("method");
+  const [step, setStep] = useState<"method" | "ussd" | "hosted">("method");
   const [selectedMethod, setSelectedMethod] = useState<LectraxPaymentMethod | null>(null);
   const { isPending: loading, run } = useAsyncAction();
   const [error, setError] = useState<string | null>(null);
   const [ussdDetails, setUssdDetails] = useState<Extract<CheckoutResponse, { kind: "ussd" }> | null>(
     null
   );
+  const [hostedCheckout, setHostedCheckout] = useState<{
+    checkoutUrl: string;
+    paymentId: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [confirmingHosted, setConfirmingHosted] = useState(false);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -155,37 +163,67 @@ export function PaymentCheckoutFlow({
         setSelectedMethod(null);
         setError(null);
         setUssdDetails(null);
+        setHostedCheckout(null);
         setCopied(false);
         setPolling(false);
+        setConfirmingHosted(false);
       }
       onOpenChange(nextOpen);
     },
     [onOpenChange]
   );
 
+  const finishSuccessfulPayment = useCallback(() => {
+    setPolling(false);
+    setConfirmingHosted(false);
+    onPaymentComplete?.();
+    handleOpenChange(false);
+    window.location.href = toClientAppPath("/lecturer/subscription?success=1");
+  }, [onPaymentComplete, handleOpenChange]);
+
   useEffect(() => {
     preloadPaymentMethodLogos(paymentMethodLogos);
   }, [paymentMethodLogos]);
 
+  const activePaymentId = hostedCheckout?.paymentId ?? ussdDetails?.paymentId ?? null;
+
   useEffect(() => {
-    if (!ussdDetails || !polling) return;
+    if (!activePaymentId || !polling) return;
 
     const interval = window.setInterval(() => {
       void (async () => {
-        const res = await appFetch(`/api/payments/${ussdDetails.paymentId}/status`);
+        const res = await appFetch(`/api/payments/${activePaymentId}/status`);
         if (!res.ok) return;
         const data = (await res.json()) as { status?: string };
         if (data.status === "completed") {
-          setPolling(false);
-          onPaymentComplete?.();
-          handleOpenChange(false);
-          window.location.href = toClientAppPath("/lecturer/subscription?success=1");
+          finishSuccessfulPayment();
         }
       })();
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [ussdDetails, polling, handleOpenChange, onPaymentComplete]);
+  }, [activePaymentId, polling, finishSuccessfulPayment]);
+
+  useEffect(() => {
+    if (step !== "hosted") return;
+
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if (!isLectraxPaymentReturnMessage(event.data)) return;
+
+      if (event.data.outcome === "success") {
+        setConfirmingHosted(true);
+        finishSuccessfulPayment();
+        return;
+      }
+
+      handleOpenChange(false);
+      window.location.href = toClientAppPath("/lecturer/subscription?cancelled=1");
+    }
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [step, finishSuccessfulPayment, handleOpenChange]);
 
   function startCheckout() {
     if (!plan || !selectedMethod) return;
@@ -215,7 +253,12 @@ export function PaymentCheckoutFlow({
         const data = result.data;
 
         if (data.kind === "redirect" && data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
+          setHostedCheckout({
+            checkoutUrl: data.checkoutUrl,
+            paymentId: data.paymentId,
+          });
+          setStep("hosted");
+          setPolling(true);
           return;
         }
 
@@ -246,7 +289,12 @@ export function PaymentCheckoutFlow({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="gap-0 overflow-hidden p-0 md:max-w-[600px]"
+        className={cn(
+          "gap-0 overflow-hidden p-0",
+          step === "hosted"
+            ? "h-[100dvh] max-h-[100dvh] w-screen max-w-none rounded-none sm:w-screen sm:max-w-none sm:rounded-none"
+            : "md:max-w-[600px]"
+        )}
         onPointerDownOutside={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
       >
@@ -305,6 +353,13 @@ export function PaymentCheckoutFlow({
               </DialogFooter>
             </div>
           </>
+        ) : step === "hosted" && hostedCheckout ? (
+          <HostedCheckoutFrame
+            checkoutUrl={hostedCheckout.checkoutUrl}
+            confirming={confirmingHosted}
+            onClose={() => handleOpenChange(false)}
+            className="min-h-[min(90dvh,720px)]"
+          />
         ) : (
           <>
             <div className="shrink-0 border-b bg-background px-6 pb-4 pt-6 pr-12">

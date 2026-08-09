@@ -85,7 +85,8 @@ export function buildContentSecurityPolicy(nonce: string): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-src 'self' blob:",
+    // Monime hosted checkout is embedded in-app (PWA-safe; avoids system browser tabs).
+    "frame-src 'self' blob: https://*.monime.io",
     "frame-ancestors 'none'",
     `report-uri ${CSP_REPORT_PATH}`,
     `report-to ${CSP_REPORTING_ENDPOINT_NAME}`,

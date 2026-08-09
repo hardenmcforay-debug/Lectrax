@@ -36,10 +36,12 @@ import {
   type LectraxPaymentMethod,
 } from "@/lib/monime/payment-methods";
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
+import { HostedCheckoutFrame } from "@/components/payments/hosted-checkout-frame";
 import { platformFetch } from "@/lib/api/fetch";
 import { appFetch } from "@/lib/api/client-fetch";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import { isLectraxPaymentReturnMessage } from "@/lib/payments/hosted-checkout-bridge";
 import { cn } from "@/lib/utils";
 
 type CheckoutResponse =
@@ -69,7 +71,7 @@ type PaymentReceipt = {
   billingCycle: string;
 };
 
-type ModalView = "checkout" | "ussd" | "success" | "failed" | "cancelled";
+type ModalView = "checkout" | "ussd" | "hosted" | "success" | "failed" | "cancelled";
 
 const formInputClass =
   "h-11 rounded-xl border-slate-200 bg-white px-4 text-sm transition-all placeholder:text-slate-400 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
@@ -187,9 +189,14 @@ export function PartnershipPaymentModal({
   const [ussdDetails, setUssdDetails] = useState<Extract<CheckoutResponse, { kind: "ussd" }> | null>(
     null
   );
+  const [hostedCheckout, setHostedCheckout] = useState<{
+    checkoutUrl: string;
+    paymentId: string;
+  } | null>(null);
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(initialReceipt);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [confirmingHosted, setConfirmingHosted] = useState(false);
   const { isPending: loading, run } = useAsyncAction();
 
   const {
@@ -234,8 +241,10 @@ export function PartnershipPaymentModal({
         setSelectedMethod(null);
         setError(null);
         setUssdDetails(null);
+        setHostedCheckout(null);
         setCopied(false);
         setPolling(false);
+        setConfirmingHosted(false);
         setReceipt(null);
         reset();
       }
@@ -244,12 +253,14 @@ export function PartnershipPaymentModal({
     [onOpenChange, reset]
   );
 
+  const activePaymentId = hostedCheckout?.paymentId ?? ussdDetails?.paymentId ?? null;
+
   useEffect(() => {
-    if (!ussdDetails || !polling) return;
+    if (!activePaymentId || !polling) return;
 
     const interval = window.setInterval(() => {
       void (async () => {
-        const res = await appFetch(`/api/partnerships/payments/${ussdDetails.paymentId}/status`);
+        const res = await appFetch(`/api/partnerships/payments/${activePaymentId}/status`);
         if (!res.ok) return;
         const data = (await res.json()) as {
           status?: string;
@@ -257,17 +268,41 @@ export function PartnershipPaymentModal({
         };
         if (data.status === "completed") {
           setPolling(false);
+          setConfirmingHosted(false);
           if (data.payment) setReceipt(data.payment);
           setView("success");
         } else if (data.status === "failed") {
           setPolling(false);
+          setConfirmingHosted(false);
           setView("failed");
         }
       })();
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [ussdDetails, polling]);
+  }, [activePaymentId, polling]);
+
+  useEffect(() => {
+    if (view !== "hosted") return;
+
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if (!isLectraxPaymentReturnMessage(event.data)) return;
+
+      if (event.data.outcome === "success") {
+        setConfirmingHosted(true);
+        setPolling(true);
+        return;
+      }
+
+      setPolling(false);
+      setConfirmingHosted(false);
+      setView("cancelled");
+    }
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [view]);
 
   const processingFee = 0;
   const total = selectedPackage?.price ?? 0;
@@ -349,7 +384,12 @@ export function PartnershipPaymentModal({
         const data = result.data;
 
         if (data.kind === "redirect" && data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
+          setHostedCheckout({
+            checkoutUrl: data.checkoutUrl,
+            paymentId: data.paymentId,
+          });
+          setView("hosted");
+          setPolling(true);
           return;
         }
 
@@ -391,7 +431,12 @@ export function PartnershipPaymentModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="gap-0 overflow-hidden p-0 md:max-w-[640px]"
+        className={cn(
+          "gap-0 overflow-hidden p-0",
+          view === "hosted"
+            ? "h-[100dvh] max-h-[100dvh] w-screen max-w-none rounded-none sm:w-screen sm:max-w-none sm:rounded-none"
+            : "md:max-w-[640px]"
+        )}
         onPointerDownOutside={(event) => {
           if (loading || polling) event.preventDefault();
         }}
@@ -399,6 +444,15 @@ export function PartnershipPaymentModal({
           if (loading || polling) event.preventDefault();
         }}
       >
+        {view === "hosted" && hostedCheckout ? (
+          <HostedCheckoutFrame
+            checkoutUrl={hostedCheckout.checkoutUrl}
+            confirming={confirmingHosted}
+            onClose={() => handleOpenChange(false)}
+            className="min-h-[min(90dvh,720px)]"
+          />
+        ) : null}
+
         {view === "checkout" && selectedPackage && (
           <>
             <div className="shrink-0 border-b bg-background px-6 pb-4 pt-6 pr-12">
