@@ -98,14 +98,14 @@ export async function POST(request: Request) {
 
   try {
     const checkout = await createMonimeCustomCheckout({
-      name: `Lectrax Partnership — ${pkg.name}`,
+      name: `Lectrax Partnership - ${pkg.name}`,
       amountMajor: chargeAmount,
       paymentId: payment.id,
       paymentMethod: data.paymentMethod,
       customerName: data.contactPerson,
       successUrl: `${returnBase}?outcome=success&flow=partnership&paymentId=${payment.id}`,
       cancelUrl: `${returnBase}?outcome=cancelled&flow=partnership&paymentId=${payment.id}`,
-      idempotencyPrefix: "partnership-checkout",
+      idempotencyPrefix: "pship",
       metadata: {
         flow: "partnership",
         payment_id: payment.id,

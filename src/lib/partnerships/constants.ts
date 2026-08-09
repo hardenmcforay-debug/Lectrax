@@ -80,7 +80,6 @@ export const PARTNERSHIP_PAYMENT_PACKAGES = [
 /**
  * Default Monime charge amounts in SLE (major units).
  * Aligned to ~24 SLE per USD based on lecturer Premium pricing.
- * Override with MONIME_AMOUNT_PARTNERSHIP_SMALL / _MEDIUM / _LARGE.
  */
 export const DEFAULT_PARTNERSHIP_SLE_AMOUNTS: Record<PartnershipPackageId, number> = {
   small: 8400,

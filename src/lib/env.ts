@@ -57,14 +57,33 @@ export function isServiceRoleConfigured(): boolean {
   return !!readEnv("SUPABASE_SERVICE_ROLE_KEY");
 }
 
+/** Prefer HTTPS for public app URLs (payment return links reject plain HTTP). */
+function normalizePublicAppUrl(url: string): string {
+  const trimmed = url.replace(/\/$/, "");
+  try {
+    const parsed = new URL(trimmed);
+    const local =
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "127.0.0.1" ||
+      parsed.hostname === "::1";
+    if (!local && parsed.protocol === "http:") {
+      parsed.protocol = "https:";
+      return parsed.origin;
+    }
+  } catch {
+    // keep as-is
+  }
+  return trimmed;
+}
+
 /** Application base URL for redirects, webhooks, and email links. */
 export function getAppUrl(fallbackOrigin?: string): string {
   const configured = readEnv("NEXT_PUBLIC_APP_URL");
   if (configured) {
-    return configured.replace(/\/$/, "");
+    return normalizePublicAppUrl(configured);
   }
   if (fallbackOrigin) {
-    return fallbackOrigin.replace(/\/$/, "");
+    return normalizePublicAppUrl(fallbackOrigin);
   }
   if (process.env.NODE_ENV === "production") {
     throw new Error(

@@ -10,6 +10,7 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/monime/payment-methods";
 import type { BillingPlan } from "@/types/database";
 import { logAudit } from "@/lib/audit";
 import { getAppUrl } from "@/lib/env";
+import { billingPlanToSubscriptionPlan } from "@/lib/subscription/constants";
 import { requireSelfSubscribeAllowed, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import {
   apiDatabaseErrorResponse,
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     .insert({
       lecturer_id: user.id,
       amount: chargeAmount,
-      plan: "1_month",
+      plan: billingPlanToSubscriptionPlan(plan),
       billing_plan: plan,
       status: "pending",
       currency,
@@ -144,6 +145,17 @@ export async function POST(request: Request) {
     await service.from("payments").update({ status: "failed" }).eq("id", payment.id);
     if (isTransientError(e)) {
       return apiPaymentUnavailableResponse();
+    }
+    if (e instanceof Error && e.message.startsWith("Monime request failed:")) {
+      const detail = e.message.replace(/^Monime request failed:\s*/i, "").trim();
+      const safeDetail =
+        detail &&
+        detail.length < 180 &&
+        !detail.startsWith("{") &&
+        !/api[_-]?key|secret|token|bearer/i.test(detail)
+          ? detail
+          : "Could not start checkout with the payment provider. Please try again.";
+      return NextResponse.json({ error: safeDetail }, { status: 502 });
     }
     return handleApiRouteError("payments.checkout", e);
   }

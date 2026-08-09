@@ -30,6 +30,20 @@ function unwrapMonimeResult<T>(body: MonimeEnvelope<T>): T {
   return body as T;
 }
 
+function truncateIdempotencyKey(key: string): string {
+  // Monime Idempotency-Key maxLength is 64.
+  return key.length <= 64 ? key : key.slice(0, 64);
+}
+
+function pickCheckoutRedirectUrl(data: {
+  redirectUrl?: string;
+  redirect_url?: string;
+  url?: string;
+}): string {
+  const candidate = data.redirectUrl ?? data.redirect_url ?? data.url;
+  return typeof candidate === "string" ? candidate.trim() : "";
+}
+
 async function monimeFetch<T>(
   path: string,
   init: RequestInit,
@@ -48,7 +62,9 @@ async function monimeFetch<T>(
       "Content-Type": "application/json",
       "Monime-Space-Id": spaceId,
       "Monime-Version": MONIME_VERSION,
-      "Idempotency-Key": options?.idempotencyKey ?? randomUUID(),
+      "Idempotency-Key": truncateIdempotencyKey(
+        options?.idempotencyKey ?? randomUUID()
+      ),
       ...(init.headers ?? {}),
     },
   });
@@ -58,6 +74,7 @@ async function monimeFetch<T>(
   if (!response.ok || body.success === false) {
     const message =
       body.error?.message ??
+      body.error?.reason ??
       (typeof body === "object" ? JSON.stringify(body) : "Monime request failed");
     throw new Error(`Monime request failed: ${message}`);
   }
@@ -128,9 +145,18 @@ async function createCardCheckoutSession(
 ): Promise<MonimeCheckoutResult> {
   const currency = getMonimeCurrency();
   const amountMinor = toMonimeMinorUnits(params.amountMajor);
-  const prefix = params.idempotencyPrefix ?? "checkout";
+  const prefix = params.idempotencyPrefix ?? "cxs";
 
-  const data = await monimeFetch<{ id?: string; redirectUrl?: string }>(
+  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
+    throw new Error("Monime request failed: Invalid checkout amount");
+  }
+
+  const data = await monimeFetch<{
+    id?: string;
+    redirectUrl?: string;
+    redirect_url?: string;
+    url?: string;
+  }>(
     "/checkout-sessions",
     {
       method: "POST",
@@ -152,7 +178,7 @@ async function createCardCheckoutSession(
     { idempotencyKey: `${prefix}:${params.paymentId}` }
   );
 
-  const checkoutUrl = data.redirectUrl ?? "";
+  const checkoutUrl = pickCheckoutRedirectUrl(data);
   if (!data.id || !checkoutUrl) {
     throw new Error("Monime did not return a checkout URL for card payment");
   }
@@ -170,7 +196,11 @@ async function createMobileMoneyPaymentCode(
 
   const currency = getMonimeCurrency();
   const amountMinor = toMonimeMinorUnits(params.amountMajor);
-  const prefix = params.idempotencyPrefix ?? "payment-code";
+  const prefix = params.idempotencyPrefix ?? "pc";
+
+  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
+    throw new Error("Monime request failed: Invalid payment amount");
+  }
 
   const data = await monimeFetch<{ id?: string; ussdCode?: string }>(
     "/payment-codes",
@@ -178,12 +208,15 @@ async function createMobileMoneyPaymentCode(
       method: "POST",
       body: JSON.stringify({
         mode: "one_time",
+        enable: true,
         name: params.name,
         amount: { currency, value: amountMinor },
-        reference: params.paymentId,
+        reference: params.paymentId.slice(0, 64),
         duration: "30m",
         authorizedProviders: [method.providerId],
-        customer: params.customerName ? { name: params.customerName } : undefined,
+        customer: params.customerName
+          ? { name: params.customerName.slice(0, 100) }
+          : undefined,
         metadata: params.metadata,
       }),
     },
@@ -223,7 +256,8 @@ export async function createMonimeCheckout(params: MonimeCheckoutParams): Promis
   const amountMajor = getBillingChargeAmount(params.plan);
 
   return createMonimeCustomCheckout({
-    name: `Lectrax Premium — ${params.plan}`,
+    // ASCII hyphen — some payment gateways reject unicode dashes in session names.
+    name: `Lectrax Premium - ${params.plan}`,
     amountMajor,
     paymentId: params.paymentId,
     paymentMethod: params.paymentMethod,
