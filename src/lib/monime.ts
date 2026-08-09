@@ -140,7 +140,39 @@ function buildLecturerMetadata(params: MonimeCheckoutParams) {
   };
 }
 
-async function createCardCheckoutSession(
+function buildPaymentOptions(paymentMethod: LectraxPaymentMethod) {
+  const method = getPaymentMethodOption(paymentMethod);
+  if (!method) {
+    throw new Error("Unsupported payment method");
+  }
+
+  if (method.channel === "card") {
+    return {
+      card: { disable: false },
+      momo: { disable: true },
+      bank: { disable: true },
+      wallet: { disable: true },
+    };
+  }
+
+  if (!method.providerId) {
+    throw new Error("Invalid mobile money payment method");
+  }
+
+  // Use hosted Checkout Session for MoMo — Monime /payment-codes is currently failing
+  // with a Redis CROSSSLOT 500 on this space.
+  return {
+    card: { disable: true },
+    momo: {
+      disable: false,
+      enabledProviders: [method.providerId],
+    },
+    bank: { disable: true },
+    wallet: { disable: true },
+  };
+}
+
+async function createHostedCheckoutSession(
   params: MonimeCustomCheckoutParams
 ): Promise<MonimeCheckoutResult> {
   const currency = getMonimeCurrency();
@@ -167,12 +199,7 @@ async function createCardCheckoutSession(
         metadata: params.metadata,
         successUrl: params.successUrl,
         cancelUrl: params.cancelUrl,
-        paymentOptions: {
-          card: { disable: false },
-          momo: { disable: true },
-          bank: { disable: true },
-          wallet: { disable: true },
-        },
+        paymentOptions: buildPaymentOptions(params.paymentMethod),
       }),
     },
     { idempotencyKey: `${prefix}:${params.paymentId}` }
@@ -180,80 +207,20 @@ async function createCardCheckoutSession(
 
   const checkoutUrl = pickCheckoutRedirectUrl(data);
   if (!data.id || !checkoutUrl) {
-    throw new Error("Monime did not return a checkout URL for card payment");
+    throw new Error("Monime did not return a checkout URL");
   }
 
   return { kind: "redirect", id: data.id, checkoutUrl };
 }
 
-async function createMobileMoneyPaymentCode(
-  params: MonimeCustomCheckoutParams
-): Promise<MonimeCheckoutResult> {
-  const method = getPaymentMethodOption(params.paymentMethod);
-  if (!method?.providerId) {
-    throw new Error("Invalid mobile money payment method");
-  }
-
-  const currency = getMonimeCurrency();
-  const amountMinor = toMonimeMinorUnits(params.amountMajor);
-  const prefix = params.idempotencyPrefix ?? "pc";
-
-  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
-    throw new Error("Monime request failed: Invalid payment amount");
-  }
-
-  // Keep session name within Monime payment-code name maxLength (64).
-  const name = params.name.slice(0, 64);
-
-  const data = await monimeFetch<{ id?: string; ussdCode?: string }>(
-    "/payment-codes",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        mode: "one_time",
-        enable: true,
-        name,
-        amount: { currency, value: amountMinor },
-        reference: params.paymentId.slice(0, 64),
-        duration: "30m",
-        authorizedProviders: [method.providerId],
-        customer: params.customerName
-          ? { name: params.customerName.slice(0, 100) }
-          : undefined,
-        metadata: params.metadata,
-      }),
-    },
-    { idempotencyKey: `${prefix}:${params.paymentId}` }
-  );
-
-  if (!data.id || !data.ussdCode) {
-    throw new Error("Monime did not return a USSD payment code");
-  }
-
-  return {
-    kind: "ussd",
-    id: data.id,
-    ussdCode: data.ussdCode,
-    providerLabel: method.label,
-    amountMajor: params.amountMajor,
-    currency,
-  };
-}
-
 export async function createMonimeCustomCheckout(
   params: MonimeCustomCheckoutParams
 ): Promise<MonimeCheckoutResult> {
-  const method = getPaymentMethodOption(params.paymentMethod);
-  if (!method) {
+  if (!getPaymentMethodOption(params.paymentMethod)) {
     throw new Error("Unsupported payment method");
   }
 
-  if (method.channel === "card") {
-    return createCardCheckoutSession(params);
-  }
-
-  // Mobile money stays in-app: Monime returns a USSD dial code (no redirect).
-  return createMobileMoneyPaymentCode(params);
+  return createHostedCheckoutSession(params);
 }
 
 export async function createMonimeCheckout(params: MonimeCheckoutParams): Promise<MonimeCheckoutResult> {
