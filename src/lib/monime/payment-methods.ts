@@ -14,14 +14,14 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   {
     id: "orange_money",
     label: "Orange Money",
-    description: "Pay with Orange Money on Monime checkout",
+    description: "Pay with Orange Money via USSD on your phone",
     channel: "momo",
     providerId: "m17",
   },
   {
     id: "afrimoney",
     label: "Afrimoney",
-    description: "Pay with Afrimoney on Monime checkout",
+    description: "Pay with Afrimoney via USSD on your phone",
     channel: "momo",
     providerId: "m18",
   },
