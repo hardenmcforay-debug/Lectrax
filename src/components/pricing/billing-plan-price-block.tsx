@@ -29,7 +29,7 @@ export function BillingPlanPriceBlock({
     <div className={cn("flex flex-col gap-1", alignClass, className)}>
       {hasDiscount ? (
         <span className="inline-flex w-fit rounded-md bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent sm:text-xs">
-          Save {formatDiscountPercent(pricing.discountPercent)}
+          Discount {formatDiscountPercent(pricing.discountPercent)}
         </span>
       ) : null}
       {hasDiscount ? (
