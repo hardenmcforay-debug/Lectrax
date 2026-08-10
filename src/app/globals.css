@@ -141,7 +141,18 @@ body {
 
 .auth-form-panel {
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .auth-form-content:has(.auth-signup) {
+    max-width: 34rem;
+  }
+
+  .auth-signup .auth-form-header h2 {
+    font-size: 1.35rem;
+  }
 }
 
 .auth-illustration-wrap {
