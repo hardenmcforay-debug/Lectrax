@@ -5,43 +5,65 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 import {
-  BarChart3,
-  Bell,
-  Calendar,
   CircleCheckBig,
+  ClipboardCheck,
   ClipboardList,
-  FileText,
-  GraduationCap,
+  Clock,
   QrCode,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
 type FloatingIcon = {
   icon: ComponentType<{ className?: string }>;
+  label: string;
   className: string;
   delay: number;
 };
 
 const FLOATING_ICONS: FloatingIcon[] = [
-  { icon: QrCode, className: "left-[2%] top-[8%]", delay: 0 },
-  { icon: CircleCheckBig, className: "right-[4%] top-[12%]", delay: 0.4 },
-  { icon: FileText, className: "right-[0%] top-[42%]", delay: 0.8 },
-  { icon: BarChart3, className: "left-[-2%] top-[48%]", delay: 1.2 },
-  { icon: Calendar, className: "left-[8%] bottom-[14%]", delay: 0.6 },
-  { icon: GraduationCap, className: "right-[10%] bottom-[18%]", delay: 1 },
-  { icon: Bell, className: "right-[22%] top-[2%]", delay: 1.4 },
-  { icon: Users, className: "left-[18%] top-[2%]", delay: 0.2 },
+  {
+    icon: Clock,
+    label: "Saves Time",
+    className: "left-[-2%] top-[4%]",
+    delay: 0,
+  },
+  {
+    icon: ShieldCheck,
+    label: "Reduces Administrative Work",
+    className: "right-[-4%] top-[6%]",
+    delay: 0.35,
+  },
+  {
+    icon: CircleCheckBig,
+    label: "Improves Record Accuracy",
+    className: "right-[-6%] top-[44%]",
+    delay: 0.7,
+  },
+  {
+    icon: ClipboardCheck,
+    label: "Simplifies Assessment Tracking",
+    className: "left-[-4%] bottom-[16%]",
+    delay: 1.05,
+  },
+  {
+    icon: Users,
+    label: "Enhances Student Engagement",
+    className: "right-[2%] bottom-[10%]",
+    delay: 1.4,
+  },
 ];
 
 function FloatingBadge({
   icon: Icon,
+  label,
   className,
   delay,
   enableMotion,
 }: FloatingIcon & { enableMotion: boolean }) {
   return (
     <motion.div
-      className={`absolute z-30 flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/25 bg-white/10 shadow-lg backdrop-blur-md sm:h-12 sm:w-12 ${className}`}
+      className={`absolute z-30 flex w-[5.75rem] flex-col items-center gap-1.5 sm:w-[6.5rem] ${className}`}
       // Visible immediately — float only after mount so hero paint is not delayed.
       initial={false}
       animate={
@@ -57,7 +79,12 @@ function FloatingBadge({
           : { duration: 0 }
       }
     >
-      <Icon className="h-5 w-5 text-cyan-200" />
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/25 bg-white/10 shadow-lg backdrop-blur-md sm:h-12 sm:w-12">
+        <Icon className="h-5 w-5 text-cyan-200" aria-hidden />
+      </div>
+      <span className="text-center text-[9px] font-semibold leading-tight text-cyan-50/95 sm:text-[10px]">
+        {label}
+      </span>
     </motion.div>
   );
 }
@@ -95,7 +122,7 @@ export function HeroVisual({ imageUrl }: HeroVisualProps) {
   return (
     <div className="hero-portal-stage relative mx-auto flex w-full max-w-xl items-center justify-center lg:max-w-none">
       {FLOATING_ICONS.map((item) => (
-        <FloatingBadge key={item.className} {...item} enableMotion={enableMotion} />
+        <FloatingBadge key={item.label} {...item} enableMotion={enableMotion} />
       ))}
 
       <div className="hero-portal relative aspect-[4/3] w-full max-w-[min(100%,32rem)]">

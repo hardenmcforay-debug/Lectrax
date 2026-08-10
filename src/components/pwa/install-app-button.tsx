@@ -44,7 +44,7 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
   }, [isHero]);
 
   const heroStyles =
-    "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-white/60 hover:bg-white/10";
+    "hero-install-btn inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/5 px-7 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-white/60 hover:bg-white/10";
 
   const defaultStyles =
     "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-7 text-sm font-semibold text-primary transition-colors hover:bg-primary/10";
@@ -104,7 +104,7 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
             <IosInstallButtonLabel />
           ) : (
             <>
-              <Download className="h-4 w-4" aria-hidden />
+              <Download className="hero-install-icon h-4 w-4" aria-hidden />
               Install App
             </>
           )}

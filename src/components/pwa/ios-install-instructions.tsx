@@ -75,7 +75,7 @@ export function IosInstallInstructions({ open, onOpenChange }: IosInstallInstruc
 export function IosInstallButtonLabel() {
   return (
     <>
-      <Download className="h-4 w-4" aria-hidden />
+      <Download className="hero-install-icon h-4 w-4" aria-hidden />
       Install {APP_NAME}
     </>
   );
