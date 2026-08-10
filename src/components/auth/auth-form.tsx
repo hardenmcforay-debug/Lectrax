@@ -234,16 +234,16 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <AuthCard>
-        <div className="auth-form-header mb-6 text-center">
-          <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
-            Welcome Back
-          </h2>
-          <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
-            Sign in to manage your academic workspace with Lectrax.
-          </p>
-        </div>
+      <div className="auth-form-header mb-5 text-center sm:mb-6">
+        <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
+          Welcome Back
+        </h2>
+        <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
+          Sign in to manage your academic workspace with Lectrax.
+        </p>
+      </div>
 
+      <AuthCard>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
           <div className="space-y-2">
             <Label htmlFor="identifier" className={authCardLabelClass}>
@@ -287,10 +287,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
-          <div className="flex flex-col items-center gap-3">
-            <Link href="/forgot-password" className={cn(authCardLinkClass, "text-sm")}>
-              Forgot password?
-            </Link>
+          <div className="flex items-center justify-between gap-3">
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
@@ -300,6 +297,9 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
               />
               <span className="text-sm text-slate-600">Remember me</span>
             </label>
+            <Link href="/forgot-password" className={cn(authCardLinkClass, "shrink-0 text-sm")}>
+              Forgot password?
+            </Link>
           </div>
 
           {info && (
@@ -316,19 +316,12 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
           </Button>
         </form>
 
-        <div className="mt-7 space-y-2 text-center">
-          <p className="text-sm text-slate-500">Don&apos;t have an account?</p>
-          <p>
-            <Link href="/signup?role=student" className={cn(authCardLinkClass, "text-sm")}>
-              Register as a Member
-            </Link>
-          </p>
-          <p>
-            <Link href="/partnerships" className={cn(authCardLinkClass, "text-sm")}>
-              Register an Organization
-            </Link>
-          </p>
-        </div>
+        <p className="mt-7 text-center text-sm text-slate-500">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className={authCardLinkClass}>
+            sign up
+          </Link>
+        </p>
       </AuthCard>
     </div>
   );
