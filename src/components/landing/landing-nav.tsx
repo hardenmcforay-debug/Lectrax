@@ -134,11 +134,8 @@ export function LandingNav() {
       document.documentElement.dataset.landingNav = mode;
       if (!header) return;
       header.dataset.navMode = mode;
-      if (mode === "solid") {
-        header.style.backgroundColor = "#ffffff";
-      } else {
-        header.style.removeProperty("background-color");
-      }
+      // Outer header stays transparent; the floating pill carries the fill.
+      header.style.removeProperty("background-color");
       header.classList.toggle("landing-nav--solid", mode === "solid");
       header.classList.toggle("landing-nav--hero", mode === "hero");
     };
@@ -219,20 +216,20 @@ export function LandingNav() {
     return cn(
       mobile
         ? "flex min-h-12 w-full items-center justify-between rounded-xl px-3 py-3 text-base font-medium transition-colors"
-        : "inline-flex items-center gap-1 text-sm font-medium transition-colors",
+        : "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-medium transition-colors",
       onHero
         ? active
-          ? "text-emerald-300"
+          ? "text-accent"
           : mobile
             ? "text-white/85 hover:bg-white/10"
-            : "text-white/90 hover:text-white"
+            : "text-white/90 hover:bg-white/10 hover:text-white"
         : active
           ? mobile
             ? "bg-primary/5 text-primary"
-            : "text-primary"
+            : "bg-primary/5 text-primary"
           : mobile
             ? "text-slate-800 hover:bg-slate-50"
-            : "text-slate-800 hover:text-primary"
+            : "text-slate-700 hover:bg-slate-100 hover:text-primary"
     );
   }
 
@@ -249,7 +246,7 @@ export function LandingNav() {
     }
 
     return cn(
-      "absolute left-1/2 top-full z-50 mt-3 w-64 -translate-x-1/2 overflow-hidden rounded-xl border py-2 shadow-lg",
+      "absolute left-1/2 top-full z-50 mt-3 w-64 -translate-x-1/2 overflow-hidden rounded-2xl border py-2 shadow-lg",
       transparent
         ? "border-white/15 bg-[#0B3D91]/95 text-white backdrop-blur-md"
         : "border-slate-200 bg-white text-slate-800"
@@ -265,7 +262,7 @@ export function LandingNav() {
         : "block px-4 py-2.5 text-sm font-medium transition-colors",
       onHero
         ? active
-          ? "bg-white/10 text-emerald-300"
+          ? "bg-white/10 text-accent"
           : mobile
             ? "text-white/80 hover:bg-white/10"
             : "text-white/90 hover:bg-white/10 hover:text-white"
@@ -351,93 +348,111 @@ export function LandingNav() {
     <header
       ref={headerRef}
       className={cn(
-        "landing-nav-safe top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300",
+        "landing-nav-safe top-0 left-0 right-0 z-50",
         isHome ? "fixed landing-nav-home" : "sticky",
         transparent ? "landing-nav--hero" : "landing-nav--solid"
       )}
       data-nav-mode={transparent ? "hero" : "solid"}
       aria-label="Site"
     >
-      <div className="landing-nav-inner mx-auto flex h-16 max-w-7xl items-center justify-between">
-        <Logo
-          iconWithBackground
-          variant={transparent ? "light" : "default"}
-        />
-
-        <nav
-          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex"
-          aria-label="Main"
-        >
-          {renderDesktopDropdown({
-            label: "Products",
-            open: productsOpen,
-            setOpen: (open) => {
-              setProductsOpen(open);
-              if (open) setCompanyOpen(false);
-            },
-            menuId: PRODUCTS_MENU_ID,
-            containerRef: productsRef,
-            active: isProductsActive(),
-            children: PRODUCT_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                role="menuitem"
-                onClick={handleRouteNav}
-                className={dropdownItemClass(false, pathname === link.href)}
-              >
-                {link.label}
-              </Link>
-            )),
-          })}
-
-          {renderDesktopDropdown({
-            label: "Company",
-            open: companyOpen,
-            setOpen: (open) => {
-              setCompanyOpen(open);
-              if (open) setProductsOpen(false);
-            },
-            menuId: COMPANY_MENU_ID,
-            containerRef: companyRef,
-            active: isCompanyActive(),
-            children: COMPANY_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                role="menuitem"
-                onClick={handleRouteNav}
-                className={dropdownItemClass(false, pathname === link.href)}
-              >
-                {link.label}
-              </Link>
-            )),
-          })}
-
-          {SECONDARY_LINKS.map((link) => renderNavLink(link))}
-        </nav>
-
-        <div className="hidden items-center gap-2 md:flex">
-          <Button variant="accent" className="rounded-xl" asChild>
-            <Link href="/login">Get Started</Link>
-          </Button>
-        </div>
-
-        <button
-          type="button"
+      <div className="landing-nav-inner">
+        <div
           className={cn(
-            "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:hidden",
-            transparent
-              ? "bg-white/10 text-white hover:bg-white/15"
-              : "landing-icon-bg text-slate-700 hover:bg-slate-100"
+            "landing-nav-pill",
+            transparent ? "landing-nav-pill--hero" : "landing-nav-pill--solid"
           )}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-          aria-haspopup="menu"
-          onClick={() => setMobileOpen((open) => !open)}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          <Logo
+            iconWithBackground
+            variant={transparent ? "light" : "default"}
+            className="shrink-0"
+            labelClassName="text-lg sm:text-xl"
+          />
+
+          <nav
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:gap-2 md:flex"
+            aria-label="Main"
+          >
+            {renderDesktopDropdown({
+              label: "Products",
+              open: productsOpen,
+              setOpen: (open) => {
+                setProductsOpen(open);
+                if (open) setCompanyOpen(false);
+              },
+              menuId: PRODUCTS_MENU_ID,
+              containerRef: productsRef,
+              active: isProductsActive(),
+              children: PRODUCT_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  role="menuitem"
+                  onClick={handleRouteNav}
+                  className={dropdownItemClass(false, pathname === link.href)}
+                >
+                  {link.label}
+                </Link>
+              )),
+            })}
+
+            {renderDesktopDropdown({
+              label: "Company",
+              open: companyOpen,
+              setOpen: (open) => {
+                setCompanyOpen(open);
+                if (open) setProductsOpen(false);
+              },
+              menuId: COMPANY_MENU_ID,
+              containerRef: companyRef,
+              active: isCompanyActive(),
+              children: COMPANY_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  role="menuitem"
+                  onClick={handleRouteNav}
+                  className={dropdownItemClass(false, pathname === link.href)}
+                >
+                  {link.label}
+                </Link>
+              )),
+            })}
+
+            {SECONDARY_LINKS.map((link) => renderNavLink(link))}
+          </nav>
+
+          <div className="ml-auto hidden items-center gap-2 md:flex">
+            <Button
+              variant="outline"
+              asChild
+              className={cn(
+                "h-10 rounded-full px-5 text-sm font-semibold",
+                transparent
+                  ? "border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 hover:text-primary"
+              )}
+            >
+              <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            className={cn(
+              "ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors md:hidden",
+              transparent
+                ? "bg-white/10 text-white hover:bg-white/15"
+                : "landing-icon-bg text-slate-700 hover:bg-slate-100"
+            )}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-haspopup="menu"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       <PortalMobileMenu
@@ -456,7 +471,7 @@ export function LandingNav() {
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
             className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+              "inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors",
               mobileMenuOnHero
                 ? "text-white/80 hover:bg-white/10"
                 : "text-muted-foreground hover:bg-slate-50"
@@ -543,9 +558,18 @@ export function LandingNav() {
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 px-1 py-3">
-          <Button variant="accent" asChild className="h-12 w-full rounded-xl">
+          <Button
+            variant="outline"
+            asChild
+            className={cn(
+              "h-12 w-full rounded-full text-base font-semibold",
+              mobileMenuOnHero
+                ? "border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                : "border-slate-300"
+            )}
+          >
             <Link href="/login" role="menuitem" onClick={handleRouteNav}>
-              Get Started
+              Sign In
             </Link>
           </Button>
         </div>

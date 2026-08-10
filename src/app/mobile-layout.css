@@ -438,20 +438,14 @@ html[data-portal-mobile="true"] .admin-portal-content {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Home hero: transparent over blue. Scrolled / inner pages: solid white bar. */
+/* Floating pill nav: header chrome stays transparent; the pill holds fill. */
 .landing-nav--hero,
 header[data-nav-mode="hero"],
-html[data-landing-nav="hero"] header.landing-nav-safe {
-  background-color: transparent;
-  background-image: none;
-  border-bottom: 1px solid transparent;
-  box-shadow: none;
-}
-
+html[data-landing-nav="hero"] header.landing-nav-safe,
 .landing-nav--solid,
 header[data-nav-mode="solid"],
 html[data-landing-nav="solid"] header.landing-nav-safe {
-  background-color: #ffffff !important;
+  background-color: transparent !important;
   background-image: none !important;
   border-bottom: 1px solid transparent;
   box-shadow: none;
@@ -459,52 +453,61 @@ html[data-landing-nav="solid"] header.landing-nav-safe {
   -webkit-backdrop-filter: none;
 }
 
-/*
-  CSS-only home nav fill on scroll. Avoid !important on the home hero state
-  so this animation can paint the white bar even if JS is delayed.
-*/
-@supports (animation-timeline: scroll()) {
-  header.landing-nav-safe.landing-nav-home:not([data-nav-mode="solid"]) {
-    animation: landing-nav-scroll-solid linear both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 24px;
-  }
-
-  @keyframes landing-nav-scroll-solid {
-    from {
-      background-color: transparent;
-      border-bottom-color: transparent;
-      box-shadow: none;
-    }
-    to {
-      background-color: #ffffff;
-      border-bottom-color: transparent;
-      box-shadow: none;
-    }
-  }
-}
-
 .landing-nav-inner {
-  padding-left: max(1rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
 }
 
 @media (min-width: 640px) {
+  .landing-nav-inner {
+    padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
   .landing-nav-inner {
     padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
     padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
   }
 }
 
-@media (min-width: 1024px) {
-  .landing-nav-inner {
-    padding-left: max(2rem, env(safe-area-inset-left, 0px));
-    padding-right: max(2rem, env(safe-area-inset-right, 0px));
-  }
+.landing-nav-pill {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 68rem;
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.landing-nav-pill--hero {
+  border-color: rgba(255, 255, 255, 0.16);
+  background-color: rgba(11, 61, 145, 0.88);
+  box-shadow: 0 10px 30px -12px rgba(8, 42, 102, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.landing-nav-pill--solid {
+  border-color: rgba(226, 232, 240, 0.95);
+  background-color: #ffffff;
+  box-shadow: 0 10px 28px -14px rgba(15, 23, 42, 0.22);
 }
 
 .landing-hero-safe {
-  padding-top: calc(6rem + env(safe-area-inset-top, 0px));
+  padding-top: calc(6.25rem + env(safe-area-inset-top, 0px));
 }
 
 /* PWA standalone portal overrides */
