@@ -315,12 +315,16 @@ html {
 
 .landing-feature-card-media {
   isolation: isolate;
-  background-color: #0b3d91;
+  background-color: transparent;
 }
 
 .landing-feature-card-image {
+  /* Keep slightly oversized so rounded top corners never show card/border hairlines. */
+  inset: -1px !important;
+  width: calc(100% + 2px) !important;
+  height: calc(100% + 2px) !important;
+  max-width: none !important;
   animation: landing-feature-image-zoom 14s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-  will-change: transform;
 }
 
 .landing-feature-card-overlay {
@@ -356,10 +360,10 @@ html {
 
 @keyframes landing-feature-image-zoom {
   from {
-    transform: scale(1);
+    transform: scale(1.03);
   }
   to {
-    transform: scale(1.06);
+    transform: scale(1.08);
   }
 }
 

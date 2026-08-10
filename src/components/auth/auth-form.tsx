@@ -258,7 +258,6 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
                 id="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="Phone number or email address"
                 className={cn(authCardInputClass, "pl-[3.75rem]")}
                 {...register("identifier")}
               />
@@ -279,7 +278,6 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
               <PasswordInput
                 id="password"
                 autoComplete="current-password"
-                placeholder="Enter your password"
                 className={cn(authCardInputClass, "pl-10")}
                 {...register("password")}
               />
@@ -601,7 +599,6 @@ export function SignupForm() {
               </AuthFieldIcon>
               <Input
                 id="fullName"
-                placeholder="John Doe"
                 className={cn(authCardInputClass, "pl-10")}
                 {...register("fullName")}
               />
@@ -624,7 +621,6 @@ export function SignupForm() {
                 id="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="+232 7612 **** or john@example.com"
                 className={cn(authCardInputClass, "pl-[3.75rem]")}
                 {...register("identifier")}
               />
@@ -645,7 +641,6 @@ export function SignupForm() {
                 </AuthFieldIcon>
                 <Input
                   id="collegeId"
-                  placeholder="Your student ID"
                   className={cn(authCardInputClass, "pl-10")}
                   {...register("collegeId")}
                 />
@@ -664,7 +659,6 @@ export function SignupForm() {
               <PasswordInput
                 id="password"
                 autoComplete="new-password"
-                placeholder="Create a strong password"
                 className={cn(authCardInputClass, "pl-10")}
                 {...register("password")}
               />
@@ -685,7 +679,6 @@ export function SignupForm() {
               <PasswordInput
                 id="confirmPassword"
                 autoComplete="new-password"
-                placeholder="Confirm your password"
                 className={cn(authCardInputClass, "pl-10")}
                 {...register("confirmPassword")}
               />

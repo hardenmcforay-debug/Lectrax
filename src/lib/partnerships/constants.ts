@@ -39,6 +39,7 @@ export const PARTNERSHIP_PAYMENT_PACKAGES = [
       "Continuous Assessment",
       "Assignment Management",
       "Performance Analytics",
+      "Audit Logs",
     ],
   },
   {
@@ -56,6 +57,7 @@ export const PARTNERSHIP_PAYMENT_PACKAGES = [
       "Continuous Assessment",
       "Assignment Management",
       "Performance Analytics",
+      "Audit Logs",
     ],
   },
   {
@@ -73,6 +75,7 @@ export const PARTNERSHIP_PAYMENT_PACKAGES = [
       "Continuous Assessment",
       "Assignment Management",
       "Performance Analytics",
+      "Audit Logs",
     ],
   },
 ] as const;
@@ -114,6 +117,7 @@ export const PARTNERSHIP_BENEFITS = [
   "Secure academic records",
   "Modern attendance and assessment tools",
   "Scalable for growing departments",
+  "Audit Logs",
 ];
 
 export const PARTNERSHIP_SUCCESS_MESSAGE =

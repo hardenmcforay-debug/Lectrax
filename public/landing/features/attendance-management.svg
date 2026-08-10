@@ -6,7 +6,6 @@
       <stop offset="1" stop-color="#1E5BB8"/>
     </linearGradient>
   </defs>
-  <rect x="120" y="80" width="560" height="340" rx="24" fill="white" fill-opacity="0.12"/>
   <rect x="160" y="120" width="200" height="200" rx="16" fill="white" fill-opacity="0.95"/>
   <rect x="184" y="144" width="152" height="152" rx="8" stroke="#0B3D91" stroke-width="4" stroke-dasharray="8 8" fill="#EEF4FF"/>
   <rect x="208" y="168" width="28" height="28" fill="#0B3D91"/><rect x="248" y="168" width="28" height="28" fill="#0B3D91"/>

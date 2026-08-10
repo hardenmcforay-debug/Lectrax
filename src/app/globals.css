@@ -205,10 +205,6 @@ body {
     max-height: none;
   }
 
-  .auth-form-marketing-copy {
-    display: none !important;
-  }
-
   .auth-form-panel {
     overflow-x: hidden;
     overflow-y: auto;
@@ -259,8 +255,7 @@ body {
     display: none !important;
   }
 
-  .auth-branding-panel,
-  .auth-form-marketing-copy {
+  .auth-branding-panel {
     display: none !important;
   }
 
@@ -312,8 +307,7 @@ body {
   }
 }
 
-html[data-pwa-standalone="true"] .auth-branding-panel,
-html[data-pwa-standalone="true"] .auth-form-marketing-copy {
+html[data-pwa-standalone="true"] .auth-branding-panel {
   display: none !important;
 }
 

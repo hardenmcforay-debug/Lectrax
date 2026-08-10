@@ -356,7 +356,7 @@ export function PricingPageContent({
             </p>
           </LandingReveal>
 
-          <LandingStagger className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <LandingStagger className="mx-auto mt-10 grid max-w-2xl gap-4 sm:grid-cols-2">
             {PAYMENT_METHOD_OPTIONS.map((method) => (
               <LandingStaggerItem
                 key={method.id}

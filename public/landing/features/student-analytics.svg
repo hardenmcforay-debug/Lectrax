@@ -6,7 +6,6 @@
       <stop offset="1" stop-color="#0B3D91"/>
     </linearGradient>
   </defs>
-  <rect x="90" y="65" width="620" height="370" rx="24" fill="white" fill-opacity="0.1"/>
   <rect x="130" y="105" width="280" height="140" rx="16" fill="white" fill-opacity="0.92"/>
   <path d="M160 205 L210 175 L260 190 L310 150 L360 165" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="210" cy="175" r="6" fill="#10B981"/>
