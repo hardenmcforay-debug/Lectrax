@@ -200,11 +200,6 @@ export function ProfileSettings({
               <User className="h-5 w-5 text-accent" />
               Profile
             </CardTitle>
-            <CardDescription>
-              {role === "student"
-                ? "Your college ID syncs automatically to every class you join."
-                : "Update your account details visible to students and the platform."}
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
@@ -263,9 +258,6 @@ export function ProfileSettings({
               <Mail className="h-5 w-5 text-accent" />
               Password recovery email
             </CardTitle>
-            <CardDescription>
-              Add or update the email address used for password reset links.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -311,7 +303,7 @@ export function ProfileSettings({
                   <p className="text-sm font-medium text-accent">Recovery email saved successfully.</p>
                 )}
                 <Button type="submit" variant="accent" loading={recoverySubmitting}>
-                  {recoverySubmitting ? "Saving..." : "Save settings"}
+                  {recoverySubmitting ? "Saving..." : "Save"}
                 </Button>
               </>
             ) : null}

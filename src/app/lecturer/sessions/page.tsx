@@ -19,7 +19,6 @@ export default async function SessionsPage() {
     <DashboardShell
       role="lecturer"
       title="Class Sessions"
-      description="Manage your class sessions, attendance, assignments, and assessments from a single academic workspace."
     >
       <div className="mb-6 flex justify-end">
         <Button asChild>

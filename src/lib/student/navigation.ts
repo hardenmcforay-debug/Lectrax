@@ -48,6 +48,9 @@ export const STUDENT_SETTINGS_HREF = "/student/settings";
 /** Longest matching href wins so `/student` is not active on `/student/join`. */
 export function getActiveStudentNavHref(pathname: string): string | null {
   const path = stripPwaScopePrefix(pathname);
+  if (path === STUDENT_SETTINGS_HREF || path.startsWith(`${STUDENT_SETTINGS_HREF}/`)) {
+    return STUDENT_SETTINGS_HREF;
+  }
   const hrefs = STUDENT_NAV_ITEMS.map((item) => item.href);
   const matches = hrefs.filter(
     (href) => path === href || path.startsWith(`${href}/`)

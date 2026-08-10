@@ -11,11 +11,7 @@ export default async function StudentAssignmentsPage() {
   const assignments = await getStudentAssignmentsList(user.id);
 
   return (
-    <DashboardShell
-      role="student"
-      title="Assignments"
-      description="View deadlines and submit your work"
-    >
+    <DashboardShell role="student" title="Assignments">
       <StudentAssignmentsList assignments={assignments} />
     </DashboardShell>
   );

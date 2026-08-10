@@ -10,22 +10,14 @@ export default async function StudentAcademicOverviewPage() {
 
   if (!data) {
     return (
-      <DashboardShell
-        role="student"
-        title="Academic Overview"
-        description="View your attendance and continuous assessment performance across all your class sessions."
-      >
+      <DashboardShell role="student" title="Academic Overview">
         <DataFetchError />
       </DashboardShell>
     );
   }
 
   return (
-    <DashboardShell
-      role="student"
-      title="Academic Overview"
-      description="View your attendance and continuous assessment performance across all your class sessions."
-    >
+    <DashboardShell role="student" title="Academic Overview">
       <AcademicOverviewView data={data} />
     </DashboardShell>
   );

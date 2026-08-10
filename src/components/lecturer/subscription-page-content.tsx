@@ -215,11 +215,7 @@ export function SubscriptionPageContent({
   const deletablePayments = payments.filter((p) => p.status !== "completed");
 
   return (
-    <DashboardShell
-      role="lecturer"
-      title="Subscription"
-      description="Manage your subscription, billing, and access to premium features designed to support your academic activities."
-    >
+    <DashboardShell role="lecturer" title="Subscription">
       {isAllowedPaymentCallbackFlag(searchParams.get("success")) && (
         <Badge variant="accent" className="mb-4">
           Payment successful! Your Lectrax Premium plan is activating…

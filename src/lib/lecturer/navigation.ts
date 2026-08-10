@@ -29,6 +29,9 @@ export const LECTURER_SETTINGS_HREF = "/lecturer/settings";
 /** Longest matching href wins so `/lecturer` is not active on nested routes. */
 export function getActiveLecturerNavHref(pathname: string): string | null {
   const path = stripPwaScopePrefix(pathname);
+  if (path === LECTURER_SETTINGS_HREF || path.startsWith(`${LECTURER_SETTINGS_HREF}/`)) {
+    return LECTURER_SETTINGS_HREF;
+  }
   const hrefs = LECTURER_NAV_ITEMS.map((item) => item.href);
   const matches = hrefs.filter(
     (href) => path === href || path.startsWith(`${href}/`)

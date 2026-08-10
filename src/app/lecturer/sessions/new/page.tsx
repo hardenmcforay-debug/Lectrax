@@ -7,11 +7,7 @@ export default function NewSessionPage() {
   const defaultAcademicYear = `${year}/${year + 1}`;
 
   return (
-    <DashboardShell
-      role="lecturer"
-      title="Create Class Session"
-      description="Create a class session and manage attendance, assignments, assessments, and student engagement from a single workspace."
-    >
+    <DashboardShell role="lecturer" title="Create Class Session">
       <div className="mb-4">
         <BackLink href="/lecturer/sessions" />
       </div>

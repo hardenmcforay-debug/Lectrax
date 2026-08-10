@@ -12,11 +12,7 @@ export default async function StudentSettingsPage() {
   const profile = await getProfileByUserId(user.id);
 
   return (
-    <DashboardShell
-      role="student"
-      title="Settings"
-      description="Manage your profile, account preferences, security settings, and platform experience from one place."
-    >
+    <DashboardShell role="student" title="Settings">
       <ProfileSettings
         role="student"
         initialProfile={buildProfileSettingsInitial(user, "student", profile)}

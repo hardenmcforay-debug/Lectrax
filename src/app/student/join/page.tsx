@@ -63,7 +63,7 @@ export default function JoinClassPage() {
   }
 
   return (
-    <DashboardShell role="student" title="Join Class" description="Enter the class session code provided by your lecturer.">
+    <DashboardShell role="student" title="Join Class">
       <div className="flex min-h-full items-center justify-center px-4">
         <Card className={`w-full max-w-md ${studentDashboardCardClass}`}>
         <CardHeader><CardTitle>Session Code</CardTitle></CardHeader>

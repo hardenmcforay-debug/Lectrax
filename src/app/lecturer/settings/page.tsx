@@ -12,11 +12,7 @@ export default async function LecturerSettingsPage() {
   const profile = await getProfileByUserId(user.id);
 
   return (
-    <DashboardShell
-      role="lecturer"
-      title="Settings"
-      description="Manage your profile, account preferences, security settings, and platform experience from one place."
-    >
+    <DashboardShell role="lecturer" title="Settings">
       <ProfileSettings
         role="lecturer"
         initialProfile={buildProfileSettingsInitial(user, "lecturer", profile)}
