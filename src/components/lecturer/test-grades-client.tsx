@@ -167,11 +167,6 @@ export function TestGradesClient({
             <Badge variant="secondary">Max score: {maxScore}</Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Enter or edit scores for all students, then click Save All.
-          </p>
-        </CardContent>
       </Card>
 
       <Card className={lecturerPortalCardClass}>

@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardList, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +30,15 @@ import {
   getDefaultTestTitle,
   getNextTestNumber,
 } from "@/lib/ca/test-columns";
+import {
+  canCreateTest as canCreateMoreTests,
+  getTestLimitReachedMessage,
+} from "@/lib/lecturer/test-limits";
 import { EMPTY_CA_WEIGHTS, type CAWeights } from "@/lib/ca/constants";
 import { CaWeightInput } from "@/components/lecturer/ca-weight-input";
 import { classTestSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import type { SubscriptionTier } from "@/lib/subscription/constants";
 
 interface CaStructurePanelProps {
   session: ClassSession;
@@ -41,6 +46,7 @@ interface CaStructurePanelProps {
   initialClassTests: ClassTestSummary[];
   initialWeights?: CAWeights;
   readOnly?: boolean;
+  subscriptionPlan?: SubscriptionTier;
   onWeightsChange?: (weights: CAWeights) => void;
   onCaConfigSaved?: (weights: CAWeights) => void;
 }
@@ -51,6 +57,7 @@ export function CaStructurePanel({
   initialClassTests,
   initialWeights,
   readOnly = false,
+  subscriptionPlan = "free",
   onWeightsChange,
   onCaConfigSaved,
 }: CaStructurePanelProps) {
@@ -98,10 +105,11 @@ export function CaStructurePanel({
 
   const activeTestCount = classTests.length;
   const nextTestNumber = useMemo(() => getNextTestNumber(activeTestCount), [activeTestCount]);
-  const canCreateTest = nextTestNumber !== null;
+  const withinPlanLimit = canCreateMoreTests(subscriptionPlan, activeTestCount);
+  const allowCreateTest = nextTestNumber !== null && withinPlanLimit;
 
   function openCreateDialog() {
-    if (!nextTestNumber) return;
+    if (!allowCreateTest || !nextTestNumber) return;
     setCreateError(null);
     setTestTitle(getDefaultTestTitle(nextTestNumber));
     setMaxScore(100);
@@ -181,7 +189,7 @@ export function CaStructurePanel({
     resetWeights.attendance + resetWeights.assignment + resetWeights.test;
 
   async function handleCreateTest() {
-    if (!nextTestNumber || creating) return;
+    if (!allowCreateTest || !nextTestNumber || creating) return;
     setCreateError(null);
 
     const parsed = classTestSchema.safeParse({
@@ -284,9 +292,6 @@ export function CaStructurePanel({
       <Card className={lecturerPortalCardClass}>
         <CardHeader>
           <CardTitle>CA Structure</CardTitle>
-          <CardDescription>
-            Set continuous assessment weights and create tests for manual score entry.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="grid gap-4 max-w-lg sm:grid-cols-3">
@@ -351,14 +356,19 @@ export function CaStructurePanel({
               <h3 className="text-base font-semibold">Create Test</h3>
               <Button
                 variant="accent"
-                disabled={!canCreateTest}
+                disabled={!allowCreateTest}
                 onClick={openCreateDialog}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {getCreateTestButtonLabel(nextTestNumber)}
+                {getCreateTestButtonLabel(allowCreateTest ? nextTestNumber : null)}
               </Button>
             </div>
 
+            {!withinPlanLimit && (
+              <p className="mt-4 text-sm text-destructive">
+                {getTestLimitReachedMessage(subscriptionPlan)}
+              </p>
+            )}
             {testActionMessage && (
               <p className="mt-4 text-sm text-green-700">{testActionMessage}</p>
             )}

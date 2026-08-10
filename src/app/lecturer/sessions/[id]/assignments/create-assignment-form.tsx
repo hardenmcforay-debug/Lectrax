@@ -126,7 +126,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
               rows={4}
               disabled={creating}
               maxLength={10000}
-              className="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -462,13 +462,6 @@ export function AssignmentGradesClient({
             <Badge variant="secondary">Max score: {maxScore}</Badge>
           </div>
         </CardHeader>
-
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Review student PDFs, enter grades for all enrolled students (including those
-            who did not submit), then optionally delete all submissions once marking is complete.
-          </p>
-        </CardContent>
       </Card>
 
       <Card className={lecturerPortalCardClass}>

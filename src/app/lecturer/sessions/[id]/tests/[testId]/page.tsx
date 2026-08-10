@@ -32,7 +32,6 @@ export default async function TestGradesPage({
     <DashboardShell
       role="lecturer"
       title="Enter test scores"
-      description="Enter and manage test scores while maintaining accurate student assessment records."
     >
       <div className="mb-4">
         <BackLink href={`/lecturer/sessions/${id}?tab=ca`} />

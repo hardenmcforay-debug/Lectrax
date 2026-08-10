@@ -102,7 +102,7 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
         >
           <>
             <Download className="hero-install-icon h-4 w-4" aria-hidden />
-            Download
+            Install app
           </>
         </button>
 

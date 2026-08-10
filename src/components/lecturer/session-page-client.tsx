@@ -469,8 +469,7 @@ export function SessionPageClient({
               <div className="sm:col-span-2 pt-2">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  variant="destructive"
                   onClick={() => {
                     setCloseSessionError(null);
                     setCloseSessionOpen(true);
@@ -771,10 +770,7 @@ export function SessionPageClient({
 
       <TabsContent value="assignments">
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Create new assignments or grade student submissions.
-            </p>
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <Button
               disabled={!canWrite}
               aria-disabled={!allowCreateAssignment}
@@ -896,6 +892,7 @@ export function SessionPageClient({
           initialWeights={initialCaWeights}
           initialClassTests={initialClassTests}
           readOnly={!canWrite}
+          subscriptionPlan={subscriptionPlan}
           onWeightsChange={handleCaWeightsChange}
           onCaConfigSaved={handleCaConfigSaved}
         />

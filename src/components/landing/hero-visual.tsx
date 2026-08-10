@@ -6,13 +6,13 @@ import { motion } from "framer-motion";
 import { useSafeReducedMotion } from "@/lib/hooks/use-safe-reduced-motion";
 import {
   BarChart3,
-  Bell,
-  Calendar,
   CircleCheckBig,
+  ClipboardCheck,
   ClipboardList,
-  FileText,
+  Clock,
   GraduationCap,
   QrCode,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -25,11 +25,11 @@ type FloatingIcon = {
 const FLOATING_ICONS: FloatingIcon[] = [
   { icon: QrCode, className: "left-[2%] top-[8%]", delay: 0 },
   { icon: CircleCheckBig, className: "right-[4%] top-[12%]", delay: 0.4 },
-  { icon: FileText, className: "right-[0%] top-[42%]", delay: 0.8 },
+  { icon: ClipboardCheck, className: "right-[0%] top-[42%]", delay: 0.8 },
   { icon: BarChart3, className: "left-[-2%] top-[48%]", delay: 1.2 },
-  { icon: Calendar, className: "left-[8%] bottom-[14%]", delay: 0.6 },
+  { icon: Clock, className: "left-[8%] bottom-[14%]", delay: 0.6 },
   { icon: GraduationCap, className: "right-[10%] bottom-[18%]", delay: 1 },
-  { icon: Bell, className: "right-[22%] top-[2%]", delay: 1.4 },
+  { icon: ShieldCheck, className: "right-[22%] top-[2%]", delay: 1.4 },
   { icon: Users, className: "left-[18%] top-[2%]", delay: 0.2 },
 ];
 

@@ -140,7 +140,6 @@ export default async function SessionDetailPage({
     <DashboardShell
       role="lecturer"
       title={`${session.course_code} — ${session.title}`}
-      description="Manage attendance, assignments, assessments, and student performance for this class session."
     >
       <div className="mb-4">
         <BackLink href="/lecturer/sessions" />

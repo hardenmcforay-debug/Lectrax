@@ -33,7 +33,6 @@ export default async function AssignmentGradesPage({
     <DashboardShell
       role="lecturer"
       title="Enter assignment grades"
-      description="Enter and manage assignment grades while maintaining accurate student assessment records."
     >
       <div className="mb-4">
         <BackLink href={`/lecturer/sessions/${id}?tab=assignments`} />

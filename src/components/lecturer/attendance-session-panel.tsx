@@ -769,9 +769,6 @@ export function AttendanceSessionPanel({
                     </SelectContent>
                   </Select>
                 </DeferredSelect>
-                <p className="text-xs text-muted-foreground">
-                  Choose how long students can check in. Default is 10 minutes.
-                </p>
               </div>
               <Button
                 onClick={() => void startAttendance()}
