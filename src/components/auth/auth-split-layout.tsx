@@ -31,7 +31,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
             </Link>
           )}
 
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto py-3 md:py-4">
+          <div className="auth-form-scroll flex min-h-0 flex-1 items-center justify-center overflow-y-auto py-3 md:py-4">
             <div className="auth-form-content mx-auto w-full min-w-0 max-w-[28.5rem]">
               {children}
             </div>

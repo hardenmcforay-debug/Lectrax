@@ -550,12 +550,12 @@ export function SignupForm() {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 auth-signup w-full">
-      <div className="auth-form-header mb-4 text-center md:mb-4">
+      <div className="auth-form-header mb-4 text-center md:mb-5">
         <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
-          Create Your Account
+          Create your account
         </h2>
         <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
-          Welcome to Lectrax. Create your account and start managing academic activities efficiently.
+          Get started with Lectrax and manage your academic workspace with ease.
         </p>
       </div>
 

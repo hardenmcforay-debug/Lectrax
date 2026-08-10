@@ -146,8 +146,19 @@ body {
 }
 
 @media (min-width: 768px) {
+  .auth-form-scroll:has(.auth-signup) {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 1.75rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .auth-signup .auth-form-header {
+    margin-bottom: 1.25rem;
+  }
+
   .auth-signup .auth-form-header h2 {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
   }
 }
 
