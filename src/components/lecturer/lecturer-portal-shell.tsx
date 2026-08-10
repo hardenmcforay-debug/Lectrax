@@ -38,14 +38,14 @@ export function LecturerPortalShell({
     !disableEnterAnimation ? "lecturer-header-enter portal-page-header" : "portal-page-header";
 
   const mobilePageDescription =
-    showHeader && description ? (
+    showHeader && description && !useGreetingHeader ? (
       <p className="portal-page-description lg:hidden">{description}</p>
     ) : null;
 
   const desktopHeaderContent =
     showHeader && title ? (
       useGreetingHeader ? (
-        <header className={cn(desktopHeaderClass, "hidden lg:block")}>
+        <header className={desktopHeaderClass}>
           <h1 className="text-xl font-semibold leading-tight text-foreground">{title}</h1>
           {description && (
             <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground sm:line-clamp-none sm:text-sm">

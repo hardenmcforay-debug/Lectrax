@@ -121,7 +121,6 @@ export function PartnershipInquiryForm({
             </Label>
             <Input
               id="universityName"
-              placeholder="University of Example"
               className={formInputClass}
               {...register("universityName")}
             />
@@ -136,7 +135,6 @@ export function PartnershipInquiryForm({
             </Label>
             <Input
               id="departmentName"
-              placeholder="Computer Science"
               className={formInputClass}
               {...register("departmentName")}
             />
@@ -151,7 +149,6 @@ export function PartnershipInquiryForm({
             </Label>
             <Input
               id="contactPerson"
-              placeholder="Dr. Jane Smith"
               className={formInputClass}
               {...register("contactPerson")}
             />
@@ -166,7 +163,6 @@ export function PartnershipInquiryForm({
             </Label>
             <Input
               id="positionRole"
-              placeholder="Head of Department"
               className={formInputClass}
               {...register("positionRole")}
             />
@@ -183,7 +179,6 @@ export function PartnershipInquiryForm({
               id="partnershipEmail"
               type="email"
               autoComplete="email"
-              placeholder="contact@university.edu"
               className={formInputClass}
               {...register("email")}
             />
@@ -198,7 +193,6 @@ export function PartnershipInquiryForm({
               id="phoneNumber"
               type="tel"
               autoComplete="tel"
-              placeholder="+232 74 567 *****"
               className={formInputClass}
               {...register("phoneNumber")}
             />
@@ -215,7 +209,6 @@ export function PartnershipInquiryForm({
               id="expectedLecturers"
               type="number"
               min={1}
-              placeholder="25"
               className={formInputClass}
               {...register("expectedLecturers")}
             />
@@ -228,14 +221,13 @@ export function PartnershipInquiryForm({
             <Label className={formLabelClass}>Selected Package</Label>
             <DeferredSelect
               placeholderLabel={
-                PARTNERSHIP_PACKAGES.find((pkg) => pkg.id === selectedPackage)?.name ??
-                "Select a package"
+                PARTNERSHIP_PACKAGES.find((pkg) => pkg.id === selectedPackage)?.name ?? ""
               }
               triggerClassName={formInputClass}
             >
               <Select value={selectedPackage} onValueChange={handlePackageSelect}>
                 <SelectTrigger className={formInputClass}>
-                  <SelectValue placeholder="Select a package" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {PARTNERSHIP_PACKAGES.map((pkg) => (
