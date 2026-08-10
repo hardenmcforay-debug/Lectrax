@@ -100,14 +100,10 @@ export function InstallAppButton({ className, variant = "default" }: InstallAppB
             className
           )}
         >
-          {isIOSInstallable ? (
-            <IosInstallButtonLabel />
-          ) : (
-            <>
-              <Download className="hero-install-icon h-4 w-4" aria-hidden />
-              Install App
-            </>
-          )}
+          <>
+            <Download className="hero-install-icon h-4 w-4" aria-hidden />
+            Download
+          </>
         </button>
 
         {isIOSInstallable && (
