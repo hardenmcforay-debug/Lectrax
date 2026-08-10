@@ -456,14 +456,15 @@ html[data-landing-nav="solid"] header.landing-nav-safe {
 .landing-nav-inner {
   padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
   padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
-  padding-top: 0.75rem;
-  padding-bottom: 0.25rem;
+  padding-top: 1.35rem;
+  padding-bottom: 0.35rem;
 }
 
 @media (min-width: 640px) {
   .landing-nav-inner {
     padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
     padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+    padding-top: 1.5rem;
   }
 }
 
@@ -471,6 +472,7 @@ html[data-landing-nav="solid"] header.landing-nav-safe {
   .landing-nav-inner {
     padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
     padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    padding-top: 1.65rem;
   }
 }
 
@@ -507,7 +509,20 @@ html[data-landing-nav="solid"] header.landing-nav-safe {
 }
 
 .landing-hero-safe {
-  padding-top: calc(6.25rem + env(safe-area-inset-top, 0px));
+  /* Clears floating pill nav (top offset + pill height) without crowding the hero. */
+  padding-top: calc(7.5rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 640px) {
+  .landing-hero-safe {
+    padding-top: calc(7.75rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-hero-safe {
+    padding-top: calc(8rem + env(safe-area-inset-top, 0px));
+  }
 }
 
 /* PWA standalone portal overrides */

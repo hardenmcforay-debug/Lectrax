@@ -57,8 +57,8 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
 
       <HeroBackground />
 
-      <div className="landing-hero-safe relative z-[1] mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pb-28 sm:px-6 sm:pb-32 lg:px-8">
-        <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
+      <div className="landing-hero-safe relative z-[1] mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pb-24 sm:px-6 sm:pb-28 lg:px-8 lg:pb-24">
+        <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className="order-1 hidden lg:block lg:order-none">
             <LandingHeroVisual imageUrl={heroImageUrl} />
           </div>
@@ -75,7 +75,7 @@ export function LandingHero({ heroImageUrl }: LandingHeroProps) {
 
             <LandingHeroFeatureHighlights />
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:mt-9 lg:justify-start">
               <Link
                 href="/login"
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-7 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-emerald-400 active:scale-[0.98]"
