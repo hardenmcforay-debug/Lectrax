@@ -550,16 +550,16 @@ export function SignupForm() {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <AuthCard>
-        <div className="auth-form-header mb-6 text-center">
-          <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
-            Create Your Account
-          </h2>
-          <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
-            Welcome to Lectrax. Create your account and start managing academic activities efficiently.
-          </p>
-        </div>
+      <div className="auth-form-header mb-5 text-center sm:mb-6">
+        <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
+          Create Your Account
+        </h2>
+        <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
+          Welcome to Lectrax. Create your account and start managing academic activities efficiently.
+        </p>
+      </div>
 
+      <AuthCard>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
           <div className="space-y-2">
             <Label className={authCardLabelClass}>Account type</Label>
