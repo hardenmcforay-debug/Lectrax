@@ -561,6 +561,16 @@ export function SignupForm() {
 
       <AuthCard className="md:p-7">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left md:space-y-3.5">
+          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
+
+          <Button
+            type="submit"
+            loading={isSubmitting || isRedirecting}
+            className={authCardButtonClass}
+          >
+            {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
+          </Button>
+
           <div className="space-y-1.5">
             <Label className={authCardLabelClass}>Account type</Label>
             <div className="relative">
@@ -591,53 +601,51 @@ export function SignupForm() {
             <input type="hidden" {...register("role")} />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 md:gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="fullName" className={authCardLabelClass}>
-                Full Name
-              </Label>
-              <div className="relative">
-                <AuthFieldIcon>
-                  <User className="h-4 w-4" strokeWidth={1.75} />
-                </AuthFieldIcon>
-                <Input
-                  id="fullName"
-                  placeholder="John Doe"
-                  className={cn(authCardInputClass, "pl-10")}
-                  {...register("fullName")}
-                />
-              </div>
-              {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName.message}</p>
-              )}
+          <div className="space-y-1.5">
+            <Label htmlFor="fullName" className={authCardLabelClass}>
+              Full Name
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <User className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <Input
+                id="fullName"
+                placeholder="John Doe"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("fullName")}
+              />
             </div>
+            {errors.fullName && (
+              <p className="text-sm text-destructive">{errors.fullName.message}</p>
+            )}
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="identifier" className={authCardLabelClass}>
-                Phone Number or Email
-              </Label>
-              <div className="relative">
-                <AuthFieldIcon wide>
-                  <Phone className="h-4 w-4" strokeWidth={1.75} />
-                  <Mail className="h-4 w-4" strokeWidth={1.75} />
-                </AuthFieldIcon>
-                <Input
-                  id="identifier"
-                  type="text"
-                  autoComplete="username"
-                  placeholder="+232 7612 **** or john@example.com"
-                  className={cn(authCardInputClass, "pl-[3.75rem]")}
-                  {...register("identifier")}
-                />
-              </div>
-              {errors.identifier && (
-                <p className="text-sm text-destructive">{errors.identifier.message}</p>
-              )}
+          <div className="space-y-1.5">
+            <Label htmlFor="identifier" className={authCardLabelClass}>
+              Phone Number or Email
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon wide>
+                <Phone className="h-4 w-4" strokeWidth={1.75} />
+                <Mail className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <Input
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                placeholder="+232 7612 **** or john@example.com"
+                className={cn(authCardInputClass, "pl-[3.75rem]")}
+                {...register("identifier")}
+              />
             </div>
+            {errors.identifier && (
+              <p className="text-sm text-destructive">{errors.identifier.message}</p>
+            )}
           </div>
 
           {role === "student" && (
-            <div className="space-y-1.5 md:max-w-[calc(50%-0.375rem)]">
+            <div className="space-y-1.5">
               <Label htmlFor="collegeId" className={authCardLabelClass}>
                 Student ID <span className="font-normal text-slate-400">(optional)</span>
               </Label>
@@ -655,60 +663,48 @@ export function SignupForm() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2 md:gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className={authCardLabelClass}>
-                Password
-              </Label>
-              <div className="relative">
-                <AuthFieldIcon>
-                  <Lock className="h-4 w-4" strokeWidth={1.75} />
-                </AuthFieldIcon>
-                <PasswordInput
-                  id="password"
-                  autoComplete="new-password"
-                  placeholder="Create a strong password"
-                  className={cn(authCardInputClass, "pl-10")}
-                  {...register("password")}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className={authCardLabelClass}>
+              Password
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <Lock className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <PasswordInput
+                id="password"
+                autoComplete="new-password"
+                placeholder="Create a strong password"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("password")}
+              />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className={authCardLabelClass}>
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <AuthFieldIcon>
-                  <Lock className="h-4 w-4" strokeWidth={1.75} />
-                </AuthFieldIcon>
-                <PasswordInput
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  placeholder="Confirm your password"
-                  className={cn(authCardInputClass, "pl-10")}
-                  {...register("confirmPassword")}
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
-              <p className="text-xs text-slate-400">Must be at least 8 characters</p>
-            </div>
+            {errors.password && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
           </div>
 
-          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
-
-          <Button
-            type="submit"
-            loading={isSubmitting || isRedirecting}
-            className={authCardButtonClass}
-          >
-            {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
-          </Button>
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword" className={authCardLabelClass}>
+              Confirm Password
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <Lock className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <PasswordInput
+                id="confirmPassword"
+                autoComplete="new-password"
+                placeholder="Confirm your password"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("confirmPassword")}
+              />
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+            )}
+            <p className="text-xs text-slate-400">Must be at least 8 characters</p>
+          </div>
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-500 md:mt-4">
