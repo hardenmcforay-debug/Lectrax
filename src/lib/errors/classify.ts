@@ -1,4 +1,5 @@
 import type { AuthError } from "@supabase/supabase-js";
+import type { AuthSurface } from "@/lib/auth/auth-surface";
 import type { ErrorCategory, PlatformError, PlatformErrorCode } from "@/lib/errors/types";
 import { getMessageForCode } from "@/lib/errors/messages";
 import { hasSupabaseAuthCookies as detectSupabaseAuthCookies } from "@/lib/security/cookies";
@@ -161,9 +162,10 @@ export function isBenignResizeObserverError(error: unknown): boolean {
 }
 
 export function hasSupabaseAuthCookies(
-  cookies: Array<{ name: string; value: string }>
+  cookies: Array<{ name: string; value?: string }>,
+  surface?: AuthSurface
 ): boolean {
-  return detectSupabaseAuthCookies(cookies);
+  return detectSupabaseAuthCookies(cookies, surface);
 }
 
 export function classifyFetchFailure(error: unknown, offline = false): PlatformError {

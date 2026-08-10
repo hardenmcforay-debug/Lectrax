@@ -80,12 +80,12 @@ export async function GET(request: Request) {
 
       const role = resolveUserRoleOrNull(profile?.role);
       if (!role) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         return NextResponse.redirect(getLoginFailureUrl(origin));
       }
 
       if (isMainAppDeployment() && role === "platform_admin") {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         return NextResponse.redirect(getPlatformAdminLoginRedirectUrl(origin));
       }
 

@@ -1,4 +1,6 @@
 import type { CookieOptions } from "@supabase/ssr";
+import type { AuthSurface } from "@/lib/auth/auth-surface";
+import { isPwaAuthCookieName } from "@/lib/auth/auth-surface";
 import { isProduction } from "@/lib/security/transport";
 
 /** Supabase SSR default session lifetime (~400 days). Documented for audits; not overridden. */
@@ -9,6 +11,16 @@ export function isSupabaseAuthCookieName(name: string): boolean {
   return (
     name.includes("-auth-token") || (name.startsWith("sb-") && name.includes("auth"))
   );
+}
+
+/** True when the cookie belongs to the given site vs PWA session namespace. */
+export function isSupabaseAuthCookieForSurface(
+  name: string,
+  surface: AuthSurface
+): boolean {
+  if (!isSupabaseAuthCookieName(name)) return false;
+  const isPwaCookie = isPwaAuthCookieName(name);
+  return surface === "pwa" ? isPwaCookie : !isPwaCookie;
 }
 
 /**
@@ -34,7 +46,12 @@ export function withSecureCookieOptions(options: CookieOptions = {}): CookieOpti
 }
 
 export function hasSupabaseAuthCookies(
-  cookies: Array<{ name: string; value?: string }>
+  cookies: Array<{ name: string; value?: string }>,
+  surface?: AuthSurface
 ): boolean {
-  return cookies.some((cookie) => isSupabaseAuthCookieName(cookie.name));
+  return cookies.some((cookie) =>
+    surface
+      ? isSupabaseAuthCookieForSurface(cookie.name, surface)
+      : isSupabaseAuthCookieName(cookie.name)
+  );
 }

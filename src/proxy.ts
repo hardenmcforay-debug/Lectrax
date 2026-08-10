@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  AUTH_SURFACE_HEADER,
+  PWA_SCOPED_HEADER,
+  parseAuthSurface,
+} from "@/lib/auth/auth-surface";
 import { updateSession } from "@/lib/supabase/middleware";
 import { rejectIfAbusiveRequest } from "@/lib/security/api-abuse";
 import { rejectIfCsrfViolation } from "@/lib/security/csrf";
@@ -25,10 +30,14 @@ export async function proxy(request: NextRequest) {
 
   const originalPath = request.nextUrl.pathname;
   const pwaScoped = isPwaScopePath(originalPath);
+  const headerSurface = parseAuthSurface(requestHeaders.get(AUTH_SURFACE_HEADER));
+  const authSurface = pwaScoped ? "pwa" : headerSurface ?? "site";
+
   if (pwaScoped) {
     // Let RSC layouts redirect to `/go/login` instead of bare `/login`.
-    requestHeaders.set("x-lectrax-pwa-scoped", "1");
+    requestHeaders.set(PWA_SCOPED_HEADER, "1");
   }
+  requestHeaders.set(AUTH_SURFACE_HEADER, authSurface);
 
   // /go/about → real /about (outside PWA scope → browser UI / not captured)
   if (pwaScoped) {
@@ -59,7 +68,10 @@ export async function proxy(request: NextRequest) {
     return applyCspHeaders(csrfResponse, nonce, cspMode);
   }
 
-  const response = await updateSession(observedRequest, { pwaScoped });
+  const response = await updateSession(observedRequest, {
+    pwaScoped,
+    authSurface,
+  });
 
   return applyCspHeaders(response, nonce, cspMode);
 }

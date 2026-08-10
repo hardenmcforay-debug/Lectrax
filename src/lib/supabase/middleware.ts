@@ -19,18 +19,26 @@ import {
 import { getRequiredApiRole, getRequiredPortalRole } from "@/lib/auth/route-protection";
 import { isUserRole, resolveUserRoleOrNull } from "@/lib/auth/roles";
 import {
-  hasSupabaseAuthCookies,
   isDefinitiveAuthError,
   isTransientDbError,
   isTransientError,
 } from "@/lib/errors/classify";
 import { getPublicSupabaseEnv } from "@/lib/env";
-import { withSecureCookieOptions } from "@/lib/security/cookies";
+import {
+  getSupabaseAuthStorageKey,
+  type AuthSurface,
+} from "@/lib/auth/auth-surface";
+import {
+  hasSupabaseAuthCookies,
+  withSecureCookieOptions,
+} from "@/lib/security/cookies";
 import { toPwaScopePath } from "@/lib/pwa/scope";
 
 export type UpdateSessionOptions = {
   /** Browser URL is under `/go/*` (installed PWA scope). */
   pwaScoped?: boolean;
+  /** Explicit auth cookie namespace (defaults from `pwaScoped`). */
+  authSurface?: AuthSurface;
 };
 
 /** Preserve Set-Cookie headers from the Supabase response onto a redirect/JSON response. */
@@ -83,6 +91,8 @@ export async function updateSession(
   options: UpdateSessionOptions = {}
 ) {
   const pwaScoped = Boolean(options.pwaScoped);
+  const authSurface: AuthSurface =
+    options.authSurface ?? (pwaScoped ? "pwa" : "site");
 
   // Forward request headers (incl. x-nonce / CSP) into the RSC render pipeline.
   let supabaseResponse = continueResponse(request, pwaScoped);
@@ -105,6 +115,11 @@ export async function updateSession(
     url,
     anonKey,
     {
+      cookieOptions: {
+        name: getSupabaseAuthStorageKey(url, authSurface),
+        path: "/",
+        sameSite: "lax",
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -176,7 +191,10 @@ export async function updateSession(
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron");
 
-  const hasAuthCookies = hasSupabaseAuthCookies(request.cookies.getAll());
+  const hasAuthCookies = hasSupabaseAuthCookies(
+    request.cookies.getAll(),
+    authSurface
+  );
 
   const {
     data: { user },
@@ -279,7 +297,8 @@ export async function updateSession(
     const roleHome = getRoleHomeUrl(role, request.nextUrl.origin);
 
     if (isMainAppDeployment() && role === "platform_admin") {
-      await supabase.auth.signOut();
+      // Local only — do not revoke refresh tokens used by the other surface.
+      await supabase.auth.signOut({ scope: "local" });
       return withSessionCookies(
         supabaseResponse,
         NextResponse.redirect(getPlatformAdminLoginRedirectUrl(request.nextUrl.origin))

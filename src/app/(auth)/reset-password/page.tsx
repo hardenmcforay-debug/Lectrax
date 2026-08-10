@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
       clearClientStorageAfterAuthReset();
       setSaved(true);
       router.replace("/login?message=password-updated");
@@ -174,7 +174,7 @@ export default function ResetPasswordPage() {
           {saved ? (
             <p className="text-sm text-accent">Password updated. Redirecting to sign in...</p>
           ) : sessionStatus === "checking" ? (
-            <p className="text-sm text-muted-foreground">Validating your reset link…</p>
+            <p className="text-sm text-muted-foreground">Validating your reset linkâ€¦</p>
           ) : sessionStatus === "expired" ? (
             <div className="space-y-4">
               {error && <AuthErrorNotice error={error} />}

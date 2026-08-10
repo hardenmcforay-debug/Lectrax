@@ -17,10 +17,11 @@ export function isCsrfExemptPath(pathname: string): boolean {
 }
 
 export function isSameOriginAppApiUrl(url: string): boolean {
-  if (url.startsWith("/api/")) return true;
+  if (url.startsWith("/api/") || url.startsWith("/go/api/")) return true;
   try {
     const parsed = new URL(url, "http://localhost");
-    return parsed.pathname.startsWith("/api/");
+    const path = parsed.pathname;
+    return path.startsWith("/api/") || path.startsWith("/go/api/");
   } catch {
     return false;
   }

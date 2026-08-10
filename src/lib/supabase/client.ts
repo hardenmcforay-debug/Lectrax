@@ -1,10 +1,21 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getClientAuthSurface,
+  getSupabaseAuthStorageKey,
+  type AuthSurface,
+} from "@/lib/auth/auth-surface";
 import { getPublicSupabaseAnonKey, getPublicSupabaseUrl } from "@/lib/env/public";
 
 const CONFIG_ERROR =
   "Authentication is unavailable because the app is misconfigured. Please contact support.";
 
-export function createClient() {
+const clientsBySurface = new Map<AuthSurface, SupabaseClient>();
+
+export function createClient(surface: AuthSurface = getClientAuthSurface()) {
+  const cached = clientsBySurface.get(surface);
+  if (cached) return cached;
+
   const url = getPublicSupabaseUrl();
   const anonKey = getPublicSupabaseAnonKey();
 
@@ -12,7 +23,17 @@ export function createClient() {
     throw new Error(CONFIG_ERROR);
   }
 
-  return createBrowserClient(url, anonKey);
+  const client = createBrowserClient(url, anonKey, {
+    isSingleton: false,
+    cookieOptions: {
+      name: getSupabaseAuthStorageKey(url, surface),
+      path: "/",
+      sameSite: "lax",
+    },
+  });
+
+  clientsBySurface.set(surface, client);
+  return client;
 }
 
 export function getSupabaseConfigError(): string | null {

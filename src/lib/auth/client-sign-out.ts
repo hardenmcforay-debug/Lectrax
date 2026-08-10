@@ -13,7 +13,8 @@ export async function signOutAndClearClientStorage(options?: {
   redirectTo?: string | null;
 }): Promise<void> {
   const supabase = createClient();
-  await supabase.auth.signOut();
+  // Local scope keeps the other surface (site vs PWA) signed in.
+  await supabase.auth.signOut({ scope: "local" });
   clearSensitiveClientStorage();
   resetInMemoryAuthState();
 

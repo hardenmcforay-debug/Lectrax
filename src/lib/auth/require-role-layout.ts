@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { PWA_SCOPED_HEADER } from "@/lib/auth/auth-surface";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getRoleHomeUrl } from "@/lib/auth/admin-deployment";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
@@ -21,7 +22,7 @@ function scopeAppHref(href: string, pwaScoped: boolean): string {
 
 export async function requireRoleLayout(requiredRole: UserRole): Promise<RoleLayoutGuardResult> {
   const headerStore = await headers();
-  const pwaScoped = headerStore.get("x-lectrax-pwa-scoped") === "1";
+  const pwaScoped = headerStore.get(PWA_SCOPED_HEADER) === "1";
   const auth = await getCachedAuthUser();
 
   if (auth.status === "service_unavailable") {

@@ -1,4 +1,9 @@
 import {
+  AUTH_SURFACE_HEADER,
+  getClientAuthSurface,
+  toAuthSurfaceApiUrl,
+} from "@/lib/auth/auth-surface";
+import {
   getAdaptiveFetchTimeoutMs,
   readConnectionQuality,
   reportNetworkSample,
@@ -39,10 +44,13 @@ export function uploadFormDataWithProgress(
     const xhr = new XMLHttpRequest();
     const startedAt = performance.now();
     const elapsedMs = () => Math.round(performance.now() - startedAt);
+    const surface = getClientAuthSurface();
+    const surfaceUrl = toAuthSurfaceApiUrl(url, surface);
 
-    xhr.open("POST", url);
+    xhr.open("POST", surfaceUrl);
     xhr.withCredentials = true;
     xhr.timeout = timeoutMs;
+    xhr.setRequestHeader(AUTH_SURFACE_HEADER, surface);
 
     for (const [key, value] of Object.entries(getCsrfRequestHeaders())) {
       xhr.setRequestHeader(key, value);

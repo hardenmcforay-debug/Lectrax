@@ -1,4 +1,9 @@
 import {
+  AUTH_SURFACE_HEADER,
+  getClientAuthSurface,
+  toAuthSurfaceApiUrl,
+} from "@/lib/auth/auth-surface";
+import {
   classifyApiResponse,
   classifyFetchFailure,
   createPlatformError,
@@ -44,7 +49,8 @@ async function fetchWithTimeout(
   }, timeoutMs);
 
   const method = (init.method ?? "GET").toUpperCase();
-  const url =
+  const surface = getClientAuthSurface();
+  const rawUrl =
     typeof input === "string"
       ? input
       : input instanceof URL
@@ -52,9 +58,13 @@ async function fetchWithTimeout(
         : input instanceof Request
           ? input.url
           : String(input);
+  const url = toAuthSurfaceApiUrl(rawUrl, surface);
 
   const headers = new Headers(init.headers);
   const isAppApi = isSameOriginAppApiUrl(url);
+  if (isAppApi) {
+    headers.set(AUTH_SURFACE_HEADER, surface);
+  }
 
   if (isAppApi && isMutationMethod(method)) {
     for (const [key, value] of Object.entries(getCsrfRequestHeaders())) {
@@ -62,8 +72,11 @@ async function fetchWithTimeout(
     }
   }
 
+  const fetchInput: RequestInfo | URL =
+    typeof input === "string" || input instanceof URL ? url : input;
+
   try {
-    return await fetch(input, {
+    return await fetch(fetchInput, {
       ...init,
       credentials: init.credentials ?? (isAppApi ? "include" : "same-origin"),
       headers,

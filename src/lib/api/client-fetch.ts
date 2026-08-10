@@ -3,6 +3,11 @@ import {
   dedupeInFlightGetRequest,
 } from "@/lib/api/in-flight-dedup";
 import {
+  AUTH_SURFACE_HEADER,
+  getClientAuthSurface,
+  toAuthSurfaceApiUrl,
+} from "@/lib/auth/auth-surface";
+import {
   getAdaptiveFetchTimeoutMs,
   readConnectionQuality,
   reportNetworkSample,
@@ -98,18 +103,24 @@ async function fetchWithTimeout(
 /**
  * Browser fetch for Lectrax same-origin API routes.
  * Sends session cookies and CSRF headers on mutating requests.
+ * PWA calls are routed through `/go/api/*` so they use the PWA auth cookie jar.
  */
 export async function appFetch(
   input: RequestInfo | URL,
   init: AppFetchInit = {}
 ): Promise<Response> {
   const method = (init.method ?? "GET").toUpperCase();
-  const url = resolveUrl(input);
+  const surface = getClientAuthSurface();
+  const resolved = resolveUrl(input);
+  const url = toAuthSurfaceApiUrl(resolved, surface);
   const isAppApi = isSameOriginAppApiUrl(url);
   const isSafeRead = method === "GET" || method === "HEAD";
   const shouldDedupe = init.dedupe ?? (isAppApi && isSafeRead && init.cache !== "no-store");
 
   const headers = new Headers(init.headers);
+  if (isAppApi) {
+    headers.set(AUTH_SURFACE_HEADER, surface);
+  }
 
   if (isAppApi && isMutationMethod(method)) {
     for (const [key, value] of Object.entries(getCsrfRequestHeaders())) {
@@ -133,7 +144,9 @@ export async function appFetch(
 
   // Only measure same-origin app API calls — avoid noise from analytics/CDN/assets.
   const reportSample = isAppApi;
-  const execute = () => fetchWithTimeout(input, requestInit, timeoutMs, reportSample);
+  const fetchInput: RequestInfo | URL =
+    typeof input === "string" || input instanceof URL ? url : input;
+  const execute = () => fetchWithTimeout(fetchInput, requestInit, timeoutMs, reportSample);
 
   if (shouldDedupe) {
     const key = buildInFlightRequestKey(method, url);
@@ -144,4 +157,3 @@ export async function appFetch(
 }
 
 export { DEFAULT_TIMEOUT_MS as APP_FETCH_DEFAULT_TIMEOUT_MS };
-

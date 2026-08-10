@@ -138,7 +138,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
         const body = (await loginResponse.json().catch(() => null)) as { error?: string } | null;
         try {
           const client = createClient();
-          await client.auth.signOut();
+          await client.auth.signOut({ scope: "local" });
         } catch {
           // Ignore sign-out errors after a failed login attempt.
         }
@@ -164,7 +164,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
       const { data: authData, error: sessionError } = await supabase.auth.getUser();
 
       if (sessionError || !authData.user) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage(
@@ -178,7 +178,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
       const user = authData.user;
       if (!user) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage("Sign In Failed", "Sign in failed. Please try again.", true)
@@ -189,7 +189,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
       const { role, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
       if (!role) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
         setError(
           networkFailure
@@ -204,7 +204,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
       }
 
       if (adminOnly && role !== "platform_admin") {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage(
@@ -217,7 +217,7 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
       }
 
       if (!adminOnly && role === "platform_admin") {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
         setError(
           toAuthMessage("Access Denied", getPlatformAdminMainAppLoginDeniedMessage(), false)
@@ -505,7 +505,7 @@ export function SignupForm() {
         const { role: resolvedRole, networkFailure } = await resolveClientRoleAfterAuth(supabase);
 
         if (!resolvedRole) {
-          await supabase.auth.signOut();
+          await supabase.auth.signOut({ scope: "local" });
         clearClientStorageAfterAuthReset();
           setError(
             networkFailure
