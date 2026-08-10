@@ -561,16 +561,6 @@ export function SignupForm() {
 
       <AuthCard className="md:p-7">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left md:space-y-3.5">
-          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
-
-          <Button
-            type="submit"
-            loading={isSubmitting || isRedirecting}
-            className={authCardButtonClass}
-          >
-            {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
-          </Button>
-
           <div className="space-y-1.5">
             <Label className={authCardLabelClass}>Account type</Label>
             <div className="relative">
@@ -705,6 +695,16 @@ export function SignupForm() {
             )}
             <p className="text-xs text-slate-400">Must be at least 8 characters</p>
           </div>
+
+          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
+
+          <Button
+            type="submit"
+            loading={isSubmitting || isRedirecting}
+            className={authCardButtonClass}
+          >
+            {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
+          </Button>
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-500 md:mt-4">
