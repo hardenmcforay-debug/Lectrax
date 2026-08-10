@@ -216,7 +216,7 @@ body {
 
   .auth-form-content {
     width: 100%;
-    max-width: min(100%, 22rem);
+    max-width: min(100%, 28.5rem);
   }
 
   .auth-form-content .auth-form-header {
@@ -282,7 +282,7 @@ body {
   }
 
   .auth-form-content {
-    max-width: 24rem;
+    max-width: 28.5rem;
   }
 
   .auth-form-content .auth-form-header {
@@ -339,7 +339,7 @@ html[data-pwa-standalone="true"] .auth-back-link {
 }
 
 html[data-pwa-standalone="true"] .auth-form-content {
-  max-width: 24rem;
+  max-width: 28.5rem;
 }
 
 html[data-pwa-standalone="true"] .auth-form-content .auth-form-header {

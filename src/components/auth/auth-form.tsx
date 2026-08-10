@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zod-resolver";
+import { IdCard, Lock, Mail, Phone, User, UsersRound } from "lucide-react";
 import { createClient, getSupabaseConfigError } from "@/lib/supabase/client";
 import { loginSchema, signupSchema, type LoginInput, type SignupInput } from "@/lib/validations";
 import { buildPhoneAuthEmail, parseSignupIdentifier } from "@/lib/auth/phone-number";
@@ -16,6 +17,14 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeferredSelect } from "@/components/shared/deferred-select";
+import {
+  AuthCard,
+  AuthFieldIcon,
+  authCardButtonClass,
+  authCardInputClass,
+  authCardLabelClass,
+  authCardLinkClass,
+} from "@/components/auth/auth-card";
 import {
   getPlatformAdminMainAppLoginDeniedMessage,
 } from "@/lib/auth/admin-deployment";
@@ -31,11 +40,7 @@ import { sanitizeQueryParam } from "@/lib/security/sanitize";
 import { REMEMBER_LOGIN_IDENTIFIER_STORAGE_KEY } from "@/lib/security/client-storage";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
-
-const authInputClass =
-  "h-10 rounded-xl border-slate-200 bg-slate-50/50 px-3 text-left text-sm transition-all placeholder:text-left placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11 md:px-4 md:text-base";
-
-const authLabelClass = "text-xs font-medium text-slate-700 md:text-sm";
+import { cn } from "@/lib/utils";
 
 function toAuthMessage(title: string, description: string, retryable = false): AuthUserMessage {
   return { title, description, retryable };
@@ -229,87 +234,102 @@ export function LoginForm({ adminOnly = false }: { adminOnly?: boolean } = {}) {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <div className="auth-form-header mb-3 text-center md:mb-5 md:text-left">
-        <h2 className="text-balance text-lg font-bold tracking-tight text-slate-900 md:text-xl lg:text-2xl">
-          Welcome Back
-        </h2>
-        <p className="auth-form-marketing-copy mt-1 text-sm text-slate-500">
-          Sign in to manage your academic workspace with Lectrax.
-        </p>
-      </div>
+      <AuthCard>
+        <div className="auth-form-header mb-6 text-center">
+          <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
+            Welcome Back
+          </h2>
+          <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
+            Sign in to manage your academic workspace with Lectrax.
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="identifier" className={authLabelClass}>
-            Phone Number or Email
-          </Label>
-          <Input
-            id="identifier"
-            type="text"
-            autoComplete="username"
-            placeholder="Phone number or email address"
-            className={authInputClass}
-            {...register("identifier")}
-          />
-          {errors.identifier && (
-            <p className="text-sm text-destructive">{errors.identifier.message}</p>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
+          <div className="space-y-2">
+            <Label htmlFor="identifier" className={authCardLabelClass}>
+              Phone Number or Email
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon wide>
+                <Phone className="h-4 w-4" strokeWidth={1.75} />
+                <Mail className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <Input
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                placeholder="Phone number or email address"
+                className={cn(authCardInputClass, "pl-[3.75rem]")}
+                {...register("identifier")}
+              />
+            </div>
+            {errors.identifier && (
+              <p className="text-sm text-destructive">{errors.identifier.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className={authCardLabelClass}>
+              Password
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <Lock className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <PasswordInput
+                id="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("password")}
+              />
+            </div>
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+          </div>
+
+          <div className="flex flex-col items-center gap-3">
+            <Link href="/forgot-password" className={cn(authCardLinkClass, "text-sm")}>
+              Forgot password?
+            </Link>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-primary focus:ring-primary/30"
+              />
+              <span className="text-sm text-slate-600">Remember me</span>
+            </label>
+          </div>
+
+          {info && (
+            <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{info}</p>
           )}
-        </div>
+          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
 
-        <div className="space-y-1.5">
-          <Label htmlFor="password" className={authLabelClass}>
-            Password
-          </Label>
-          <PasswordInput
-            id="password"
-            autoComplete="current-password"
-            placeholder="Enter your password"
-            className={authInputClass}
-            {...register("password")}
-          />
-          {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <label className="flex min-w-0 cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border-slate-300 text-primary focus:ring-primary/30"
-            />
-            <span className="text-xs text-slate-600 md:text-sm">Remember me</span>
-          </label>
-          <Link
-            href="/forgot-password"
-            className="shrink-0 text-xs font-medium text-primary transition-colors hover:text-primary/80 md:text-sm"
+          <Button
+            type="submit"
+            loading={isSubmitting || isRedirecting}
+            className={authCardButtonClass}
           >
-            Forgot password?
-          </Link>
+            {isSubmitting || isRedirecting ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+
+        <div className="mt-7 space-y-2 text-center">
+          <p className="text-sm text-slate-500">Don&apos;t have an account?</p>
+          <p>
+            <Link href="/signup?role=student" className={cn(authCardLinkClass, "text-sm")}>
+              Register as a Member
+            </Link>
+          </p>
+          <p>
+            <Link href="/partnerships" className={cn(authCardLinkClass, "text-sm")}>
+              Register an Organization
+            </Link>
+          </p>
         </div>
-
-        {info && (
-          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{info}</p>
-        )}
-        {error && (
-          <AuthErrorNotice error={error} onRetry={() => setError(null)} />
-        )}
-
-        <Button
-          type="submit"
-          loading={isSubmitting || isRedirecting}
-          className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
-        >
-          {isSubmitting || isRedirecting ? "Signing in..." : "Sign In"}
-        </Button>
-      </form>
-
-      <p className="mt-3 text-center text-xs text-slate-500 md:mt-5 md:text-sm">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-semibold text-primary transition-colors hover:text-primary/80">
-          Sign Up
-        </Link>
-      </p>
+      </AuthCard>
     </div>
   );
 }
@@ -537,140 +557,170 @@ export function SignupForm() {
 
   return (
     <div className="auth-fade-in auth-fade-in-delay-1 w-full">
-      <div className="auth-form-header mb-2 text-center md:mb-4 md:text-left">
-        <h2 className="text-balance text-lg font-bold tracking-tight text-slate-900 md:text-xl lg:text-2xl">
-          Create Your Account
-        </h2>
-        <p className="auth-form-marketing-copy mt-1 text-sm text-slate-500">
-          Welcome to Lectrax. Create your account and start managing academic activities efficiently.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5 text-left md:space-y-3">
-        <div className="space-y-1.5">
-          <Label className={authLabelClass}>Account type</Label>
-          <DeferredSelect
-            placeholderLabel={role === "student" ? "Student" : "Lecturer / Teacher"}
-            triggerClassName={authInputClass}
-          >
-            <Select
-              value={role}
-              onValueChange={(v) => {
-                setRole(v as "lecturer" | "student");
-                setValue("role", v as "lecturer" | "student");
-              }}
-            >
-              <SelectTrigger className={authInputClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lecturer">Lecturer / Teacher</SelectItem>
-                <SelectItem value="student">Student</SelectItem>
-              </SelectContent>
-            </Select>
-          </DeferredSelect>
-          <input type="hidden" {...register("role")} />
+      <AuthCard>
+        <div className="auth-form-header mb-6 text-center">
+          <h2 className="text-balance text-xl font-bold tracking-tight text-slate-800 md:text-2xl">
+            Create Your Account
+          </h2>
+          <p className="auth-form-marketing-copy mt-1.5 text-sm text-slate-500">
+            Welcome to Lectrax. Create your account and start managing academic activities efficiently.
+          </p>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="fullName" className={authLabelClass}>
-            Full Name
-          </Label>
-          <Input
-            id="fullName"
-            placeholder="John Doe"
-            className={authInputClass}
-            {...register("fullName")}
-          />
-          {errors.fullName && (
-            <p className="text-sm text-destructive">{errors.fullName.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="identifier" className={authLabelClass}>
-            Phone Number or Email
-          </Label>
-          <Input
-            id="identifier"
-            type="text"
-            autoComplete="username"
-            placeholder="+232 7612 **** or john@example.com"
-            className={authInputClass}
-            {...register("identifier")}
-          />
-          {errors.identifier && (
-            <p className="text-sm text-destructive">{errors.identifier.message}</p>
-          )}
-        </div>
-
-        {role === "student" && (
-          <div className="space-y-1.5">
-            <Label htmlFor="collegeId" className={authLabelClass}>
-              Student ID <span className="font-normal text-slate-400">(optional)</span>
-            </Label>
-            <Input
-              id="collegeId"
-              placeholder="Your student ID"
-              className={authInputClass}
-              {...register("collegeId")}
-            />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
+          <div className="space-y-2">
+            <Label className={authCardLabelClass}>Account type</Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <UsersRound className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <DeferredSelect
+                placeholderLabel={role === "student" ? "Student" : "Lecturer / Teacher"}
+                triggerClassName={cn(authCardInputClass, "pl-10")}
+              >
+                <Select
+                  value={role}
+                  onValueChange={(v) => {
+                    setRole(v as "lecturer" | "student");
+                    setValue("role", v as "lecturer" | "student");
+                  }}
+                >
+                  <SelectTrigger className={cn(authCardInputClass, "pl-10")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lecturer">Lecturer / Teacher</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                  </SelectContent>
+                </Select>
+              </DeferredSelect>
+            </div>
+            <input type="hidden" {...register("role")} />
           </div>
-        )}
 
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className={authLabelClass}>
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className={authCardLabelClass}>
+              Full Name
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon>
+                <User className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <Input
+                id="fullName"
+                placeholder="John Doe"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("fullName")}
+              />
+            </div>
+            {errors.fullName && (
+              <p className="text-sm text-destructive">{errors.fullName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="identifier" className={authCardLabelClass}>
+              Phone Number or Email
+            </Label>
+            <div className="relative">
+              <AuthFieldIcon wide>
+                <Phone className="h-4 w-4" strokeWidth={1.75} />
+                <Mail className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <Input
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                placeholder="+232 7612 **** or john@example.com"
+                className={cn(authCardInputClass, "pl-[3.75rem]")}
+                {...register("identifier")}
+              />
+            </div>
+            {errors.identifier && (
+              <p className="text-sm text-destructive">{errors.identifier.message}</p>
+            )}
+          </div>
+
+          {role === "student" && (
+            <div className="space-y-2">
+              <Label htmlFor="collegeId" className={authCardLabelClass}>
+                Student ID <span className="font-normal text-slate-400">(optional)</span>
+              </Label>
+              <div className="relative">
+                <AuthFieldIcon>
+                  <IdCard className="h-4 w-4" strokeWidth={1.75} />
+                </AuthFieldIcon>
+                <Input
+                  id="collegeId"
+                  placeholder="Your student ID"
+                  className={cn(authCardInputClass, "pl-10")}
+                  {...register("collegeId")}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className={authCardLabelClass}>
               Password
             </Label>
-            <PasswordInput
-              id="password"
-              autoComplete="new-password"
-              placeholder="Create a strong password"
-              className={authInputClass}
-              {...register("password")}
-            />
+            <div className="relative">
+              <AuthFieldIcon>
+                <Lock className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <PasswordInput
+                id="password"
+                autoComplete="new-password"
+                placeholder="Create a strong password"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("password")}
+              />
+            </div>
             {errors.password && (
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className={authLabelClass}>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className={authCardLabelClass}>
               Confirm Password
             </Label>
-            <PasswordInput
-              id="confirmPassword"
-              autoComplete="new-password"
-              placeholder="Confirm your password"
-              className={authInputClass}
-              {...register("confirmPassword")}
-            />
+            <div className="relative">
+              <AuthFieldIcon>
+                <Lock className="h-4 w-4" strokeWidth={1.75} />
+              </AuthFieldIcon>
+              <PasswordInput
+                id="confirmPassword"
+                autoComplete="new-password"
+                placeholder="Confirm your password"
+                className={cn(authCardInputClass, "pl-10")}
+                {...register("confirmPassword")}
+              />
+            </div>
             {errors.confirmPassword && (
               <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
             )}
+            <p className="text-xs text-slate-400">Must be at least 8 characters</p>
           </div>
-        </div>
 
-        {error && (
-          <AuthErrorNotice error={error} onRetry={() => setError(null)} />
-        )}
+          {error && <AuthErrorNotice error={error} onRetry={() => setError(null)} />}
 
-        <Button
-          type="submit"
-          loading={isSubmitting || isRedirecting}
-          className="auth-primary-btn h-10 w-full rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_14px_rgba(11,61,145,0.35)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(11,61,145,0.4)] active:scale-[0.99] md:h-11 md:text-base"
-        >
-          {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            loading={isSubmitting || isRedirecting}
+            className={authCardButtonClass}
+          >
+            {isSubmitting || isRedirecting ? "Creating account..." : "Create Account"}
+          </Button>
+        </form>
 
-      <p className="mt-3 text-center text-xs text-slate-500 md:mt-5 md:text-sm">
-        Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-primary transition-colors hover:text-primary/80">
-          Sign In
-        </Link>
-      </p>
+        <p className="mt-7 text-center text-sm text-slate-500">
+          Already have an account?{" "}
+          <Link href="/login" className={authCardLinkClass}>
+            Sign In
+          </Link>
+        </p>
+      </AuthCard>
     </div>
   );
 }
