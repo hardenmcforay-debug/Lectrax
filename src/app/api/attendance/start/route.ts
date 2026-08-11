@@ -15,12 +15,14 @@ import { isUniqueViolation } from "@/lib/db/postgres-errors";
 import { parseJsonBody } from "@/lib/security/parse-request";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { attendanceStartSchema } from "@/lib/validations";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 function resolveAppUrl(request: Request): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(request.url).origin;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -184,3 +186,5 @@ export async function POST(request: Request) {
     tokenExpiresAt: finalRotation.tokenExpiresAt.toISOString(),
   });
 }
+
+export const POST = withApiObservability("attendance.start.post", postHandler);

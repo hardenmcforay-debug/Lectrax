@@ -6,8 +6,10 @@ import {
   getAttendanceSessionPresentStudents,
 } from "@/lib/lecturer/attendance-sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function GET(
+
+async function getHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; attendanceSessionId: string }> }
 ) {
@@ -43,3 +45,5 @@ export async function GET(
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
+
+export const GET = withApiObservability("lecturer.sessions.attendance-sessions.present.get", getHandler);

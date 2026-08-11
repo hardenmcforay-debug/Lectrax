@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 /** Returns the trusted database server time for deadline comparisons. */
-export async function GET() {
+async function getHandler() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,3 +22,5 @@ export async function GET() {
 
   return NextResponse.json({ serverTime: data });
 }
+
+export const GET = withApiObservability("server-time.get", getHandler);

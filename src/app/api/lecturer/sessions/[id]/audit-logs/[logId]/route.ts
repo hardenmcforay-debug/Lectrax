@@ -4,8 +4,10 @@ import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { requirePremiumFeature, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string; logId: string }> }
 ) {
@@ -51,3 +53,5 @@ export async function DELETE(
 
   return NextResponse.json({ message: "Activity log deleted." });
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.audit-logs.by-id.delete", deleteHandler);

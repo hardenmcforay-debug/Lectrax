@@ -24,6 +24,8 @@ import {
 } from "@/lib/attendance/device-verification";
 import { attendanceScanSchema } from "@/lib/validations";
 import { parseJsonBody } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 type DuplicateScanContext = {
   userId: string;
@@ -85,7 +87,7 @@ async function respondDuplicateAttendance(
   );
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
 
@@ -378,3 +380,5 @@ export async function POST(request: Request) {
     record,
   });
 }
+
+export const POST = withApiObservability("attendance.scan.post", postHandler);

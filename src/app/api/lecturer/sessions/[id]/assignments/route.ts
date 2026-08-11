@@ -14,8 +14,10 @@ import {
   notifyEnrolledStudentsInClass,
 } from "@/lib/student/notifications";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(
+
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -112,3 +114,5 @@ export async function POST(
 
   return NextResponse.json({ assignment });
 }
+
+export const POST = withApiObservability("lecturer.sessions.assignments.post", postHandler);

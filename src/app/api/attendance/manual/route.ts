@@ -9,6 +9,8 @@ import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/su
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const manualSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -73,7 +75,7 @@ async function validateManualAttendanceRequest(
   return { attendanceSession };
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
@@ -153,7 +155,7 @@ export async function POST(request: Request) {
   });
 }
 
-export async function DELETE(request: Request) {
+async function deleteHandler(request: Request) {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
@@ -241,3 +243,6 @@ export async function DELETE(request: Request) {
     message: "Attendance removed for this session.",
   });
 }
+
+export const POST = withApiObservability("attendance.manual.post", postHandler);
+export const DELETE = withApiObservability("attendance.manual.delete", deleteHandler);

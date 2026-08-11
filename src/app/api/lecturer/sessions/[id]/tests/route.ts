@@ -7,13 +7,15 @@ import { getClassTestsForSession, getNextTestNumber } from "@/lib/lecturer/class
 import { classTestSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { isUniqueViolation } from "@/lib/db/postgres-errors";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 import {
   checkFreePlanLimit,
   requireWritableSubscription,
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
 
-export async function GET(
+async function getHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -63,7 +65,7 @@ export async function GET(
   });
 }
 
-export async function POST(
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -171,3 +173,6 @@ export async function POST(
 
   return NextResponse.json({ test }, { status: 201 });
 }
+
+export const GET = withApiObservability("lecturer.sessions.tests.get", getHandler);
+export const POST = withApiObservability("lecturer.sessions.tests.post", postHandler);

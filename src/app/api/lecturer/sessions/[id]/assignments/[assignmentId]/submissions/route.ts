@@ -4,8 +4,10 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassAssignmentForLecturer } from "@/lib/lecturer/class-assignments";
 import { deleteSubmissionFile } from "@/lib/assignments/submissions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
 ) {
@@ -91,3 +93,5 @@ export async function DELETE(
 
   return NextResponse.json({ deleted: submissions.length });
 }
+
+export const DELETE = withApiObservability("lecturer.sessions.assignments.submissions.delete", deleteHandler);

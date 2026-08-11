@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCronSecret } from "@/lib/env";
 import { logSystemAudit } from "@/lib/audit";
+import { BUSINESS_EVENTS, trackBusinessEvent } from "@/lib/observability/business-events";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 import {
   backfillMissingSubscriptionRecords,
   processExpiryReminders,
   refreshSubscriptionLifecycle,
 } from "@/lib/subscription/lifecycle";
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const secret = getCronSecret();
   const authHeader = request.headers.get("authorization");
 
@@ -55,6 +58,14 @@ export async function POST(request: Request) {
   const remindersSent = await processExpiryReminders(service);
   const backfilledSubscriptions = await backfillMissingSubscriptionRecords(service);
 
+  const summary = {
+    lifecycleUpdates,
+    lifecycleFailures,
+    remindersSent,
+    backfilledSubscriptions,
+    processedAt: new Date().toISOString(),
+  };
+
   if (lifecycleFailures > 0) {
     void logSystemAudit({
       action: "subscription_lifecycle_partial_failure",
@@ -64,14 +75,15 @@ export async function POST(request: Request) {
         lifecycle_updates: lifecycleUpdates,
       },
     });
+    trackBusinessEvent(BUSINESS_EVENTS.CRON_FAILURE, summary, { severity: "error" });
+  } else {
+    trackBusinessEvent(BUSINESS_EVENTS.CRON_SUCCESS, summary);
   }
 
   return NextResponse.json({
     ok: lifecycleFailures === 0,
-    lifecycleUpdates,
-    lifecycleFailures,
-    remindersSent,
-    backfilledSubscriptions,
-    processedAt: new Date().toISOString(),
+    ...summary,
   });
 }
+
+export const POST = withApiObservability("cron.subscription-lifecycle.post", postHandler);

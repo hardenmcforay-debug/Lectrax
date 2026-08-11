@@ -6,12 +6,14 @@ import { getClassTestForLecturer } from "@/lib/lecturer/class-tests";
 import { testScoresBulkSchema } from "@/lib/validations";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 import {
   getClassSessionLabel,
   notifyStudentsByEnrollmentIds,
 } from "@/lib/student/notifications";
 
-export async function PUT(
+async function putHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; testId: string }> }
 ) {
@@ -161,3 +163,5 @@ export async function PUT(
     deleted: deleteEnrollmentIds.length,
   });
 }
+
+export const PUT = withApiObservability("lecturer.sessions.tests.scores.put", putHandler);

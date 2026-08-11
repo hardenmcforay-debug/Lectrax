@@ -15,8 +15,10 @@ import {
   handleApiRouteError,
 } from "@/lib/errors/api";
 import { sanitizeErrorMessage, isTransientError } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+
+async function postHandler(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
@@ -174,3 +176,5 @@ export async function POST(request: Request) {
     return handleApiRouteError("partnerships.checkout", e);
   }
 }
+
+export const POST = withApiObservability("partnerships.checkout.post", postHandler);

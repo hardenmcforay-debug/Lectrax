@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { parseRouteUuid } from "@/lib/security/parse-request";
 import { studentRowsWeightQuerySchema } from "@/lib/validations";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefined {
   const attendance = searchParams.get("attendanceWeight");
@@ -35,7 +37,7 @@ function parseWeightOverride(searchParams: URLSearchParams): CAWeights | undefin
   };
 }
 
-export async function GET(
+async function getHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -76,3 +78,5 @@ export async function GET(
     return handleApiRouteError("lecturer.student-rows", error);
   }
 }
+
+export const GET = withApiObservability("lecturer.sessions.student-rows.get", getHandler);

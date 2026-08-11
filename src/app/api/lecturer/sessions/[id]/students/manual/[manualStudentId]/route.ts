@@ -10,12 +10,14 @@ import {
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody, parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const updateManualStudentCollegeIdSchema = manualStudentSchema.pick({
   collegeId: true,
 });
 
-export async function PATCH(
+async function patchHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; manualStudentId: string }> }
 ) {
@@ -125,3 +127,5 @@ export async function PATCH(
     },
   });
 }
+
+export const PATCH = withApiObservability("lecturer.sessions.students.manual.patch", patchHandler);

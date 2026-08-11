@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+
+async function deleteHandler(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
@@ -41,3 +43,5 @@ export async function DELETE(
 
   return NextResponse.json({ message: "Payment record deleted." });
 }
+
+export const DELETE = withApiObservability("payments.by-id.delete", deleteHandler);

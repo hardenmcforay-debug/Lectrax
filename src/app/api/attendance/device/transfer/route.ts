@@ -9,8 +9,10 @@ import {
 } from "@/lib/attendance/device-verification";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,3 +64,5 @@ export async function POST(request: Request) {
     message: DEVICE_MESSAGES.transferSuccess,
   });
 }
+
+export const POST = withApiObservability("attendance.device.transfer.post", postHandler);

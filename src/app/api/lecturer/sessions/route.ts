@@ -9,8 +9,10 @@ import {
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -77,3 +79,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ session });
 }
+
+export const POST = withApiObservability("lecturer.sessions.post", postHandler);

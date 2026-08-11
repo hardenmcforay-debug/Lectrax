@@ -1,0 +1,65 @@
+[
+  {
+    "id": "error-rate-spike",
+    "name": "Lectrax — Error rate increase",
+    "conditions": "event.type:error OR message:api.error",
+    "threshold": "> 20 events / 5m",
+    "action": "notify slack + page on-call"
+  },
+  {
+    "id": "api-latency",
+    "name": "Lectrax — API latency P95",
+    "conditions": "transaction.duration",
+    "threshold": "P95 > 2000ms warn / > 5000ms critical / 10m",
+    "action": "notify slack"
+  },
+  {
+    "id": "database-unavailable",
+    "name": "Lectrax — Database unavailable",
+    "conditions": "message:health.degraded AND tags.check:database",
+    "threshold": ">= 1 / 2m",
+    "action": "page on-call"
+  },
+  {
+    "id": "auth-failure-spike",
+    "name": "Lectrax — Auth failure spike",
+    "conditions": "message:auth.login.failure",
+    "threshold": "> 30 / 5m",
+    "action": "notify slack"
+  },
+  {
+    "id": "payment-failures",
+    "name": "Lectrax — Payment failures",
+    "conditions": "message:payment.failure",
+    "threshold": ">= 1 / 5m",
+    "action": "page on-call"
+  },
+  {
+    "id": "attendance-failures",
+    "name": "Lectrax — Attendance failures",
+    "conditions": "message:attendance.qr.failure",
+    "threshold": "> 10 / 10m",
+    "action": "notify slack"
+  },
+  {
+    "id": "cron-failures",
+    "name": "Lectrax — Cron failures",
+    "conditions": "message:cron.failure",
+    "threshold": ">= 1 after scheduled run",
+    "action": "page on-call"
+  },
+  {
+    "id": "memory-spike",
+    "name": "Lectrax — Memory spike",
+    "conditions": "tags.memory_rss_bytes",
+    "threshold": "RSS > 450MB / 5m",
+    "action": "notify slack"
+  },
+  {
+    "id": "email-failures",
+    "name": "Lectrax — Email / password-reset failures",
+    "conditions": "message:auth.password_reset.email_failure OR message:email.failure",
+    "threshold": "> 5 / 15m",
+    "action": "notify slack"
+  }
+]

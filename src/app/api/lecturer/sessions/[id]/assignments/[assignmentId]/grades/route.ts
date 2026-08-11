@@ -9,12 +9,14 @@ import {
 import { testScoresBulkSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { requireWritableSubscription, subscriptionGuardResponse } from "@/lib/subscription/guards";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 import {
   getClassSessionLabel,
   notifyStudentsByEnrollmentIds,
 } from "@/lib/student/notifications";
 
-export async function PUT(
+async function putHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
 ) {
@@ -172,3 +174,4 @@ export async function PUT(
   });
 }
 
+export const PUT = withApiObservability("lecturer.sessions.assignments.grades.put", putHandler);

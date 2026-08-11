@@ -6,8 +6,10 @@ import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { getClassSessionForLecturer } from "@/lib/lecturer/class-sessions";
 import { caConfigSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function PUT(
+
+async function putHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -70,3 +72,5 @@ export async function PUT(
 
   return NextResponse.json({ message: "CA configuration saved." });
 }
+
+export const PUT = withApiObservability("lecturer.sessions.ca-config.put", putHandler);

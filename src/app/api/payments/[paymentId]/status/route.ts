@@ -9,8 +9,10 @@ import {
 import type { BillingPlan } from "@/types/database";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function GET(
+
+async function getHandler(
   _request: Request,
   { params }: { params: Promise<{ paymentId: string }> }
 ) {
@@ -85,3 +87,5 @@ export async function GET(
 
   return NextResponse.json({ status: payment.status });
 }
+
+export const GET = withApiObservability("payments.by-id.status.get", getHandler);

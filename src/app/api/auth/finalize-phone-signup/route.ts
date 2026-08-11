@@ -5,6 +5,8 @@ import { confirmPhoneOnlyAccount } from "@/lib/auth/phone-account";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const finalizePhoneSignupSchema = z.object({
   userId: uuidField("Invalid user ID"),
@@ -16,7 +18,7 @@ function buildFinalizePhoneSignupRateLimitKey(userId: string): string {
   return `finalizePhoneSignup:${hash.slice(0, 24)}`;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -52,3 +54,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not finalize phone account." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.finalize-phone-signup.post", postHandler);
