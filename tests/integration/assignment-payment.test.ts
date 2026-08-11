@@ -39,7 +39,7 @@ describe("integration: payment checkout contract", () => {
   it("maps plan selection to Monime charge units", () => {
     const plan = "monthly" as const;
     expect(billingPlanToSubscriptionPlan(plan)).toBe("1_month");
-    expect(toMonimeMinorUnits(DEFAULT_SLE_CHARGE_AMOUNTS[plan])).toBe(12_000);
+    expect(toMonimeMinorUnits(DEFAULT_SLE_CHARGE_AMOUNTS[plan])).toBe(24_000);
   });
 
   it("validates partnership checkout payloads used by payment UI", () => {

@@ -25,9 +25,9 @@ describe("payment & billing", () => {
   it("exposes free-tier limits and SLE charge amounts", () => {
     expect(FREE_LIMITS.MAX_ACTIVE_CLASS_SESSIONS).toBe(2);
     expect(BILLING_PLANS.monthly.days).toBe(30);
-    expect(DEFAULT_SLE_CHARGE_AMOUNTS.monthly).toBe(120);
-    expect(toMonimeMinorUnits(120)).toBe(12_000);
-    expect(formatChargeAmount(120, "SLE")).toContain("Le");
+    expect(DEFAULT_SLE_CHARGE_AMOUNTS.monthly).toBe(240);
+    expect(toMonimeMinorUnits(240)).toBe(24_000);
+    expect(formatChargeAmount(240, "SLE")).toContain("Le");
   });
 
   it("verifies Monime HMAC webhook signatures", () => {
