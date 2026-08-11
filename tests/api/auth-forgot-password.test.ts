@@ -13,15 +13,17 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/auth/password-reset", () => ({
   authAccountExistsForIdentifier: (...args: unknown[]) =>
-    authAccountExistsForIdentifier(...args),
+    (authAccountExistsForIdentifier as (...a: unknown[]) => unknown)(...args),
   buildPasswordResetRateLimitKey: (identifier: string) => `rl:${identifier}`,
   PASSWORD_RESET_SUCCESS_MESSAGE:
     "If an account exists with that email address, a password reset link has been sent.",
-  waitForMinimumResponseTime: (...args: unknown[]) => waitForMinimumResponseTime(...args),
+  waitForMinimumResponseTime: (...args: unknown[]) =>
+    (waitForMinimumResponseTime as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/security/enforce-rate-limit", () => ({
-  rejectIfKeyRateLimited: (...args: unknown[]) => rejectIfKeyRateLimited(...args),
+  rejectIfKeyRateLimited: (...args: unknown[]) =>
+    (rejectIfKeyRateLimited as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/errors/logger", () => ({

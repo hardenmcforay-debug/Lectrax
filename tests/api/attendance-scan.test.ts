@@ -23,7 +23,8 @@ function chain(result: { data?: unknown; error?: unknown }) {
 }
 
 vi.mock("@/lib/auth/require-api-role", () => ({
-  requireStudentRole: (...args: unknown[]) => requireStudentRole(...args),
+  requireStudentRole: (...args: unknown[]) =>
+    (requireStudentRole as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/security/enforce-rate-limit", () => ({
@@ -32,12 +33,15 @@ vi.mock("@/lib/security/enforce-rate-limit", () => ({
 }));
 
 vi.mock("@/lib/security/parse-request", () => ({
-  parseJsonBody: (...args: unknown[]) => parseJsonBody(...args),
+  parseJsonBody: (...args: unknown[]) =>
+    (parseJsonBody as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/qr-token", () => ({
-  verifyQRToken: (...args: unknown[]) => verifyQRToken(...args),
-  hashQRToken: (...args: unknown[]) => hashQRToken(...args),
+  verifyQRToken: (...args: unknown[]) =>
+    (verifyQRToken as (...a: unknown[]) => unknown)(...args),
+  hashQRToken: (...args: unknown[]) =>
+    (hashQRToken as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -45,12 +49,13 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/audit", () => ({
-  logAudit: (...args: unknown[]) => logAudit(...args),
+  logAudit: (...args: unknown[]) =>
+    (logAudit as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock("@/lib/attendance/close-session", () => ({
   closeAttendanceSessionIfAbandoned: (...args: unknown[]) =>
-    closeAttendanceSessionIfAbandoned(...args),
+    (closeAttendanceSessionIfAbandoned as (...a: unknown[]) => unknown)(...args),
 }));
 
 const validIdentity = {
