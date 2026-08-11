@@ -41,6 +41,10 @@
     "scripts",
     "deploy",
     "tests",
-    "loadtests"
+    "e2e",
+    "loadtests",
+    "coverage",
+    "playwright-report",
+    "test-results"
   ]
 }
