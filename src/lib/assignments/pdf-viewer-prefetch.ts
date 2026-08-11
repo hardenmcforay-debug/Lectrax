@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { shouldPrefetchHeavyAssets } from "@/lib/network/connection-quality";
 
 type PdfJsModule = typeof import("pdfjs-dist");
 
@@ -36,9 +37,10 @@ function warmPdfWorker(): Promise<void> {
   return workerWarmPromise;
 }
 
-/** Load PDF.js (and warm its worker) once; safe to call early on assignment pages. */
-export function prefetchPdfEngine(): Promise<PdfJsModule> {
-  void warmPdfWorker();
+function loadPdfEngine(warmWorker: boolean): Promise<PdfJsModule> {
+  if (warmWorker) {
+    void warmPdfWorker();
+  }
 
   if (!pdfjsModulePromise) {
     pdfjsModulePromise = import("pdfjs-dist")
@@ -55,8 +57,20 @@ export function prefetchPdfEngine(): Promise<PdfJsModule> {
   return pdfjsModulePromise;
 }
 
+/**
+ * Background-warm PDF.js when the connection looks healthy.
+ * On weak links this is a no-op so villages are not charged a large JS download early.
+ */
+export function prefetchPdfEngine(): Promise<PdfJsModule | null> {
+  if (!shouldPrefetchHeavyAssets()) {
+    return Promise.resolve(null);
+  }
+  return loadPdfEngine(true);
+}
+
+/** Always load PDF.js for an explicit viewer open. */
 export function getPdfJsModule(): Promise<PdfJsModule> {
-  return prefetchPdfEngine();
+  return loadPdfEngine(true);
 }
 
 /**
@@ -68,7 +82,7 @@ export function prefetchSubmissionPdf(viewApiUrl: string): Promise<PrefetchedSub
   if (existing) return existing;
 
   const task = (async () => {
-    const [, response] = await Promise.all([prefetchPdfEngine(), appFetch(viewApiUrl)]);
+    const [, response] = await Promise.all([getPdfJsModule(), appFetch(viewApiUrl)]);
 
     if (!response.ok) {
       throw new Error("Could not resolve submission PDF.");
@@ -114,9 +128,17 @@ export function clearPrefetchedSubmissionPdf(viewApiUrl: string) {
   submissionPrefetch.delete(viewApiUrl);
 }
 
-/** Idle-friendly prefetch that yields to more important work. */
+/** Background prefetch for hover/idle — skipped on weak links. */
+export function prefetchSubmissionPdfInBackground(viewApiUrl: string) {
+  if (typeof window === "undefined") return;
+  if (!shouldPrefetchHeavyAssets()) return;
+  void prefetchSubmissionPdf(viewApiUrl);
+}
+
+/** Idle-friendly prefetch that yields to more important work. Skips on weak links. */
 export function prefetchSubmissionPdfWhenIdle(viewApiUrl: string) {
   if (typeof window === "undefined") return;
+  if (!shouldPrefetchHeavyAssets()) return;
 
   const run = () => {
     void prefetchSubmissionPdf(viewApiUrl);

@@ -1,6 +1,10 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import {
+  getAdaptivePollIntervalMs,
+  getConnectionQuality,
+} from "@/lib/network/connection-quality";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -80,8 +84,12 @@ export function useAssignmentPastDeadline(
     if (Number.isNaN(deadlineMs)) return;
 
     let cancelled = false;
+    const quality = getConnectionQuality();
+    const weakLink = quality === "slow" || quality === "offline";
 
     const syncFromServer = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+
       if (options?.assignmentId) {
         const authoritative = await fetchAssignmentPastDeadline(options.assignmentId);
         if (!cancelled && authoritative !== null) {
@@ -104,7 +112,11 @@ export function useAssignmentPastDeadline(
     void syncFromServer();
 
     const msUntilDeadline = deadlineMs - (Date.now() + serverOffsetRef.current);
-    const pollMs = pollIntervalMs(msUntilDeadline);
+    // On weak links, keep a 1s local clock and ask the server much less often.
+    const rawPollMs = weakLink
+      ? Math.max(pollIntervalMs(msUntilDeadline) ?? 15_000, 15_000)
+      : pollIntervalMs(msUntilDeadline);
+    const pollMs = rawPollMs == null ? null : getAdaptivePollIntervalMs(rawPollMs, quality);
     const intervalId = pollMs ? window.setInterval(() => void syncFromServer(), pollMs) : undefined;
     const localTickId = window.setInterval(syncLocal, 1_000);
 
@@ -116,7 +128,10 @@ export function useAssignmentPastDeadline(
       );
     }
 
-    const offsetSyncId = window.setInterval(() => void syncFromServer(), 60_000);
+    const offsetSyncId = window.setInterval(
+      () => void syncFromServer(),
+      getAdaptivePollIntervalMs(60_000, quality)
+    );
 
     return () => {
       cancelled = true;

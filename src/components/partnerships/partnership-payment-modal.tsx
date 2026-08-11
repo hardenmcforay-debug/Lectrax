@@ -41,6 +41,7 @@ import { platformFetch } from "@/lib/api/fetch";
 import { appFetch } from "@/lib/api/client-fetch";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import { getAdaptivePollIntervalMs } from "@/lib/network/connection-quality";
 import { isLectraxPaymentReturnMessage } from "@/lib/payments/hosted-checkout-bridge";
 import { cn } from "@/lib/utils";
 
@@ -258,7 +259,9 @@ export function PartnershipPaymentModal({
   useEffect(() => {
     if (!activePaymentId || !polling) return;
 
-    const interval = window.setInterval(() => {
+    const pollMs = getAdaptivePollIntervalMs(5_000);
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       void (async () => {
         const res = await appFetch(`/api/partnerships/payments/${activePaymentId}/status`);
         if (!res.ok) return;
@@ -277,9 +280,15 @@ export function PartnershipPaymentModal({
           setView("failed");
         }
       })();
-    }, 5000);
+    };
 
-    return () => window.clearInterval(interval);
+    const interval = window.setInterval(tick, pollMs);
+    document.addEventListener("visibilitychange", tick);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [activePaymentId, polling]);
 
   useEffect(() => {

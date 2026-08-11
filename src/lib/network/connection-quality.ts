@@ -157,3 +157,31 @@ export function getAdaptiveFetchTimeoutMs(quality: ConnectionQuality): number {
   }
   return 30_000;
 }
+
+/** Heavy background downloads (PDF/engine/logo warm) only when the link looks healthy. */
+export function shouldPrefetchHeavyAssets(
+  quality: ConnectionQuality = getConnectionQuality()
+): boolean {
+  return quality === "online";
+}
+
+/** Stretch background poll intervals on weak links without changing product behavior. */
+export function getAdaptivePollIntervalMs(
+  baseMs: number,
+  quality: ConnectionQuality = getConnectionQuality()
+): number {
+  if (quality === "offline") return Math.max(baseMs * 3, baseMs + 15_000);
+  if (quality === "slow") return Math.max(Math.round(baseMs * 2), baseMs + 5_000);
+  return baseMs;
+}
+
+/** Coalesce bursty refreshes longer when the connection is already struggling. */
+export function getAdaptiveDebounceMs(
+  baseMs: number,
+  quality: ConnectionQuality = getConnectionQuality()
+): number {
+  if (quality === "slow" || quality === "offline") {
+    return Math.max(baseMs, 2_000);
+  }
+  return baseMs;
+}

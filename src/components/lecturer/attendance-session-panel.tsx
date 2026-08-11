@@ -34,9 +34,12 @@ import {
   formatSessionDurationLabel,
   PRESENT_COUNT_POLL_FALLBACK_MS,
   PRESENT_COUNT_POLL_INTERVAL_MS,
+  PRESENT_COUNT_POLL_SLOW_FALLBACK_MS,
+  PRESENT_COUNT_POLL_SLOW_INTERVAL_MS,
   QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
+import { getConnectionQuality } from "@/lib/network/connection-quality";
 import { endAttendanceSessionOnUnload } from "@/lib/attendance/end-on-unload";
 import {
   addPresentRecord,
@@ -187,7 +190,7 @@ export function AttendanceSessionPanel({
   const fetchPresentRecords = useCallback(async (attendanceSessionId: string) => {
     try {
       const res = await appFetch(
-        `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present`
+        `/api/lecturer/sessions/${session.id}/attendance-sessions/${attendanceSessionId}/present?lite=1`
       );
       const data = (await res.json()) as {
         students?: { enrollmentId: string; markMethod: string }[];
@@ -291,7 +294,10 @@ export function AttendanceSessionPanel({
           source,
           tokenExpiresAt: data.tokenExpiresAt ?? new Date(nextExpiresAt).toISOString(),
         });
-        void syncPresentRecordsRef.current(attendanceSessionId, "qr-refresh");
+        // Realtime already streams marks; skip the extra present GET on healthy live links.
+        if (!realtimeConnectedRef.current) {
+          void syncPresentRecordsRef.current(attendanceSessionId, "qr-refresh");
+        }
         return true;
       } catch {
         setError("Network error while refreshing QR code.");
@@ -471,23 +477,40 @@ export function AttendanceSessionPanel({
     if (!activeSession) return;
 
     const attendanceSessionId = activeSession.id;
+    const quality = getConnectionQuality();
+    const fastIntervalMs =
+      quality === "slow" || quality === "offline"
+        ? PRESENT_COUNT_POLL_SLOW_INTERVAL_MS
+        : PRESENT_COUNT_POLL_INTERVAL_MS;
+    const fallbackIntervalMs =
+      quality === "slow" || quality === "offline"
+        ? PRESENT_COUNT_POLL_SLOW_FALLBACK_MS
+        : PRESENT_COUNT_POLL_FALLBACK_MS;
+
     const runPoll = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       void syncPresentRecordsRef.current(attendanceSessionId, "poll");
     };
 
     const fastPollId = window.setInterval(() => {
       if (realtimeConnectedRef.current) return;
       runPoll();
-    }, PRESENT_COUNT_POLL_INTERVAL_MS);
+    }, fastIntervalMs);
 
     const fallbackPollId = window.setInterval(() => {
       if (!realtimeConnectedRef.current) return;
       runPoll();
-    }, PRESENT_COUNT_POLL_FALLBACK_MS);
+    }, fallbackIntervalMs);
+
+    const onVisibility = () => {
+      if (!document.hidden) runPoll();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.clearInterval(fastPollId);
       window.clearInterval(fallbackPollId);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [activeSession]);
 

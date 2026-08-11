@@ -55,6 +55,7 @@ import {
 import {
   prefetchPdfEngine,
   prefetchSubmissionPdf,
+  prefetchSubmissionPdfInBackground,
   prefetchSubmissionPdfWhenIdle,
 } from "@/lib/assignments/pdf-viewer-prefetch";
 
@@ -221,7 +222,7 @@ export function AssignmentGradesClient({
 
   const prefetchPdf = useCallback(
     (enrollmentId: string) => {
-      void prefetchSubmissionPdf(submissionViewUrlFor(enrollmentId));
+      prefetchSubmissionPdfInBackground(submissionViewUrlFor(enrollmentId));
     },
     [submissionViewUrlFor],
   );

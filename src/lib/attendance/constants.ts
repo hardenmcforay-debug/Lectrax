@@ -16,6 +16,10 @@ export const PRESENT_COUNT_POLL_INTERVAL_MS = QR_REFRESH_INTERVAL_MS;
 /** Fallback poll interval when realtime is connected (safety net only). */
 export const PRESENT_COUNT_POLL_FALLBACK_MS = 30_000;
 
+/** Slower present sync when the observed connection quality is already poor. */
+export const PRESENT_COUNT_POLL_SLOW_INTERVAL_MS = 15_000;
+export const PRESENT_COUNT_POLL_SLOW_FALLBACK_MS = 60_000;
+
 export const QR_REFRESH_INTERVAL_SECONDS = QR_TOKEN_TTL_SECONDS;
 
 /** Default overall attendance collection window (minutes). */

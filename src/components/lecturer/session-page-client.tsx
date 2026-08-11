@@ -53,6 +53,7 @@ import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status
 import { isPastDeadline } from "@/lib/assignments/deadline";
 import { manualStudentSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { getAdaptiveDebounceMs } from "@/lib/network/connection-quality";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 
 const SESSION_TAB_ITEMS = [
@@ -293,7 +294,7 @@ export function SessionPageClient({
     }
     studentRowsRefreshTimerRef.current = window.setTimeout(() => {
       void refreshStudentRows();
-    }, 400);
+    }, getAdaptiveDebounceMs(400));
   }, [refreshStudentRows]);
 
   useEffect(() => {

@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
-import { getAttendanceSessionPresentStudents } from "@/lib/lecturer/attendance-sessions";
+import {
+  getAttendanceSessionPresentMarks,
+  getAttendanceSessionPresentStudents,
+} from "@/lib/lecturer/attendance-sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string; attendanceSessionId: string }> }
 ) {
   const { id: classSessionId, attendanceSessionId } = await params;
+  const lite = new URL(request.url).searchParams.get("lite") === "1";
 
   const supabase = await createClient();
   const {
@@ -25,11 +29,9 @@ export async function GET(
   }
 
   try {
-    const students = await getAttendanceSessionPresentStudents(
-      classSessionId,
-      attendanceSessionId,
-      user.id
-    );
+    const students = lite
+      ? await getAttendanceSessionPresentMarks(classSessionId, attendanceSessionId, user.id)
+      : await getAttendanceSessionPresentStudents(classSessionId, attendanceSessionId, user.id);
 
     if (!students) {
       return NextResponse.json({ error: "Attendance session not found." }, { status: 404 });

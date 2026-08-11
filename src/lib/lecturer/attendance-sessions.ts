@@ -8,11 +8,11 @@ export interface AttendancePresentStudent {
   markMethod: string;
 }
 
-export async function getAttendanceSessionPresentStudents(
+async function assertOwnedAttendanceSession(
   classSessionId: string,
   attendanceSessionId: string,
   lecturerId: string
-): Promise<AttendancePresentStudent[] | null> {
+): Promise<boolean> {
   const supabase = await createServiceClient();
 
   const { data: attendanceSession } = await supabase
@@ -21,11 +21,21 @@ export async function getAttendanceSessionPresentStudents(
     .eq("id", attendanceSessionId)
     .maybeSingle();
 
-  if (
-    !attendanceSession ||
-    attendanceSession.class_session_id !== classSessionId ||
-    attendanceSession.lecturer_id !== lecturerId
-  ) {
+  return Boolean(
+    attendanceSession &&
+      attendanceSession.class_session_id === classSessionId &&
+      attendanceSession.lecturer_id === lecturerId
+  );
+}
+
+export async function getAttendanceSessionPresentStudents(
+  classSessionId: string,
+  attendanceSessionId: string,
+  lecturerId: string
+): Promise<AttendancePresentStudent[] | null> {
+  const supabase = await createServiceClient();
+
+  if (!(await assertOwnedAttendanceSession(classSessionId, attendanceSessionId, lecturerId))) {
     return null;
   }
 
@@ -42,6 +52,33 @@ export async function getAttendanceSessionPresentStudents(
   }
 
   return (records ?? []).map((record) => mapPresentStudentRecord(record));
+}
+
+/** Compact present marks for live attendance sync — avoids name/profile joins on every poll. */
+export async function getAttendanceSessionPresentMarks(
+  classSessionId: string,
+  attendanceSessionId: string,
+  lecturerId: string
+): Promise<Array<{ enrollmentId: string; markMethod: string }> | null> {
+  const supabase = await createServiceClient();
+
+  if (!(await assertOwnedAttendanceSession(classSessionId, attendanceSessionId, lecturerId))) {
+    return null;
+  }
+
+  const { data: records, error } = await supabase
+    .from("attendance_records")
+    .select("enrollment_id, mark_method")
+    .eq("attendance_session_id", attendanceSessionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (records ?? []).map((record) => ({
+    enrollmentId: record.enrollment_id,
+    markMethod: record.mark_method,
+  }));
 }
 
 function mapPresentStudentRecord(record: {

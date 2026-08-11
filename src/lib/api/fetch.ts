@@ -13,6 +13,11 @@ import {
 import { logPlatformError } from "@/lib/errors/logger";
 import type { PlatformError } from "@/lib/errors/types";
 import {
+  getAdaptiveFetchTimeoutMs,
+  readConnectionQuality,
+  reportNetworkSample,
+} from "@/lib/network/connection-quality";
+import {
   getCsrfRequestHeaders,
   isMutationMethod,
   isSameOriginAppApiUrl,
@@ -43,6 +48,7 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   let timedOut = false;
+  const startedAt = performance.now();
   const timeoutId = window.setTimeout(() => {
     timedOut = true;
     controller.abort();
@@ -74,17 +80,44 @@ async function fetchWithTimeout(
 
   const fetchInput: RequestInfo | URL =
     typeof input === "string" || input instanceof URL ? url : input;
+  const elapsedMs = () => Math.round(performance.now() - startedAt);
 
   try {
-    return await fetch(fetchInput, {
+    const response = await fetch(fetchInput, {
       ...init,
       credentials: init.credentials ?? (isAppApi ? "include" : "same-origin"),
       headers,
       signal: controller.signal,
     });
+    if (isAppApi) {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: response.ok,
+        networkError:
+          !response.ok &&
+          (response.status === 408 || response.status === 429 || response.status >= 500)
+            ? true
+            : undefined,
+      });
+    }
+    return response;
   } catch (error) {
     if (isAbortError(error) && timedOut) {
+      if (isAppApi) {
+        reportNetworkSample({
+          durationMs: elapsedMs(),
+          ok: false,
+          timedOut: true,
+        });
+      }
       throw new Error("Request timed out. Please try again.");
+    }
+    if (isAppApi && !(isAbortError(error))) {
+      reportNetworkSample({
+        durationMs: elapsedMs(),
+        ok: false,
+        networkError: true,
+      });
     }
     throw error;
   } finally {
@@ -101,7 +134,11 @@ export async function platformFetch<T = unknown>(
   options: PlatformFetchOptions = {}
 ): Promise<PlatformFetchResult<T>> {
   const {
-    timeoutMs = DEFAULT_TIMEOUT_MS,
+    timeoutMs = getAdaptiveFetchTimeoutMs(
+      typeof navigator !== "undefined"
+        ? readConnectionQuality(navigator.onLine)
+        : "online"
+    ),
     retries = DEFAULT_RETRIES,
     retryDelayMs = DEFAULT_RETRY_DELAY_MS,
     ...init

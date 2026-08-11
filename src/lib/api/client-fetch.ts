@@ -20,18 +20,33 @@ import {
 } from "@/lib/security/csrf";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_SAFE_READ_RETRIES = 1;
+const RETRY_DELAY_MS = 700;
 
 export type AppFetchInit = RequestInit & {
   /** Request timeout in milliseconds. Defaults to 30s, or 45s on slow connections. */
   timeoutMs?: number;
   /** Coalesce identical in-flight GET requests. Default true for same-origin GET API calls. */
   dedupe?: boolean;
+  /**
+   * Extra attempts after the first try. Defaults to 1 for safe GET/HEAD API reads,
+   * 0 for mutations. Retries only cover blips (timeout/network/5xx/429).
+   */
+  retries?: number;
 };
 
 function resolveUrl(input: RequestInfo | URL): string {
   if (typeof input === "string") return input;
   if (input instanceof URL) return input.href;
   return input.url;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
 }
 
 async function fetchWithTimeout(
@@ -65,9 +80,11 @@ async function fetchWithTimeout(
       signal: controller.signal,
     });
     if (reportSample) {
+      const retryableFailure = !response.ok && isRetryableStatus(response.status);
       reportNetworkSample({
         durationMs: elapsedMs(),
-        ok: true,
+        ok: response.ok,
+        networkError: retryableFailure ? true : undefined,
       });
     }
     return response;
@@ -104,6 +121,7 @@ async function fetchWithTimeout(
  * Browser fetch for Lectrax same-origin API routes.
  * Sends session cookies and CSRF headers on mutating requests.
  * PWA calls are routed through `/go/api/*` so they use the PWA auth cookie jar.
+ * Safe reads retry once on weak/flaky links.
  */
 export async function appFetch(
   input: RequestInfo | URL,
@@ -116,6 +134,8 @@ export async function appFetch(
   const isAppApi = isSameOriginAppApiUrl(url);
   const isSafeRead = method === "GET" || method === "HEAD";
   const shouldDedupe = init.dedupe ?? (isAppApi && isSafeRead && init.cache !== "no-store");
+  const retries =
+    init.retries ?? (isAppApi && isSafeRead ? DEFAULT_SAFE_READ_RETRIES : 0);
 
   const headers = new Headers(init.headers);
   if (isAppApi) {
@@ -146,7 +166,52 @@ export async function appFetch(
   const reportSample = isAppApi;
   const fetchInput: RequestInfo | URL =
     typeof input === "string" || input instanceof URL ? url : input;
-  const execute = () => fetchWithTimeout(fetchInput, requestInit, timeoutMs, reportSample);
+
+  const execute = async () => {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const response = await fetchWithTimeout(
+          fetchInput,
+          requestInit,
+          timeoutMs,
+          reportSample
+        );
+
+        if (
+          attempt < retries &&
+          isSafeRead &&
+          !response.ok &&
+          isRetryableStatus(response.status)
+        ) {
+          await sleep(RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
+
+        return response;
+      } catch (error) {
+        lastError = error;
+
+        // Caller-aborted requests must not retry (timeouts are already converted above).
+        if (isAbortError(error)) {
+          throw error;
+        }
+
+        if (attempt >= retries) {
+          throw error;
+        }
+
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          throw error;
+        }
+
+        await sleep(RETRY_DELAY_MS * (attempt + 1));
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error("Request failed.");
+  };
 
   if (shouldDedupe) {
     const key = buildInFlightRequestKey(method, url);

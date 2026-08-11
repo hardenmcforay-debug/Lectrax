@@ -30,6 +30,10 @@ import {
 import type { PaymentMethodLogoId } from "@/lib/subscription/payment-method-logo-ids";
 import { platformFetch } from "@/lib/api/fetch";
 import { ERROR_MESSAGES } from "@/lib/errors/messages";
+import {
+  getAdaptivePollIntervalMs,
+  shouldPrefetchHeavyAssets,
+} from "@/lib/network/connection-quality";
 import { isLectraxPaymentReturnMessage } from "@/lib/payments/hosted-checkout-bridge";
 import { toClientAppPath } from "@/lib/pwa/config";
 import { cn } from "@/lib/utils";
@@ -100,11 +104,12 @@ function optimizedPaymentLogoHref(href: string, width = 128): string {
   return `/_next/image?${params.toString()}`;
 }
 
-/** Warm browser cache as soon as the subscription page mounts (before dialog opens). */
+/** Warm payment logos only when checkout is open and the connection can spare the bytes. */
 function preloadPaymentMethodLogos(
   logos: Record<PaymentMethodLogoId, string | null> | undefined
 ): void {
   if (typeof document === "undefined" || !logos) return;
+  if (!shouldPrefetchHeavyAssets()) return;
 
   for (const href of Object.values(logos)) {
     if (!href || preloadedPaymentLogoUrls.has(href)) continue;
@@ -182,15 +187,18 @@ export function PaymentCheckoutFlow({
   }, [onPaymentComplete, handleOpenChange]);
 
   useEffect(() => {
+    if (!open) return;
     preloadPaymentMethodLogos(paymentMethodLogos);
-  }, [paymentMethodLogos]);
+  }, [open, paymentMethodLogos]);
 
   const activePaymentId = hostedCheckout?.paymentId ?? ussdDetails?.paymentId ?? null;
 
   useEffect(() => {
     if (!activePaymentId || !polling) return;
 
-    const interval = window.setInterval(() => {
+    const pollMs = getAdaptivePollIntervalMs(5_000);
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       void (async () => {
         const res = await appFetch(`/api/payments/${activePaymentId}/status`);
         if (!res.ok) return;
@@ -199,9 +207,15 @@ export function PaymentCheckoutFlow({
           finishSuccessfulPayment();
         }
       })();
-    }, 5000);
+    };
 
-    return () => window.clearInterval(interval);
+    const interval = window.setInterval(tick, pollMs);
+    document.addEventListener("visibilitychange", tick);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [activePaymentId, polling, finishSuccessfulPayment]);
 
   useEffect(() => {

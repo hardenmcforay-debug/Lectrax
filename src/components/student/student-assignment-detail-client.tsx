@@ -33,6 +33,7 @@ import {
   clearPrefetchedSubmissionPdf,
   prefetchPdfEngine,
   prefetchSubmissionPdf,
+  prefetchSubmissionPdfInBackground,
   prefetchSubmissionPdfWhenIdle,
 } from "@/lib/assignments/pdf-viewer-prefetch";
 
@@ -313,10 +314,10 @@ export function StudentAssignmentDetailClient({
                 variant="link"
                 className="h-auto p-0"
                 onPointerEnter={() => {
-                  void prefetchSubmissionPdf(submissionViewUrl);
+                  prefetchSubmissionPdfInBackground(submissionViewUrl);
                 }}
                 onFocus={() => {
-                  void prefetchSubmissionPdf(submissionViewUrl);
+                  prefetchSubmissionPdfInBackground(submissionViewUrl);
                 }}
                 onClick={openSubmissionPdf}
               >
