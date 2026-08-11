@@ -54,7 +54,10 @@ export async function proxy(request: NextRequest) {
   internalUrl.pathname = internalPath;
 
   // Session / auth logic sees unprefixed routes; browser URL can stay under /go/*.
+  // Preserve method — NextRequest defaults to GET, which would skip CSRF,
+  // body-size, and mutation rate-limit checks.
   const observedRequest = new NextRequest(internalUrl, {
+    method: request.method,
     headers: requestHeaders,
   });
 
