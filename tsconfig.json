@@ -39,6 +39,8 @@
     "node_modules",
     "supabase/functions",
     "scripts",
-    "deploy"
+    "deploy",
+    "tests",
+    "loadtests"
   ]
 }
