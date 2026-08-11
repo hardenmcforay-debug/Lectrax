@@ -42,8 +42,9 @@ describe("csp", () => {
     expect(policy).toContain(`report-uri ${CSP_REPORT_PATH}`);
     expect(policy).toContain("report-to csp-endpoint");
     expect(policy).toContain("upgrade-insecure-requests");
-    // Server-only providers must not appear in browser CSP.
-    expect(policy).not.toContain("monime");
+    // Payment checkout embeds Monime frames; API hosts stay out of connect-src.
+    expect(policy).toContain("frame-src 'self' blob: https://*.monime.io");
+    expect(policy).not.toMatch(/connect-src[^;]*monime/);
     expect(policy).not.toContain("resend");
     expect(policy).not.toContain("fonts.googleapis.com");
   });

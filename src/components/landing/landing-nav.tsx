@@ -114,8 +114,8 @@ export function LandingNav() {
     setMobileProductsOpen(false);
     setMobileCompanyOpen(false);
     setClickedScrollSection(null);
+    // Home starts transparent; inner pages are solid via `!isHome` below.
     setScrolledPastHero(false);
-    scrolledRef.current = false;
   }
 
   const isHome = pathname === "/";
@@ -141,13 +141,15 @@ export function LandingNav() {
     };
 
     if (!isHome) {
+      // Solid comes from `!isHome` — no scroll state update needed here.
       paint("solid");
       scrolledRef.current = true;
-      setScrolledPastHero(true);
       return () => {
         delete document.documentElement.dataset.landingNav;
       };
     }
+
+    scrolledRef.current = false;
 
     const updateScrolled = () => {
       const next = readScrollY() > SCROLL_SOLID_OFFSET;

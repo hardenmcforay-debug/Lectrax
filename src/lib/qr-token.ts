@@ -10,8 +10,18 @@ export interface QRTokenPayload {
   nonce: string;
 }
 
+/** Small skew so student devices slightly behind the server still accept fresh tokens. */
+const QR_TOKEN_CLOCK_SKEW_MS = 2_000;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function getSecret(): string {
   return getQrTokenSecret();
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
 }
 
 export function createQRToken(payload: Omit<QRTokenPayload, "nonce">): string {
@@ -33,7 +43,13 @@ export function verifyQRToken(token: string): QRTokenPayload | null {
     const b = Buffer.from(expected);
     if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
     const payload = JSON.parse(Buffer.from(data, "base64url").toString()) as QRTokenPayload;
-    if (Date.now() > payload.expiresAt) return null;
+    if (!isUuid(payload.attendanceSessionId) || !isUuid(payload.classSessionId)) {
+      return null;
+    }
+    if (typeof payload.expiresAt !== "number" || !Number.isFinite(payload.expiresAt)) {
+      return null;
+    }
+    if (Date.now() > payload.expiresAt + QR_TOKEN_CLOCK_SKEW_MS) return null;
     return payload;
   } catch {
     return null;

@@ -140,6 +140,25 @@ async function postHandler(request: Request) {
     return NextResponse.json({ error: "Attendance session not found" }, { status: 400 });
   }
 
+  if (attSession.class_session_id !== payload.classSessionId) {
+    await logAudit({
+      action: "attendance_scan_class_binding_mismatch",
+      entityType: "attendance_session",
+      entityId: attSession.id,
+      classSessionId: attSession.class_session_id,
+      metadata: {
+        student_id: user.id,
+        attendance_session_id: payload.attendanceSessionId,
+        token_class_session_id: payload.classSessionId,
+        session_class_session_id: attSession.class_session_id,
+      },
+    });
+    return NextResponse.json(
+      { error: "Invalid QR class session binding." },
+      { status: 400 }
+    );
+  }
+
   if (
     !isAttendanceSessionOpen(attSession) ||
     (await closeAttendanceSessionIfAbandoned(await createServiceClient(), attSession))

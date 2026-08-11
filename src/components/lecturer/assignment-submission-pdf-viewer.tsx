@@ -246,8 +246,6 @@ export function AssignmentSubmissionPdfViewer({
 
   if (activeViewUrl !== prevActiveViewUrl) {
     setPrevActiveViewUrl(activeViewUrl);
-    userZoomedRef.current = false;
-    pageWidthRef.current = null;
     if (activeViewUrl === null) {
       setPageCount(0);
       setCurrentPage(1);
@@ -266,6 +264,11 @@ export function AssignmentSubmissionPdfViewer({
       setScale(getFallbackPdfScale());
     }
   }
+
+  useEffect(() => {
+    userZoomedRef.current = false;
+    pageWidthRef.current = null;
+  }, [activeViewUrl]);
 
   const readPageWidth = useCallback(async (doc: PDFDocumentProxy) => {
     if (pageWidthRef.current !== null) return pageWidthRef.current;
