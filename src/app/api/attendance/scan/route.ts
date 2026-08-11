@@ -321,8 +321,6 @@ async function postHandler(request: Request) {
       class_session_id: payload.classSessionId,
       mark_method: "device_verified",
       device_fingerprint: deviceFingerprint,
-      latitude: null,
-      longitude: null,
       scan_metadata: {
         scanned_at: new Date().toISOString(),
         browser_fingerprint: browserFingerprint,
