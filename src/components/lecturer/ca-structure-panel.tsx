@@ -97,10 +97,12 @@ export function CaStructurePanel({
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [testActionMessage, setTestActionMessage] = useState<string | null>(null);
+  const [limitNotice, setLimitNotice] = useState<string | null>(null);
 
   if (initialClassTests !== prevInitialClassTests) {
     setPrevInitialClassTests(initialClassTests);
     setClassTests(initialClassTests);
+    setLimitNotice(null);
   }
 
   const activeTestCount = classTests.length;
@@ -109,8 +111,17 @@ export function CaStructurePanel({
   const allowCreateTest = nextTestNumber !== null && withinPlanLimit;
 
   function openCreateDialog() {
-    if (!allowCreateTest || !nextTestNumber) return;
+    if (!nextTestNumber) return;
     setCreateError(null);
+    setTestActionMessage(null);
+
+    // Free (or plan) limit: only show the upgrade message when they try to create another test.
+    if (!withinPlanLimit) {
+      setLimitNotice(getTestLimitReachedMessage(subscriptionPlan));
+      return;
+    }
+
+    setLimitNotice(null);
     setTestTitle(getDefaultTestTitle(nextTestNumber));
     setMaxScore(100);
     setCreateOpen(true);
@@ -274,6 +285,7 @@ export function CaStructurePanel({
       });
 
       setDeleteTarget(null);
+      setLimitNotice(null);
       setTestActionMessage(data.message ?? "Test deleted successfully.");
       router.refresh();
     } catch {
@@ -356,18 +368,16 @@ export function CaStructurePanel({
               <h3 className="text-base font-semibold">Create Test</h3>
               <Button
                 variant="accent"
-                disabled={!allowCreateTest}
+                disabled={nextTestNumber === null}
                 onClick={openCreateDialog}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {getCreateTestButtonLabel(allowCreateTest ? nextTestNumber : null)}
+                {getCreateTestButtonLabel(nextTestNumber)}
               </Button>
             </div>
 
-            {!withinPlanLimit && (
-              <p className="mt-4 text-sm text-destructive">
-                {getTestLimitReachedMessage(subscriptionPlan)}
-              </p>
+            {limitNotice && (
+              <p className="mt-4 text-sm text-destructive">{limitNotice}</p>
             )}
             {testActionMessage && (
               <p className="mt-4 text-sm text-green-700">{testActionMessage}</p>
