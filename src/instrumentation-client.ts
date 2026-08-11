@@ -42,7 +42,7 @@ if (dsn) {
       /^AbortError/,
       /Loading chunk [\d]+ failed/,
     ],
-    beforeSend(event: Sentry.Event) {
+    beforeSend(event: Sentry.ErrorEvent) {
       if (event.extra) {
         for (const key of Object.keys(event.extra)) {
           if (/secret|password|authorization|cookie|token/i.test(key)) {
