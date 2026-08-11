@@ -33,7 +33,6 @@ type PlatformFetchOptions = RequestInit & {
   retryDelayMs?: number;
 };
 
-const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RETRIES = 1;
 const DEFAULT_RETRY_DELAY_MS = 600;
 
