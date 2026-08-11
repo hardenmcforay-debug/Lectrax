@@ -91,7 +91,7 @@ async function postHandler(request: Request) {
   const auth = await requireStudentRole();
   if (auth.error) return auth.error;
 
-  const userRateLimit = rejectIfUserRateLimited(
+  const userRateLimit = await rejectIfUserRateLimited(
     auth.userId,
     "attendanceScanPerUser",
     "attendance-scan-user"

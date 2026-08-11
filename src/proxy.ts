@@ -58,7 +58,7 @@ export async function proxy(request: NextRequest) {
     headers: requestHeaders,
   });
 
-  const abuseResponse = rejectIfAbusiveRequest(observedRequest);
+  const abuseResponse = await rejectIfAbusiveRequest(observedRequest);
   if (abuseResponse) {
     return applyCspHeaders(abuseResponse, nonce, cspMode);
   }

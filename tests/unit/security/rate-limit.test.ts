@@ -1,37 +1,39 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildRateLimitKey,
   checkRateLimit,
 } from "@/lib/security/rate-limit";
 
 describe("in-memory rate limit", () => {
-  it("allows requests under the limit and denies after", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("allows requests under the limit and denies after", async () => {
     const key = `test:sliding:${Date.now()}`;
     const rule = { limit: 3, windowMs: 60_000 };
 
-    expect(checkRateLimit(key, rule).allowed).toBe(true);
-    expect(checkRateLimit(key, rule).allowed).toBe(true);
-    expect(checkRateLimit(key, rule).allowed).toBe(true);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(true);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(true);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(true);
 
-    const denied = checkRateLimit(key, rule);
+    const denied = await checkRateLimit(key, rule);
     expect(denied.allowed).toBe(false);
     expect(denied.retryAfterSec).toBeGreaterThanOrEqual(1);
+    expect(denied.backend).toBe("memory");
   });
 
-  it("resets the window after windowMs elapses", () => {
+  it("resets the window after windowMs elapses", async () => {
+    vi.useFakeTimers();
     const key = `test:window:${Date.now()}`;
-    const rule = { limit: 1, windowMs: 1 };
+    const rule = { limit: 1, windowMs: 1_000 };
 
-    expect(checkRateLimit(key, rule).allowed).toBe(true);
-    expect(checkRateLimit(key, rule).allowed).toBe(false);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(true);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(false);
 
-    // Busy-wait past the 1ms window so the next call opens a fresh bucket.
-    const start = Date.now();
-    while (Date.now() - start < 5) {
-      // no-op
-    }
+    vi.advanceTimersByTime(1_001);
 
-    expect(checkRateLimit(key, rule).allowed).toBe(true);
+    expect((await checkRateLimit(key, rule)).allowed).toBe(true);
   });
 
   it("builds scoped keys", () => {

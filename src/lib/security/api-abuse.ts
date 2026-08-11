@@ -192,14 +192,14 @@ export function rejectIfBodyTooLarge(request: NextRequest): NextResponse | null 
 }
 
 /** Returns 429 when the client exceeds configured rate limits. */
-export function rejectIfRateLimited(request: NextRequest): NextResponse | null {
+export async function rejectIfRateLimited(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
   const resolved = resolveRateLimit(pathname, request.method);
   if (!resolved) return null;
 
   const ip = getClientIp(request);
   const key = buildRateLimitKey(ip, resolved.policy);
-  const result = checkRateLimit(key, resolved.rule);
+  const result = await checkRateLimit(key, resolved.rule);
 
   if (result.allowed) return null;
 
@@ -217,6 +217,8 @@ export function rejectIfRateLimited(request: NextRequest): NextResponse | null {
 }
 
 /** Combined early abuse checks for middleware (body size + rate limits). */
-export function rejectIfAbusiveRequest(request: NextRequest): NextResponse | null {
-  return rejectIfBodyTooLarge(request) ?? rejectIfRateLimited(request);
+export async function rejectIfAbusiveRequest(
+  request: NextRequest
+): Promise<NextResponse | null> {
+  return rejectIfBodyTooLarge(request) ?? (await rejectIfRateLimited(request));
 }

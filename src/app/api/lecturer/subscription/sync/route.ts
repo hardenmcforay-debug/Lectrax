@@ -11,7 +11,7 @@ async function postHandler() {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
-  const rateLimited = rejectIfUserRateLimited(
+  const rateLimited = await rejectIfUserRateLimited(
     auth.userId,
     "subscriptionSync",
     "subscription.sync"

@@ -22,14 +22,14 @@ function tooManyRequestsResponse(retryAfterSec?: number): NextResponse {
 }
 
 /** Apply a named policy to an arbitrary key (e.g. authenticated user id). */
-export function rejectIfKeyRateLimited(
+export async function rejectIfKeyRateLimited(
   key: string,
   policy: RateLimitPolicyName | RateLimitRule,
   logScope?: string
-): NextResponse | null {
+): Promise<NextResponse | null> {
   const rule =
     typeof policy === "string" ? RATE_LIMIT_POLICIES[policy] : policy;
-  const result = checkRateLimit(key, rule);
+  const result = await checkRateLimit(key, rule);
 
   if (result.allowed) return null;
 
@@ -41,10 +41,10 @@ export function rejectIfKeyRateLimited(
 }
 
 /** Per-user limit after authentication (complements middleware IP limits). */
-export function rejectIfUserRateLimited(
+export async function rejectIfUserRateLimited(
   userId: string,
   policy: RateLimitPolicyName,
   logScope?: string
-): NextResponse | null {
+): Promise<NextResponse | null> {
   return rejectIfKeyRateLimited(`user:${userId}:${policy}`, policy, logScope);
 }

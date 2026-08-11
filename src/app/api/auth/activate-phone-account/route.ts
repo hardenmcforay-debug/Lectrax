@@ -42,7 +42,7 @@ async function postHandler(request: Request) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildActivatePhoneAccountRateLimitKey(identifier),
       "activatePhoneAccount",
       "auth.activate-phone-account"

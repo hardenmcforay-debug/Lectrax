@@ -36,7 +36,7 @@ async function postHandler(request: Request) {
     }
 
     const { userId, phoneNumber } = parsed.data;
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildFinalizePhoneSignupRateLimitKey(userId),
       "finalizePhoneSignup",
       "auth.finalize-phone-signup"

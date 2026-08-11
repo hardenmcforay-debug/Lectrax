@@ -79,6 +79,15 @@ if (monimeSet.length === 0) {
   warnings.push("Monime not configured (optional until payments are enabled)");
 }
 
+const upstashKeys = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"];
+const upstashSet = upstashKeys.filter((key) => read(key));
+if (upstashSet.length > 0 && upstashSet.length < upstashKeys.length) {
+  errors.push("Incomplete Upstash configuration (set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN)");
+}
+if (upstashSet.length === 0) {
+  warnings.push("Upstash Redis not configured (rate limits will use in-memory fallback only)");
+}
+
 const publicEnvKeys = Object.keys(process.env).filter((key) => key.startsWith("NEXT_PUBLIC_"));
 const forbiddenPublicPatterns = [
   /SERVICE_ROLE/i,

@@ -9,6 +9,20 @@ import {
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN ?? process.env.SENTRY_DSN;
 
 if (dsn) {
+  const replayIntegration = (
+    Sentry as typeof Sentry & {
+      replayIntegration?: (options: {
+        maskAllInputs: boolean;
+        maskAllText: boolean;
+        blockAllMedia: boolean;
+      }) => unknown;
+    }
+  ).replayIntegration?.({
+    maskAllInputs: true,
+    maskAllText: false,
+    blockAllMedia: true,
+  });
+
   Sentry.init({
     dsn,
     enabled: true,
@@ -19,13 +33,7 @@ if (dsn) {
         ? TRACE_SAMPLE_RATE_DEVELOPMENT
         : TRACE_SAMPLE_RATE_PRODUCTION,
     enableLogs: true,
-    integrations: [
-      Sentry.replayIntegration({
-        maskAllInputs: true,
-        maskAllText: false,
-        blockAllMedia: true,
-      }),
-    ],
+    integrations: replayIntegration ? [replayIntegration] : [],
     replaysSessionSampleRate: REPLAY_SESSION_SAMPLE_RATE,
     replaysOnErrorSampleRate: REPLAY_ON_ERROR_SAMPLE_RATE,
     ignoreErrors: [
@@ -34,7 +42,7 @@ if (dsn) {
       /^AbortError/,
       /Loading chunk [\d]+ failed/,
     ],
-    beforeSend(event) {
+    beforeSend(event: Sentry.Event) {
       if (event.extra) {
         for (const key of Object.keys(event.extra)) {
           if (/secret|password|authorization|cookie|token/i.test(key)) {
