@@ -3,8 +3,10 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { joinSessionSchema } from "@/lib/validations";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -81,3 +83,5 @@ export async function POST(request: Request) {
     },
   });
 }
+
+export const POST = withApiObservability("student.join.post", postHandler);

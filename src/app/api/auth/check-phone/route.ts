@@ -5,6 +5,8 @@ import { profileExistsForPhone } from "@/lib/auth/resolve-login-identifier";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const checkPhoneSchema = z.object({
   phoneNumber: normalizedRequiredPhoneField,
@@ -15,7 +17,7 @@ function buildCheckPhoneRateLimitKey(phone: string): string {
   return `checkPhone:${hash.slice(0, 24)}`;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -57,3 +59,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not verify phone number." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.check-phone.post", postHandler);

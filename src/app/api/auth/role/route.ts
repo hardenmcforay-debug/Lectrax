@@ -3,8 +3,10 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { apiServiceUnavailableResponse, apiUnauthorizedResponse } from "@/lib/errors/api";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function GET() {
+
+async function getHandler() {
   const auth = await getCachedAuthUser();
 
   if (auth.status === "service_unavailable") {
@@ -32,3 +34,5 @@ export async function GET() {
 
   return NextResponse.json({ role: roleResult.role, userId: auth.user.id });
 }
+
+export const GET = withApiObservability("auth.role.get", getHandler);

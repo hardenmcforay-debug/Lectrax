@@ -13,8 +13,10 @@ import {
 } from "@/lib/lecturer/class-assignments";
 
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function DELETE(
+
+async function deleteHandler(
   _request: Request,
 
   { params }: { params: Promise<{ id: string; assignmentId: string }> }
@@ -91,3 +93,4 @@ export async function DELETE(
 
 }
 
+export const DELETE = withApiObservability("lecturer.sessions.assignments.delete", deleteHandler);

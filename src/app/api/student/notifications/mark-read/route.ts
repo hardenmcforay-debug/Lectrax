@@ -4,12 +4,14 @@ import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/auth/get-profile";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const markReadSchema = z.object({
   type: z.enum(["assignment", "grade", "attendance"]),
 });
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,3 +57,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = withApiObservability("student.notifications.mark-read.post", postHandler);

@@ -19,13 +19,15 @@ import {
   handleApiRouteError,
 } from "@/lib/errors/api";
 import { sanitizeErrorMessage, isTransientError } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const checkoutSchema = z.object({
   plan: z.enum(["monthly", "semester", "annual"]),
   paymentMethod: z.enum(["orange_money", "afrimoney"]),
 });
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -160,3 +162,5 @@ export async function POST(request: Request) {
     return handleApiRouteError("payments.checkout", e);
   }
 }
+
+export const POST = withApiObservability("payments.checkout.post", postHandler);

@@ -10,6 +10,8 @@ import {
 } from "@/lib/attendance/sessions";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const refreshSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -19,7 +21,7 @@ function resolveAppUrl(request: Request): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? new URL(request.url).origin;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -100,3 +102,5 @@ export async function POST(request: Request) {
     sessionExpiresAt: attendanceSession.session_expires_at,
   });
 }
+
+export const POST = withApiObservability("attendance.refresh.post", postHandler);

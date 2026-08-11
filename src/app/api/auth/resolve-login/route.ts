@@ -6,6 +6,8 @@ import { resolveAuthEmailFromIdentifier } from "@/lib/auth/resolve-login-identif
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const resolveLoginSchema = z.object({
   identifier: loginIdentifierField,
@@ -16,7 +18,7 @@ function buildResolveLoginRateLimitKey(identifier: string): string {
   return `resolveLogin:${hash.slice(0, 24)}`;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -56,3 +58,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not resolve login identifier." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.resolve-login.post", postHandler);

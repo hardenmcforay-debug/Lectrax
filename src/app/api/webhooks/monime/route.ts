@@ -18,8 +18,10 @@ import { handleApiRouteError } from "@/lib/errors/api";
 import { monimeWebhookEventSchema } from "@/lib/validations";
 import { logServerError } from "@/lib/errors/logger";
 import { completePartnershipPayment } from "@/lib/partnerships/complete-payment";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(request: Request) {
+
+async function postHandler(request: Request) {
   const rawBody = await request.text();
   const signature = getMonimeWebhookSignature(request);
 
@@ -251,3 +253,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+export const POST = withApiObservability("webhooks.monime.post", postHandler);

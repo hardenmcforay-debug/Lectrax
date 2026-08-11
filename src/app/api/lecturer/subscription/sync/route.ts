@@ -3,9 +3,11 @@ import { requireLecturerRole } from "@/lib/auth/require-api-role";
 import { backfillMissingSubscriptionRecordsForLecturer } from "@/lib/subscription/lifecycle";
 import { handleApiRouteError } from "@/lib/errors/api";
 import { rejectIfUserRateLimited } from "@/lib/security/enforce-rate-limit";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 /** Repairs missing subscription history rows for the signed-in lecturer only. */
-export async function POST() {
+async function postHandler() {
   const auth = await requireLecturerRole();
   if (auth.error) return auth.error;
 
@@ -26,3 +28,5 @@ export async function POST() {
     return handleApiRouteError("subscription.sync", error);
   }
 }
+
+export const POST = withApiObservability("lecturer.subscription.sync.post", postHandler);

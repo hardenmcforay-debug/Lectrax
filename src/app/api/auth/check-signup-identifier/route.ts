@@ -6,6 +6,8 @@ import { accountExistsForSignupIdentifier } from "@/lib/auth/phone-account";
 import { rejectIfKeyRateLimited } from "@/lib/security/enforce-rate-limit";
 import { logServerError } from "@/lib/errors/logger";
 import { createHash } from "crypto";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const checkSignupIdentifierSchema = z.object({
   identifier: loginIdentifierField,
@@ -16,7 +18,7 @@ function buildCheckSignupIdentifierRateLimitKey(identifier: string): string {
   return `checkSignupIdentifier:${hash.slice(0, 24)}`;
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     let body: unknown;
     try {
@@ -72,3 +74,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not verify signup details." }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("auth.check-signup-identifier.post", postHandler);

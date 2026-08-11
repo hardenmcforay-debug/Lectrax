@@ -5,6 +5,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { apiServiceUnavailableResponse } from "@/lib/errors/api";
+import { bindObservabilityUser } from "@/lib/observability/request-store";
 import type { UserRole } from "@/types/database";
 
 type ApiRoleGuardSuccess = {
@@ -44,6 +45,7 @@ async function requireApiRole(
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
+  bindObservabilityUser(auth.user.id);
   return { user: auth.user, userId: auth.user.id, supabase, service };
 }
 
@@ -71,5 +73,6 @@ export async function requireAuthenticatedUser(): Promise<
   const service = await createServiceClient();
   const supabase = await createClient();
 
+  bindObservabilityUser(auth.user.id);
   return { user: auth.user, userId: auth.user.id, supabase, service };
 }

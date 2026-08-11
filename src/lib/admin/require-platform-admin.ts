@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getRoleForUserSafe } from "@/lib/auth/get-role";
 import { getCachedAuthUser } from "@/lib/auth/session";
 import { apiServiceUnavailableResponse } from "@/lib/errors/api";
+import { bindObservabilityUser } from "@/lib/observability/request-store";
 
 export async function requirePlatformAdmin() {
   const auth = await getCachedAuthUser();
@@ -27,5 +28,6 @@ export async function requirePlatformAdmin() {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
+  bindObservabilityUser(auth.user.id);
   return { supabase, service, user: auth.user, userId: auth.user.id };
 }

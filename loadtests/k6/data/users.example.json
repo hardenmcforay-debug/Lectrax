@@ -1,0 +1,17 @@
+[
+  {
+    "identifier": "lecturer.loadtest@example.com",
+    "password": "ChangeMe!Load1",
+    "role": "lecturer"
+  },
+  {
+    "identifier": "student1.loadtest@example.com",
+    "password": "ChangeMe!Load1",
+    "role": "student"
+  },
+  {
+    "identifier": "student2.loadtest@example.com",
+    "password": "ChangeMe!Load1",
+    "role": "student"
+  }
+]

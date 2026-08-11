@@ -7,6 +7,8 @@ import { normalizePhoneNumber } from "@/lib/auth/phone-number";
 import { applyRecoveryEmailUpdate } from "@/lib/auth/recovery-email";
 import { canEditRecoveryEmail, getRecoveryEmailDisplay } from "@/lib/auth/phone-number";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 type ProfileResponse = {
   id: string;
@@ -46,7 +48,7 @@ function buildProfileResponse(
   };
 }
 
-export async function GET() {
+async function getHandler() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -75,7 +77,7 @@ export async function GET() {
   });
 }
 
-export async function PATCH(request: Request) {
+async function patchHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -235,3 +237,6 @@ export async function PATCH(request: Request) {
     profile: buildProfileResponse(savedProfile, user.email, user.user_metadata),
   });
 }
+
+export const GET = withApiObservability("profile.get", getHandler);
+export const PATCH = withApiObservability("profile.patch", patchHandler);

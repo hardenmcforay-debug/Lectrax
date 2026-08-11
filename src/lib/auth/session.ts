@@ -3,6 +3,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { AuthSessionResult } from "@/lib/errors/types";
 import { isDefinitiveAuthError, isTransientError } from "@/lib/errors/classify";
 import { createClient } from "@/lib/supabase/server";
+import { bindObservabilityUser } from "@/lib/observability/request-store";
 
 function safeSerialize(error: unknown): string {
   if (error instanceof Error) {
@@ -49,6 +50,7 @@ async function resolveAuthUser(
       return { status: "unauthenticated" };
     }
 
+    bindObservabilityUser(user.id);
     return { status: "authenticated", user };
   } catch (error) {
     if (process.env.NODE_ENV === "development") {

@@ -5,6 +5,8 @@ import { logAudit } from "@/lib/audit";
 import { persistAttendanceSessionClosed } from "@/lib/attendance/close-session";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { uuidField } from "@/lib/security/zod-helpers";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 const endSchema = z.object({
   attendanceSessionId: uuidField(),
@@ -31,7 +33,7 @@ async function parseEndBody(request: Request): Promise<unknown> {
   }
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -100,3 +102,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: sanitizeErrorMessage(message) }, { status: 500 });
   }
 }
+
+export const POST = withApiObservability("attendance.end.post", postHandler);

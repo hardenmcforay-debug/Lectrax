@@ -10,8 +10,10 @@ import {
   subscriptionGuardResponse,
 } from "@/lib/subscription/guards";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function POST(
+
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -112,3 +114,5 @@ export async function POST(
     },
   });
 }
+
+export const POST = withApiObservability("lecturer.sessions.students.manual.post", postHandler);

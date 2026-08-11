@@ -10,6 +10,8 @@ import { requireStudentRole } from "@/lib/auth/require-api-role";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { parseRouteUuid } from "@/lib/security/parse-request";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
+
 
 async function logRejectedSubmission(params: {
   userId: string;
@@ -33,7 +35,7 @@ async function logRejectedSubmission(params: {
   });
 }
 
-export async function POST(
+async function postHandler(
   request: Request,
   { params }: { params: Promise<{ assignmentId: string }> }
 ) {
@@ -176,3 +178,5 @@ export async function POST(
 
   return NextResponse.json({ success: true });
 }
+
+export const POST = withApiObservability("student.assignments.submit.post", postHandler);

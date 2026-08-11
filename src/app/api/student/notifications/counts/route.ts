@@ -7,8 +7,10 @@ import {
   type StudentNotificationType,
 } from "@/lib/student/notifications";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-export async function GET() {
+
+async function getHandler() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,3 +42,5 @@ export async function GET() {
     counts: data ? aggregateNotificationCounts(data as { type: StudentNotificationType }[]) : EMPTY_STUDENT_NOTIFICATION_COUNTS,
   });
 }
+
+export const GET = withApiObservability("student.notifications.counts.get", getHandler);

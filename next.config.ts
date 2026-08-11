@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import { getAppSecurityHeaderRoutes } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
+  // Public browser maps stay off; Sentry uploads private maps when auth token is set.
   productionBrowserSourceMaps: false,
   serverExternalPackages: ["exceljs"],
   // Allow HMR when opening the dev server from LAN IPs (phone / other device).
@@ -37,4 +39,27 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN?.trim();
+const sentryDsn =
+  process.env.SENTRY_DSN?.trim() ||
+  process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+// Skip the Sentry webpack/turbopack wrapper when unset — on ~8GB machines it
+// balloons the Next.js process and makes local `next dev` unusable.
+const sentryEnabled = Boolean(sentryAuthToken || sentryDsn);
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: sentryAuthToken,
+      silent: !sentryAuthToken,
+      widenClientFileUpload: true,
+      tunnelRoute: "/monitoring",
+      disableLogger: true,
+      automaticVercelMonitors: true,
+      sourcemaps: {
+        disable: !sentryAuthToken,
+        deleteSourcemapsAfterUpload: true,
+      },
+    })
+  : nextConfig;
