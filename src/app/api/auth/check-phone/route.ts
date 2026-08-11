@@ -35,7 +35,7 @@ async function postHandler(request: Request) {
     }
 
     const phoneNumber = parsed.data.phoneNumber;
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildCheckPhoneRateLimitKey(phoneNumber),
       "checkPhone",
       "auth.check-phone"

@@ -17,7 +17,7 @@ Sentry.init({
       : TRACE_SAMPLE_RATE_PRODUCTION,
   enableLogs: true,
   sendDefaultPii: false,
-  beforeSend(event) {
+  beforeSend(event: Sentry.Event) {
     if (event.request?.headers) {
       delete event.request.headers.authorization;
       delete event.request.headers.cookie;

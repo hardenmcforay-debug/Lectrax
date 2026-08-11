@@ -1,3 +1,5 @@
+import type { Scope } from "@sentry/nextjs";
+
 /**
  * Safe Sentry helpers — no-ops when the SDK is disabled (no DSN).
  * Sentry is loaded lazily so API route imports stay light in tests/cold start.
@@ -29,7 +31,7 @@ export function captureException(
 
   void getSentry().then((Sentry) => {
     if (!Sentry) return;
-    Sentry.withScope((scope) => {
+    Sentry.withScope((scope: Scope) => {
       if (context?.scope) scope.setTag("lectrax.scope", context.scope);
       if (context?.tags) {
         for (const [key, value] of Object.entries(context.tags)) {
@@ -56,7 +58,7 @@ export function captureMessage(
 
   void getSentry().then((Sentry) => {
     if (!Sentry) return;
-    Sentry.withScope((scope) => {
+    Sentry.withScope((scope: Scope) => {
       if (context?.tags) {
         for (const [key, value] of Object.entries(context.tags)) {
           scope.setTag(key, value);

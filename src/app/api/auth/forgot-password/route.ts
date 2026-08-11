@@ -35,7 +35,7 @@ async function postHandler(request: Request) {
   const startedAt = Date.now();
 
   try {
-    const identifierLimitKey = (identifier: string) =>
+    const identifierLimitKey = async (identifier: string) =>
       rejectIfKeyRateLimited(
         buildPasswordResetRateLimitKey(identifier),
         "passwordResetEmail",
@@ -58,7 +58,7 @@ async function postHandler(request: Request) {
     }
 
     const identifier = parsed.data.identifier;
-    const identifierLimited = identifierLimitKey(identifier);
+    const identifierLimited = await identifierLimitKey(identifier);
     if (identifierLimited) return identifierLimited;
 
     const service = await createServiceClient();

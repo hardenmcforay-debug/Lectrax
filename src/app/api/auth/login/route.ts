@@ -44,7 +44,7 @@ async function postHandler(request: Request) {
     }
 
     const { identifier, password } = parsed.data;
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildLoginRateLimitKey(identifier),
       "authLogin",
       "auth.login"

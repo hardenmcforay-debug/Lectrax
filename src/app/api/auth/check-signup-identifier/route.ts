@@ -36,7 +36,7 @@ async function postHandler(request: Request) {
     }
 
     const identifier = parsed.data.identifier;
-    const rateLimited = rejectIfKeyRateLimited(
+    const rateLimited = await rejectIfKeyRateLimited(
       buildCheckSignupIdentifierRateLimitKey(identifier),
       "checkSignupIdentifier",
       "auth.check-signup-identifier"

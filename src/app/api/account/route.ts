@@ -26,7 +26,7 @@ async function deleteHandler(request: Request) {
   const auth = await requireAuthenticatedUser();
   if (auth.error) return auth.error;
 
-  const limited = rejectIfUserRateLimited(
+  const limited = await rejectIfUserRateLimited(
     auth.userId,
     "accountDeletion",
     "account_deletion"
