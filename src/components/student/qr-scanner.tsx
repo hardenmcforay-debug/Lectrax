@@ -209,8 +209,6 @@ export function QRScanner() {
           body: JSON.stringify({
             token: normalized,
             ...identity,
-            latitude: null,
-            longitude: null,
           }),
           signal: controller.signal,
         });

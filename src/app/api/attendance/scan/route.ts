@@ -111,8 +111,6 @@ async function postHandler(request: Request) {
 
   const {
     token,
-    latitude,
-    longitude,
     deviceFingerprint,
     browserFingerprint,
     deviceIdentifier,
@@ -150,15 +148,6 @@ async function postHandler(request: Request) {
       { error: "Attendance collection has ended for this session." },
       { status: 410 }
     );
-  }
-
-  if (attSession.require_gps) {
-    if (latitude == null || longitude == null) {
-      return NextResponse.json(
-        { error: "Location is required to mark attendance for this session." },
-        { status: 400 }
-      );
-    }
   }
 
   const tokenHash = hashQRToken(token);
@@ -332,8 +321,8 @@ async function postHandler(request: Request) {
       class_session_id: payload.classSessionId,
       mark_method: "device_verified",
       device_fingerprint: deviceFingerprint,
-      latitude,
-      longitude,
+      latitude: null,
+      longitude: null,
       scan_metadata: {
         scanned_at: new Date().toISOString(),
         browser_fingerprint: browserFingerprint,

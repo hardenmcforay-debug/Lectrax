@@ -49,7 +49,7 @@ async function postHandler(request: Request) {
     );
   }
 
-  const { classSessionId, title, durationMinutes, requireGps } = parsed.data;
+  const { classSessionId, title, durationMinutes } = parsed.data;
   const service = await createServiceClient();
 
   const [{ data: profile }, { data: classSession }, { data: existingActive }] = await Promise.all([
@@ -127,7 +127,6 @@ async function postHandler(request: Request) {
       qr_token_hash: finalRotation.tokenHash,
       qr_expires_at: finalRotation.tokenExpiresAt.toISOString(),
       session_expires_at: sessionExpiresAt.toISOString(),
-      require_gps: requireGps,
       is_active: true,
     })
     .select("id, title, session_date, created_at, session_expires_at")
