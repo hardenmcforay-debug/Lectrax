@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://ci-project.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key-for-build-and-tests-only
+  SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key-for-build-and-tests-only
+  NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+  QR_TOKEN_SECRET: ci-qr-token-secret-min-32-characters-long!!
+  CRON_SECRET: ci-cron-secret-for-build-and-tests
+  MONIME_API_KEY: ci-monime-api-key-for-tests
+  MONIME_SPACE_ID: ci-monime-space-id
+  MONIME_WEBHOOK_SECRET: ci-monime-webhook-secret-for-tests
+  MONIME_CURRENCY: SLE
+
+jobs:
+  quality:
+    name: Typecheck · Lint · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Unit, integration, and API tests
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+      - name: Build project
+        run: npm run build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+
+  security:
+    name: Security audit · Dependency scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production dependency audit
+        run: npm run audit:deps -- --audit-level=high
+
+      - name: Full dependency vulnerability scan
+        run: npm run audit:all
+
+  e2e:
+    name: Playwright end-to-end
+    runs-on: ubuntu-latest
+    needs: [quality]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run Playwright tests
+        run: npm run test:e2e -- --project=chromium
+        env:
+          CI: "true"
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          E2E_LECTURER_IDENTIFIER: ${{ secrets.E2E_LECTURER_IDENTIFIER }}
+          E2E_LECTURER_PASSWORD: ${{ secrets.E2E_LECTURER_PASSWORD }}
+          E2E_STUDENT_IDENTIFIER: ${{ secrets.E2E_STUDENT_IDENTIFIER }}
+          E2E_STUDENT_PASSWORD: ${{ secrets.E2E_STUDENT_PASSWORD }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
