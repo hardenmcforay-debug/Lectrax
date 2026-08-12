@@ -4,9 +4,10 @@ import { FacebookLogo } from "@/components/contact/facebook-logo";
 import { InstagramLogo } from "@/components/contact/instagram-logo";
 import { LinkedInLogo } from "@/components/contact/linkedin-logo";
 import { TikTokLogo } from "@/components/contact/tiktok-logo";
+import { WhatsAppLogo } from "@/components/contact/whatsapp-logo";
 import { XLogo } from "@/components/contact/x-logo";
 import { APP_NAME } from "@/lib/constants";
-import { CONTACT_EMAIL, CONTACT_SOCIAL_LINKS } from "@/lib/contact/constants";
+import { CONTACT_EMAIL, CONTACT_SOCIAL_LINKS, CONTACT_WHATSAPP_HREF, CONTACT_WHATSAPP_NUMBER } from "@/lib/contact/constants";
 import { getProductNavLinks } from "@/lib/landing/products";
 
 const productLinks = getProductNavLinks();
@@ -111,6 +112,17 @@ export function LandingFooter() {
                 className="transition-colors duration-300 ease-out hover:text-white"
               >
                 {CONTACT_EMAIL}
+              </a>
+            </p>
+            <p className="mt-2 text-sm text-white/65">
+              <a
+                href={CONTACT_WHATSAPP_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 transition-colors duration-300 ease-out hover:text-white"
+              >
+                <WhatsAppLogo className="h-5 w-5 shrink-0" />
+                <span>{CONTACT_WHATSAPP_NUMBER}</span>
               </a>
             </p>
             <div className="mt-4 grid grid-cols-5 items-center gap-2">

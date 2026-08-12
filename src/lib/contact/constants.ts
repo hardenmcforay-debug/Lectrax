@@ -1,5 +1,9 @@
 export const CONTACT_EMAIL = "hello@lectrax.com";
 
+/** Display number and wa.me link (digits only in the URL). */
+export const CONTACT_WHATSAPP_NUMBER = "+23270452122";
+export const CONTACT_WHATSAPP_HREF = "https://wa.me/23270452122";
+
 export const CONTACT_SOCIAL_LINKS = [
   { href: "https://facebook.com", label: "Facebook", id: "facebook", handle: "Lectrax" },
   { href: "https://x.com", label: "X", id: "x", handle: "Lectraxofficial" },
