@@ -147,27 +147,37 @@ export async function updateSession(
 
   const pathname = request.nextUrl.pathname;
 
+  // Password recovery must never stay under `/go/*` — PKCE + recovery session cookies
+  // live in the site auth jar that the email link browser uses.
+  if (pwaScoped && pathname === "/reset-password") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/reset-password";
+    return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
+  }
+
   if (pathname === "/reset-password") {
     return supabaseResponse;
   }
 
   const recoveryType = request.nextUrl.searchParams.get("type");
+  // Password recovery must stay on the unscoped site path so PKCE/session cookies match
+  // the browser cookie jar used when the email link opens (never `/go/reset-password`).
   if (
-    (pathname === "/login" || pathname === "/") &&
+    (pathname === "/login" || pathname === "/" || pathname === "/go/login") &&
     (recoveryType === "recovery" || request.nextUrl.searchParams.has("token_hash"))
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = appRedirectPath("/reset-password", pwaScoped);
+    redirectUrl.pathname = "/reset-password";
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
   if (
-    pathname === "/login" &&
+    (pathname === "/login" || pathname === "/go/login") &&
     request.nextUrl.searchParams.has("code") &&
     request.nextUrl.searchParams.get("next") === "/reset-password"
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = appRedirectPath("/reset-password", pwaScoped);
+    redirectUrl.pathname = "/reset-password";
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 

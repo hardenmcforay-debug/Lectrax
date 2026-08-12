@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const supabase = createClient();
+    const supabase = createClient("site");
 
     async function waitForRecoverySession() {
       // Allow hash/code bootstrap a moment to finish before declaring expiry.
@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
+      const supabase = createClient("site");
       const {
         data: { user },
       } = await supabase.auth.getUser();

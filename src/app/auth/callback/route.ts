@@ -37,7 +37,8 @@ export async function GET(request: Request) {
 
   if (tokenHash && flowType === "recovery") {
     const response = redirectToPasswordReset(origin);
-    const supabase = await createRouteHandlerClient(response);
+    // Recovery email links open in the browser site surface.
+    const supabase = await createRouteHandlerClient(response, { surface: "site" });
     const { error } = await supabase.auth.verifyOtp({
       type: "recovery",
       token_hash: tokenHash,
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     }
 
     logServerError("auth.callback.recoveryVerifyOtp", error);
-    return NextResponse.redirect(getLoginFailureUrl(origin));
+    return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
   }
 
   if (code) {
@@ -57,7 +58,9 @@ export async function GET(request: Request) {
       ? redirectToPasswordReset(origin)
       : NextResponse.redirect(`${origin}/`);
 
-    const supabase = await createRouteHandlerClient(sessionResponse);
+    const supabase = await createRouteHandlerClient(sessionResponse, {
+      surface: recoveryRedirect ? "site" : undefined,
+    });
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -95,6 +98,13 @@ export async function GET(request: Request) {
     }
 
     logServerError("auth.callback.exchangeCodeForSession", error);
+    if (recoveryRedirect) {
+      return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
+    }
+  }
+
+  if (isRecoveryFlow || flowType === "recovery") {
+    return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
   }
 
   return NextResponse.redirect(getLoginFailureUrl(origin));

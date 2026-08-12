@@ -4,8 +4,7 @@ import { useEffect } from "react";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
 import { isProtectedPortalPath } from "@/lib/auth/route-protection";
 import { PASSWORD_RESET_PAGE_PATH } from "@/lib/auth/password-recovery";
-import { getClientAuthEntryPath, toClientAppPath } from "@/lib/pwa/config";
-import { stripPwaScopePrefix } from "@/lib/pwa/scope";
+import { getClientAuthEntryPath } from "@/lib/pwa/config";
 import { createClient } from "@/lib/supabase/client";
 
 /** Clear client caches when the Supabase session ends (logout, expiry, remote sign-out). */
@@ -16,9 +15,9 @@ export function AuthSessionSync() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        const resetPath = toClientAppPath(PASSWORD_RESET_PAGE_PATH);
-        if (stripPwaScopePrefix(window.location.pathname) !== PASSWORD_RESET_PAGE_PATH) {
-          window.location.replace(resetPath);
+        // Keep recovery on the site path so it matches the site PKCE/session cookies.
+        if (window.location.pathname !== PASSWORD_RESET_PAGE_PATH) {
+          window.location.replace(PASSWORD_RESET_PAGE_PATH);
         }
         return;
       }

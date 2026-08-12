@@ -7,6 +7,7 @@ import { PASSWORD_RESET_PAGE_PATH } from "@/lib/auth/password-recovery";
 const EXCHANGE_LOCK_PREFIX = "lectrax:pw-reset-exchange:";
 
 function goToResetPasswordPage() {
+  // Recovery sessions live in the site cookie jar — never send users to `/go/reset-password`.
   if (window.location.pathname !== PASSWORD_RESET_PAGE_PATH) {
     window.location.replace(PASSWORD_RESET_PAGE_PATH);
     return;
@@ -46,7 +47,8 @@ function claimExchangeLock(key: string): boolean {
  */
 export function PasswordRecoverySessionBootstrap() {
   useEffect(() => {
-    const supabase = createClient();
+    // Email recovery always completes in the browser site cookie namespace.
+    const supabase = createClient("site");
     const currentUrl = new URL(window.location.href);
     const shouldHandleRecovery =
       hasRecoveryQueryParams(currentUrl) ||
