@@ -1,8 +1,8 @@
 /**
  * Canonical production origin for SEO (metadata, sitemap, robots, Open Graph).
- * Always use the apex domain — never localhost, preview, or www.
+ * Prefer the live primary host — never localhost or preview URLs.
  */
-export const CANONICAL_SITE_ORIGIN = "https://lectrax.com";
+export const CANONICAL_SITE_ORIGIN = "https://www.lectrax.com";
 
 /** Existing Lectrax brand mark used for Open Graph / schema logo. */
 export const DEFAULT_OG_IMAGE_PATH = "/brand/official-logo.png";
