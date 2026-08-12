@@ -273,6 +273,8 @@ export function PaymentCheckoutFlow({
           });
           setStep("hosted");
           setPolling(true);
+          // Pending payment row already exists — refresh history before checkout closes.
+          onPaymentComplete?.();
           return;
         }
 
@@ -280,6 +282,7 @@ export function PaymentCheckoutFlow({
           setUssdDetails(data);
           setStep("ussd");
           setPolling(true);
+          onPaymentComplete?.();
           return;
         }
 

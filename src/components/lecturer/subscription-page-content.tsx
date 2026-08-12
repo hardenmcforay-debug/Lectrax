@@ -111,23 +111,32 @@ export function SubscriptionPageContent({
 
   async function refreshSubscriptionData() {
     const supabase = createClient();
+    // Prefer local session cookies first — more reliable in the PWA after hosted checkout.
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+      data: { session },
+    } = await supabase.auth.getSession();
+    let userId = session?.user?.id ?? null;
+
+    if (!userId) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    }
+    if (!userId) return;
 
     const { data: p } = await supabase
       .from("profiles")
       .select("subscription_plan, subscription_status, subscription_end_date, grace_period_end_date")
-      .eq("id", user.id)
+      .eq("id", userId)
       .maybeSingle();
 
     const { data: pay } = await supabase
       .from("payments")
       .select(
-        "id, amount, status, plan, billing_plan, created_at, paid_at, metadata, monime_payment_id"
+        "id, amount, status, plan, billing_plan, created_at, paid_at, metadata, monime_payment_id, payment_method"
       )
-      .eq("lecturer_id", user.id)
+      .eq("lecturer_id", userId)
       .order("created_at", { ascending: false })
       .limit(10);
 
@@ -136,7 +145,7 @@ export function SubscriptionPageContent({
       const { data: adminSub } = await supabase
         .from("subscriptions")
         .select("id")
-        .eq("lecturer_id", user.id)
+        .eq("lecturer_id", userId)
         .eq("is_free_override", true)
         .not("granted_by", "is", null)
         .eq("status", "active")
@@ -473,7 +482,14 @@ export function SubscriptionPageContent({
 
       <PaymentCheckoutFlow
         open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        onOpenChange={(open) => {
+          setCheckoutOpen(open);
+          // Pending payments are created when checkout starts; refresh history on close
+          // so they appear without a manual page reload (critical in the installed PWA).
+          if (!open) {
+            void refreshSubscriptionData();
+          }
+        }}
         plan={checkoutPlan}
         planLabel={checkoutPlanLabel}
         paymentMethodLogos={initialData.paymentMethodLogos}

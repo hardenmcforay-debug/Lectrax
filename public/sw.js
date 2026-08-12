@@ -1,4 +1,4 @@
-const CACHE_VERSION = "lectrax-v13";
+const CACHE_VERSION = "lectrax-v14";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
@@ -20,6 +20,7 @@ const CACHEABLE_EXTENSIONS = /\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|we
 const NEVER_CACHE_PATTERNS = [
   /^\/$/,
   /^\/api\//,
+  /^\/go\/api\//,
   /supabase\.co/,
   /\/auth\//,
   /\/login/,
@@ -30,14 +31,22 @@ const NEVER_CACHE_PATTERNS = [
   /^\/student/,
   /^\/lecturer/,
   /^\/admin/,
+  /^\/go\/student/,
+  /^\/go\/lecturer/,
+  /^\/go\/admin/,
 ];
 
+function appPathname(pathname) {
+  return pathname.startsWith("/go/") ? pathname.slice(3) : pathname;
+}
+
 function isProtectedRoute(pathname) {
+  const path = appPathname(pathname);
   return (
-    pathname.startsWith("/lecturer") ||
-    pathname.startsWith("/student") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/api/")
+    path.startsWith("/lecturer") ||
+    path.startsWith("/student") ||
+    path.startsWith("/admin") ||
+    path.startsWith("/api/")
   );
 }
 

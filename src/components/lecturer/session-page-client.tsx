@@ -2,6 +2,7 @@
 
 import { appFetch } from "@/lib/api/client-fetch";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
+import { toClientAppPath } from "@/lib/pwa/config";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -209,8 +210,10 @@ export function SessionPageClient({
       }
 
       setCloseSessionOpen(false);
-      router.push("/lecturer/sessions");
-      router.refresh();
+      // Hard-navigate within the current auth surface (`/go/*` in PWA). Soft
+      // `router.push("/lecturer/...")` leaves PWA scope, hits site cookies, and
+      // briefly redirects to login before the app snaps back.
+      window.location.assign(toClientAppPath("/lecturer/sessions"));
       // Keep locked until navigation unmounts this view.
     } catch {
       setCloseSessionError("Network error. Please try again.");
@@ -300,7 +303,27 @@ export function SessionPageClient({
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`class-session-attendance-${session.id}`)
+      .channel(`class-session-students-${session.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "enrollments",
+          filter: `class_session_id=eq.${session.id}`,
+        },
+        () => scheduleRefreshStudentRows()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "enrollments",
+          filter: `class_session_id=eq.${session.id}`,
+        },
+        () => scheduleRefreshStudentRows()
+      )
       .on(
         "postgres_changes",
         {
