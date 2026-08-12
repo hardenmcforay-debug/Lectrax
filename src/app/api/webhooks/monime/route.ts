@@ -18,6 +18,7 @@ import { handleApiRouteError } from "@/lib/errors/api";
 import { monimeWebhookEventSchema } from "@/lib/validations";
 import { logServerError } from "@/lib/errors/logger";
 import { completePartnershipPayment } from "@/lib/partnerships/complete-payment";
+import { logStructured } from "@/lib/observability/structured-log";
 import { withApiObservability } from "@/lib/observability/with-api-observability";
 
 
@@ -25,10 +26,22 @@ async function postHandler(request: Request) {
   const rawBody = await request.text();
   const signature = getMonimeWebhookSignature(request);
 
-  if (!verifyMonimeWebhookSignature(rawBody, signature)) {
-    logServerError("webhooks.monime.invalid_signature", {
-      hasSignature: Boolean(signature),
+  if (!signature) {
+    // Unsigned probes (scanners/health checks) are expected on a public webhook URL.
+    // Do not raise Sentry errors for missing signatures.
+    logStructured("warn", "[webhooks.monime] missing signature header", {
+      scope: "webhooks.monime.invalid_signature",
+      hasSignature: false,
     });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  if (!verifyMonimeWebhookSignature(rawBody, signature)) {
+    logServerError(
+      "webhooks.monime.invalid_signature",
+      new Error("Monime webhook signature verification failed"),
+      { hasSignature: true }
+    );
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

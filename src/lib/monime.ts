@@ -432,9 +432,28 @@ function verifyHmacWebhookSignature(
   }
 }
 
-/** Monime sends `Monime-Signature`; keep legacy alias for older configs. */
+/** Monime sends `Monime-Signature`; keep legacy aliases for older configs / proxies. */
 export function getMonimeWebhookSignature(request: Request): string | null {
-  return request.headers.get("monime-signature") ?? request.headers.get("x-monime-signature");
+  const preferred =
+    request.headers.get("monime-signature") ??
+    request.headers.get("x-monime-signature") ??
+    request.headers.get("x-signature");
+
+  if (preferred?.trim()) return preferred.trim();
+
+  for (const [name, value] of request.headers.entries()) {
+    const lower = name.toLowerCase();
+    if (
+      lower === "monime-signature" ||
+      lower === "x-monime-signature" ||
+      lower.endsWith("monime-signature")
+    ) {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+
+  return null;
 }
 
 export function verifyMonimeWebhookSignature(
