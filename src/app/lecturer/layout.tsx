@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireRoleLayout } from "@/lib/auth/require-role-layout";
 import { ServiceUnavailablePage } from "@/components/errors/service-unavailable-page";
 import { PortalOnboardingGate } from "@/components/auth/portal-onboarding-gate";
 import { ProtectedSessionGuard } from "@/components/auth/protected-session-guard";
+import { NOINDEX_METADATA } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = NOINDEX_METADATA;
 
 export default async function LecturerLayout({ children }: { children: React.ReactNode }) {
   const guard = await requireRoleLayout("lecturer");

@@ -1,10 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/constants";
 import { OFFLINE_MODE_MESSAGE, OFFLINE_MODE_SUBMESSAGE } from "@/lib/errors/messages";
+import { NOINDEX_METADATA } from "@/lib/seo/metadata";
 
-export const metadata = {
+export const metadata: Metadata = {
+  ...NOINDEX_METADATA,
   title: "Offline",
-  robots: { index: false, follow: false },
 };
 
 export default function OfflinePage() {

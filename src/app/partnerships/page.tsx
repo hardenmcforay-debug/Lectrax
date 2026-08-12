@@ -3,13 +3,15 @@ import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PartnershipsPageContent } from "@/components/partnerships/partnerships-page-content";
 import { getPaymentMethodLogoUrls } from "@/lib/subscription/payment-method-logos";
+import { publicPageMetadata } from "@/lib/seo/metadata";
 import "../landing.css";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
   title: "University Partnerships",
   description:
     "Partner with Lectrax to provide your lecturers with a modern academic management platform for attendance, assessments, assignments, and student performance management.",
-};
+  path: "/partnerships",
+});
 
 export default async function PartnershipsPage() {
   const paymentMethodLogos = await getPaymentMethodLogoUrls();

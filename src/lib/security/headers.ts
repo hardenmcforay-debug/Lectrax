@@ -30,12 +30,16 @@ export function getPermissionsPolicy(options?: { allowCamera?: boolean }): strin
   ].join(", ");
 }
 
+const NOINDEX_ROBOTS: SecurityHeader = {
+  key: "X-Robots-Tag",
+  value: "noindex, nofollow",
+};
+
 /** Baseline security headers applied to all application routes (CSP excluded — see proxy). */
 export function getSecurityHeaders(options?: { allowCamera?: boolean }): SecurityHeader[] {
   const headers: SecurityHeader[] = [
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "X-Frame-Options", value: "DENY" },
-    { key: "X-Robots-Tag", value: "noindex, nofollow" },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     { key: "Permissions-Policy", value: getPermissionsPolicy(options) },
     { key: "X-DNS-Prefetch-Control", value: "off" },
@@ -63,6 +67,8 @@ const PRIVATE_NO_STORE: SecurityHeader[] = [
   { key: "Vary", value: "Cookie" },
 ];
 
+const PRIVATE_APP_HEADERS: SecurityHeader[] = [...PRIVATE_NO_STORE, NOINDEX_ROBOTS];
+
 /** Next.js `headers()` configuration for the main Lectrax application. */
 export function getAppSecurityHeaderRoutes(): Array<{ source: string; headers: SecurityHeader[] }> {
   const securityHeaders = getSecurityHeaders({ allowCamera: true });
@@ -71,19 +77,27 @@ export function getAppSecurityHeaderRoutes(): Array<{ source: string; headers: S
     { source: "/:path*", headers: securityHeaders },
     {
       source: "/(student|lecturer|admin)/:path*",
-      headers: PRIVATE_NO_STORE,
+      headers: PRIVATE_APP_HEADERS,
     },
     {
-      source: "/(login|signup|forgot-password|reset-password)",
-      headers: PRIVATE_NO_STORE,
+      source: "/(login|signup|forgot-password|reset-password|offline)",
+      headers: PRIVATE_APP_HEADERS,
+    },
+    {
+      source: "/go/:path*",
+      headers: PRIVATE_APP_HEADERS,
     },
     {
       source: "/api/:path*",
-      headers: PRIVATE_NO_STORE,
+      headers: PRIVATE_APP_HEADERS,
     },
     {
       source: "/auth/:path*",
-      headers: PRIVATE_NO_STORE,
+      headers: PRIVATE_APP_HEADERS,
+    },
+    {
+      source: "/payments/:path*",
+      headers: PRIVATE_APP_HEADERS,
     },
     {
       source: "/sw.js",
@@ -99,9 +113,9 @@ export function getAppSecurityHeaderRoutes(): Array<{ source: string; headers: S
   ];
 }
 
-/** Admin-only deployment — no camera access required. */
+/** Admin-only deployment — no camera access required; remain fully noindex. */
 export function getAdminSecurityHeaderRoutes(): Array<{ source: string; headers: SecurityHeader[] }> {
-  const securityHeaders = getSecurityHeaders({ allowCamera: false });
+  const securityHeaders = [...getSecurityHeaders({ allowCamera: false }), NOINDEX_ROBOTS];
 
   return [
     { source: "/:path*", headers: securityHeaders },

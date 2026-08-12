@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { APP_DESCRIPTION, APP_NAME, BRAND } from "@/lib/constants";
+import { APP_NAME, BRAND } from "@/lib/constants";
 import { PlatformErrorProvider } from "@/components/errors/platform-error-provider";
 import { PlatformErrorBoundary } from "@/components/errors/platform-error-boundary";
 import { SiteBrandingProvider } from "@/components/layout/site-branding-provider";
@@ -15,8 +15,7 @@ import { PwaScopeNavigator } from "@/components/pwa/pwa-scope-navigator";
 import { PWA_BOOT_CRITICAL_CSS } from "@/lib/pwa/boot-critical-css";
 import { pwaIconUrl } from "@/lib/pwa/config";
 import { getRequestCspNonce } from "@/lib/security/get-request-nonce";
-
-const pageTitle = `${APP_NAME} | Modern Academic Management Platform`;
+import { buildRootMetadata } from "@/lib/seo/metadata";
 
 export const viewport: Viewport = {
   themeColor: BRAND.primary,
@@ -27,17 +26,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: {
-    default: pageTitle,
-    template: `%s | ${APP_NAME}`,
-  },
-  description: APP_DESCRIPTION,
-  applicationName: APP_NAME,
+  ...buildRootMetadata(),
   manifest: pwaIconUrl("/manifest.json"),
-  robots: {
-    index: false,
-    follow: false,
-  },
   icons: {
     icon: [
       { url: pwaIconUrl("/favicon-32x32.png"), sizes: "32x32", type: "image/png" },
@@ -54,17 +44,6 @@ export const metadata: Metadata = {
     capable: true,
     title: APP_NAME,
     statusBarStyle: "default",
-  },
-  openGraph: {
-    title: pageTitle,
-    description: APP_DESCRIPTION,
-    siteName: APP_NAME,
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: pageTitle,
-    description: APP_DESCRIPTION,
   },
   other: {
     "apple-mobile-web-app-title": APP_NAME,

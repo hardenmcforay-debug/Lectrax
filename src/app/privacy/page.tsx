@@ -3,12 +3,14 @@ import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PrivacyPolicyContent } from "@/components/legal/privacy-policy-content";
 import { APP_NAME } from "@/lib/constants";
+import { publicPageMetadata } from "@/lib/seo/metadata";
 import "../landing.css";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
   title: "Privacy Policy",
   description: `Learn how ${APP_NAME} collects, uses, and protects your personal and academic information.`,
-};
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

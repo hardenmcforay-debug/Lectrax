@@ -9,6 +9,7 @@ import {
   PRODUCT_SLUGS,
 } from "@/lib/landing/products";
 import { getProductImageUrls } from "@/lib/landing/site-branding";
+import { publicPageMetadata } from "@/lib/seo/metadata";
 import "../../landing.css";
 
 type ProductPageProps = {
@@ -27,10 +28,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     return { title: "Product" };
   }
 
-  return {
+  return publicPageMetadata({
     title: product.title,
     description: product.summary,
-  };
+    path: `/products/${product.slug}`,
+  });
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
