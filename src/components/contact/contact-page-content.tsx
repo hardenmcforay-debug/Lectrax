@@ -10,6 +10,7 @@ import { LinkedInLogo } from "@/components/contact/linkedin-logo";
 import { ResponseTimeLogo } from "@/components/contact/response-time-logo";
 import { TikTokLogo } from "@/components/contact/tiktok-logo";
 import { UniversityPartnershipsLogo } from "@/components/contact/university-partnerships-logo";
+import { WhatsAppLogo } from "@/components/contact/whatsapp-logo";
 import { XLogo } from "@/components/contact/x-logo";
 import {
   HeroItem,
@@ -19,7 +20,12 @@ import {
   LandingStaggerItem,
   MarketingPageEnter,
 } from "@/components/landing/landing-motion";
-import { CONTACT_EMAIL, CONTACT_SOCIAL_LINKS } from "@/lib/contact/constants";
+import {
+  CONTACT_EMAIL,
+  CONTACT_SOCIAL_LINKS,
+  CONTACT_WHATSAPP_HREF,
+  CONTACT_WHATSAPP_NUMBER,
+} from "@/lib/contact/constants";
 
 type ContactChannel = {
   title: string;
@@ -99,6 +105,19 @@ export function ContactPageContent() {
                               <span className="text-sm font-semibold text-slate-800">Email</span>
                               <span className="break-all text-xs font-medium text-slate-600">
                                 {channel.value}
+                              </span>
+                            </a>
+                            <a
+                              href={CONTACT_WHATSAPP_HREF}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`WhatsApp ${CONTACT_WHATSAPP_NUMBER}`}
+                              className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-slate-300 bg-slate-100 px-3 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-200/80 sm:py-5"
+                            >
+                              <WhatsAppLogo className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+                              <span className="text-sm font-semibold text-slate-800">WhatsApp</span>
+                              <span className="break-all text-xs font-medium text-slate-600">
+                                {CONTACT_WHATSAPP_NUMBER}
                               </span>
                             </a>
                             {CONTACT_SOCIAL_LINKS.map((social) => {
