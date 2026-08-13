@@ -82,18 +82,91 @@ async function removeStoragePaths(
   }
 }
 
+async function preserveEnrollmentsAsManualRecords(
+  service: SupabaseClient,
+  userId: string,
+  profile: { full_name: string | null; college_id: string | null }
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const label = anonymizeLabel(profile.full_name, profile.college_id);
+
+  const { data: enrollments, error } = await service
+    .from("enrollments")
+    .select("id, class_session_id, college_id")
+    .eq("student_id", userId);
+
+  if (error) {
+    logServerError("account_delete.enrollments_load", error);
+    return {
+      ok: false,
+      status: 500,
+      error: "Could not prepare class records before deletion.",
+    };
+  }
+
+  for (const enrollment of enrollments ?? []) {
+    const { data: manual, error: insertError } = await service
+      .from("manual_students")
+      .insert({
+        class_session_id: enrollment.class_session_id,
+        full_name: label,
+        college_id: enrollment.college_id ?? profile.college_id,
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !manual?.id) {
+      logServerError("account_delete.manual_student_insert", insertError);
+      return {
+        ok: false,
+        status: 500,
+        error: "Could not preserve class records before deletion.",
+      };
+    }
+
+    // Enrollments require either a live student_id or a manual_student_id.
+    // Clearing student_id without converting trips the check constraint and
+    // makes auth.admin.deleteUser fail with "Database error deleting user".
+    const { error: updateError } = await service
+      .from("enrollments")
+      .update({
+        student_id: null,
+        manual_student_id: manual.id,
+        is_manual: true,
+        former_student_label: label,
+        college_id: enrollment.college_id ?? profile.college_id,
+      })
+      .eq("id", enrollment.id)
+      .eq("student_id", userId);
+
+    if (updateError) {
+      logServerError("account_delete.enrollment_anonymize", updateError);
+      await service.from("manual_students").delete().eq("id", manual.id);
+      return {
+        ok: false,
+        status: 500,
+        error: "Could not preserve class records before deletion.",
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+async function clearOptionalProfileReferences(
+  service: SupabaseClient,
+  userId: string
+): Promise<void> {
+  await service.from("assignment_grades").update({ graded_by: null }).eq("graded_by", userId);
+  await service.from("subscriptions").update({ granted_by: null }).eq("granted_by", userId);
+}
+
 async function cleanupStudentOwnedData(
   service: SupabaseClient,
   userId: string,
   profile: { full_name: string | null; college_id: string | null }
-): Promise<void> {
-  const label = anonymizeLabel(profile.full_name, profile.college_id);
-
-  // Preserve academic enrollment history with an anonymized label.
-  await service
-    .from("enrollments")
-    .update({ former_student_label: label })
-    .eq("student_id", userId);
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const preserved = await preserveEnrollmentsAsManualRecords(service, userId, profile);
+  if (!preserved.ok) return preserved;
 
   const { data: submissions } = await service
     .from("assignment_submissions")
@@ -110,6 +183,7 @@ async function cleanupStudentOwnedData(
     await service
       .from("assignment_submissions")
       .update({
+        student_id: null,
         storage_path: null,
         file_name: "deleted.pdf",
         file_size: 0,
@@ -120,6 +194,8 @@ async function cleanupStudentOwnedData(
   await service.from("device_registrations").delete().eq("student_id", userId);
   await service.from("student_notifications").delete().eq("student_id", userId);
   await service.from("attendance_device_transfers").delete().eq("student_id", userId);
+
+  return { ok: true };
 }
 
 async function cleanupLecturerOwnedData(
@@ -247,11 +323,14 @@ export async function deleteUserAccount(params: {
     }
 
     if (role === "student") {
-      await cleanupStudentOwnedData(service, user.id, {
+      const studentCleanup = await cleanupStudentOwnedData(service, user.id, {
         full_name: profile.full_name,
         college_id: profile.college_id,
       });
+      if (!studentCleanup.ok) return studentCleanup;
     }
+
+    await clearOptionalProfileReferences(service, user.id);
 
     // Audit without retaining contact PII.
     await logSystemAudit({
