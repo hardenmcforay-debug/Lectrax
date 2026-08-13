@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
 
     async function waitForRecoverySession() {
       // Allow hash/code bootstrap a moment to finish before declaring expiry.
-      for (let attempt = 0; attempt < 25; attempt += 1) {
+      for (let attempt = 0; attempt < 40; attempt += 1) {
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        await new Promise((resolve) => window.setTimeout(resolve, 120));
+        await new Promise((resolve) => window.setTimeout(resolve, 150));
       }
 
       const {

@@ -16,15 +16,22 @@ import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-p
 import { logServerError } from "@/lib/errors/logger";
 import { createRouteHandlerClient } from "@/lib/supabase/route-handler";
 
-function redirectToPasswordReset(origin: string): NextResponse {
-  return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
-}
-
 function copyResponseCookies(from: NextResponse, to: NextResponse): NextResponse {
   from.cookies.getAll().forEach((cookie) => {
     to.cookies.set(cookie);
   });
   return to;
+}
+
+function redirectRecoveryToResetPage(
+  origin: string,
+  params: { code: string | null; tokenHash: string | null }
+): NextResponse {
+  const resetUrl = new URL(PASSWORD_RESET_PAGE_PATH, origin);
+  if (params.code) resetUrl.searchParams.set("code", params.code);
+  if (params.tokenHash) resetUrl.searchParams.set("token_hash", params.tokenHash);
+  resetUrl.searchParams.set("type", "recovery");
+  return NextResponse.redirect(resetUrl);
 }
 
 export async function GET(request: Request) {
@@ -35,39 +42,19 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/";
   const isRecoveryFlow = isPasswordRecoveryCallback({ type: flowType, next });
 
-  if (tokenHash && flowType === "recovery") {
-    const response = redirectToPasswordReset(origin);
-    // Recovery email links open in the browser site surface.
-    const supabase = await createRouteHandlerClient(response, { surface: "site" });
-    const { error } = await supabase.auth.verifyOtp({
-      type: "recovery",
-      token_hash: tokenHash,
-    });
-
-    if (!error) {
-      return response;
-    }
-
-    logServerError("auth.callback.recoveryVerifyOtp", error);
-    return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
+  // Recovery codes are one-time. Email scanners prefetch this GET and would
+  // burn the link before the user opens it. Pass tokens through for JS exchange.
+  if (isRecoveryFlow || flowType === "recovery") {
+    return redirectRecoveryToResetPage(origin, { code, tokenHash });
   }
 
   if (code) {
-    const recoveryRedirect = isRecoveryFlow || flowType === "recovery";
-    const sessionResponse = recoveryRedirect
-      ? redirectToPasswordReset(origin)
-      : NextResponse.redirect(`${origin}/`);
+    const sessionResponse = NextResponse.redirect(`${origin}/`);
 
-    const supabase = await createRouteHandlerClient(sessionResponse, {
-      surface: recoveryRedirect ? "site" : undefined,
-    });
+    const supabase = await createRouteHandlerClient(sessionResponse);
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      if (recoveryRedirect) {
-        // Recovery session cookies are on sessionResponse — return it as-is.
-        return sessionResponse;
-      }
 
       const {
         data: { user },
@@ -98,13 +85,6 @@ export async function GET(request: Request) {
     }
 
     logServerError("auth.callback.exchangeCodeForSession", error);
-    if (recoveryRedirect) {
-      return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
-    }
-  }
-
-  if (isRecoveryFlow || flowType === "recovery") {
-    return NextResponse.redirect(`${origin}${PASSWORD_RESET_PAGE_PATH}`);
   }
 
   return NextResponse.redirect(getLoginFailureUrl(origin));
