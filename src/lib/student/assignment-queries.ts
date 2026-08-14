@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   batchAssignmentsBeforeDeadline,
   isAssignmentBeforeDeadline,
@@ -44,6 +44,7 @@ export async function getStudentAssignmentsList(
   studentId: string
 ): Promise<StudentAssignmentListItem[]> {
   const supabase = await createClient();
+  const service = await createServiceClient();
 
   const { data: enrollments } = await supabase
     .from("enrollments")
@@ -58,7 +59,7 @@ export async function getStudentAssignmentsList(
   const classSessionIds = enrollments.map((e) => e.class_session_id as string);
 
   const [, assignmentsResult] = await Promise.all([
-    supabase.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
+    service.rpc("lock_expired_assignment_submissions", { p_assignment_id: null }),
     supabase
       .from("assignments")
       .select("id, title, deadline, max_score, class_session_id, class_sessions(course_code)")
@@ -169,9 +170,10 @@ export async function getStudentAssignmentDetail(
   assignmentId: string
 ): Promise<StudentAssignmentDetailData | null> {
   const supabase = await createClient();
+  const service = await createServiceClient();
 
   const [, assignmentResult] = await Promise.all([
-    supabase.rpc("lock_expired_assignment_submissions", { p_assignment_id: assignmentId }),
+    service.rpc("lock_expired_assignment_submissions", { p_assignment_id: assignmentId }),
     supabase
       .from("assignments")
       .select(

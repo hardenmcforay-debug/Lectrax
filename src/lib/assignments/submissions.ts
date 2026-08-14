@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/server";
 import {
   ASSIGNMENT_SUBMISSIONS_BUCKET,
   buildSubmissionStoragePath,
@@ -13,12 +14,13 @@ import type { Assignment, ClassSession } from "@/types/database";
 import { SUBMISSION_CLOSED_ERROR } from "@/lib/assignments/deadline-messages";
 import { isAssignmentBeforeDeadline } from "@/lib/assignments/deadline-server";
 
-/** Lock submissions whose assignment deadline has passed (DB RPC). */
+/** Lock submissions whose assignment deadline has passed (service-role RPC). */
 export async function lockExpiredAssignmentSubmissions(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   assignmentId?: string
 ): Promise<void> {
-  await supabase.rpc("lock_expired_assignment_submissions", {
+  const service = await createServiceClient();
+  await service.rpc("lock_expired_assignment_submissions", {
     p_assignment_id: assignmentId ?? null,
   });
 }

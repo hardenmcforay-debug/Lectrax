@@ -81,18 +81,15 @@ export async function getStudentAcademicOverview(
   const classSessionById = new Map((classSessions ?? []).map((cs) => [cs.id, cs]));
 
   const [
-    { data: attendanceSessions },
-    { data: attendanceRecords },
+    { data: attendanceSessionCounts, error: attendanceSessionCountError },
+    { data: attendanceCounts, error: attendanceCountError },
     { data: assignments },
     { data: testScores },
     { data: classTests },
     { data: caConfigs },
   ] = await Promise.all([
-    db.from("attendance_sessions").select("id, class_session_id").in("class_session_id", classSessionIds),
-    db
-      .from("attendance_records")
-      .select("enrollment_id, attendance_session_id")
-      .in("enrollment_id", enrollmentIds),
+    db.rpc("attendance_session_counts_by_class", { p_class_session_ids: classSessionIds }),
+    db.rpc("attendance_counts_for_enrollments", { p_enrollment_ids: enrollmentIds }),
     db
       .from("assignments")
       .select("id, class_session_id, title, max_score, created_at")
@@ -119,29 +116,21 @@ export async function getStudentAcademicOverview(
       .in("class_session_id", classSessionIds),
   ]);
 
-  const sessionsByClass = new Map<string, string[]>();
-  for (const session of attendanceSessions ?? []) {
-    const list = sessionsByClass.get(session.class_session_id) ?? [];
-    list.push(session.id);
-    sessionsByClass.set(session.class_session_id, list);
+  if (attendanceSessionCountError) {
+    throw new Error(attendanceSessionCountError.message);
+  }
+  if (attendanceCountError) {
+    throw new Error(attendanceCountError.message);
   }
 
-  const classSessionByAttendanceSession = new Map<string, string>();
-  for (const [classSessionId, sessionIdList] of sessionsByClass) {
-    for (const attendanceSessionId of sessionIdList) {
-      classSessionByAttendanceSession.set(attendanceSessionId, classSessionId);
-    }
+  const sessionsByClass = new Map<string, number>();
+  for (const row of attendanceSessionCounts ?? []) {
+    sessionsByClass.set(row.class_session_id, Number(row.session_count) || 0);
   }
 
-  const attendedCountByEnrollmentAndClass = new Map<string, number>();
-  for (const record of attendanceRecords ?? []) {
-    const classSessionId = classSessionByAttendanceSession.get(record.attendance_session_id);
-    if (!classSessionId) continue;
-    const key = `${record.enrollment_id}:${classSessionId}`;
-    attendedCountByEnrollmentAndClass.set(
-      key,
-      (attendedCountByEnrollmentAndClass.get(key) ?? 0) + 1
-    );
+  const attendedCountByEnrollment = new Map<string, number>();
+  for (const row of attendanceCounts ?? []) {
+    attendedCountByEnrollment.set(row.enrollment_id, Number(row.attended_count) || 0);
   }
 
   const assignmentsByClass = new Map<string, typeof assignments>();
@@ -210,10 +199,8 @@ export async function getStudentAcademicOverview(
     if (!cs) continue;
 
     const classSessionId = enrollment.class_session_id;
-    const sessionIds = sessionsByClass.get(classSessionId) ?? [];
-    const actualSessionCount = sessionIds.length;
-    const attendedInClass =
-      attendedCountByEnrollmentAndClass.get(`${enrollment.id}:${classSessionId}`) ?? 0;
+    const actualSessionCount = sessionsByClass.get(classSessionId) ?? 0;
+    const attendedInClass = attendedCountByEnrollment.get(enrollment.id) ?? 0;
 
     const classAssignments = assignmentsByClass.get(classSessionId) ?? [];
     const enrollmentSubmissions = submissionsByEnrollment.get(enrollment.id) ?? [];

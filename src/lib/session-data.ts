@@ -40,15 +40,16 @@ export async function getStudentTableRows(
     )
     .eq("class_session_id", classSessionId);
 
-  const { data: attendanceSessions } = await supabase
-    .from("attendance_sessions")
-    .select("id")
-    .eq("class_session_id", classSessionId);
-
-  const sessionIds = attendanceSessions?.map((s) => s.id) ?? [];
-  const totalSessions = sessionIds.length;
-
-  const [{ data: caConfig }, { data: classTests }, { data: allTestScores }] = await Promise.all([
+  const [
+    { count: attendanceSessionCount },
+    { data: caConfig },
+    { data: classTests },
+    { data: allTestScores },
+  ] = await Promise.all([
+    supabase
+      .from("attendance_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("class_session_id", classSessionId),
     supabase
       .from("ca_configurations")
       .select("attendance_weight, assignment_weight, test_weight, expected_class_count")
@@ -70,6 +71,8 @@ export async function getStudentTableRows(
       .eq("semester", semester)
       .eq("academic_year", academicYear),
   ]);
+
+  const totalSessions = attendanceSessionCount ?? 0;
 
   const storedWeights = parseCaWeights(
     caConfig?.attendance_weight,
@@ -137,18 +140,18 @@ export async function getStudentTableRows(
   );
 
   const attendedByEnrollment = new Map<string, number>();
-  if (enrollmentIds.length && sessionIds.length) {
-    const { data: attendanceRecords } = await supabase
-      .from("attendance_records")
-      .select("enrollment_id")
-      .in("enrollment_id", enrollmentIds)
-      .in("attendance_session_id", sessionIds);
+  if (enrollmentIds.length) {
+    const { data: attendanceCounts, error: attendanceCountError } = await supabase.rpc(
+      "attendance_counts_by_enrollment",
+      { p_class_session_id: classSessionId }
+    );
 
-    for (const record of attendanceRecords ?? []) {
-      attendedByEnrollment.set(
-        record.enrollment_id,
-        (attendedByEnrollment.get(record.enrollment_id) ?? 0) + 1
-      );
+    if (attendanceCountError) {
+      throw new Error(attendanceCountError.message);
+    }
+
+    for (const row of attendanceCounts ?? []) {
+      attendedByEnrollment.set(row.enrollment_id, Number(row.attended_count) || 0);
     }
   }
 
