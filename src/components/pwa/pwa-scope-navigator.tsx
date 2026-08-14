@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { isPasswordRecoveryLandingPath } from "@/lib/auth/password-recovery";
 import { isRunningAsInstalledPwa } from "@/lib/pwa/detect";
 import {
   isAppShellPath,
@@ -22,6 +23,10 @@ export function PwaScopeNavigator() {
     if (!isRunningAsInstalledPwa()) return;
 
     if (pathname && !isPwaScopePath(pathname) && isAppShellPath(pathname)) {
+      // Recovery must stay on the site path so PKCE/session cookies match the email link.
+      if (isPasswordRecoveryLandingPath(pathname)) {
+        return;
+      }
       router.replace(toPwaScopePath(pathname) + window.location.search + window.location.hash);
       return;
     }
@@ -52,7 +57,11 @@ export function PwaScopeNavigator() {
         return;
       }
 
-      if (isAppShellPath(url.pathname) && !isPwaScopePath(url.pathname)) {
+      if (
+        isAppShellPath(url.pathname) &&
+        !isPwaScopePath(url.pathname) &&
+        !isPasswordRecoveryLandingPath(url.pathname)
+      ) {
         event.preventDefault();
         router.push(toPwaScopePath(url.pathname) + url.search + url.hash);
       }

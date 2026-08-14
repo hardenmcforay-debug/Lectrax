@@ -48,6 +48,12 @@ export async function GET(request: Request) {
     return redirectRecoveryToResetPage(origin, { code, tokenHash });
   }
 
+  // Implicit recovery tokens live in the URL hash and never reach this GET.
+  // Redirecting to login drops the fragment in several browsers and the PWA.
+  if (!code && !tokenHash && !searchParams.get("error")) {
+    return NextResponse.redirect(new URL(PASSWORD_RESET_PAGE_PATH, origin));
+  }
+
   if (code) {
     const sessionResponse = NextResponse.redirect(`${origin}/`);
 

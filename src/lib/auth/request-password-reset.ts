@@ -1,4 +1,7 @@
-import { getPasswordResetCallbackUrl } from "@/lib/auth/password-recovery";
+import {
+  getPasswordResetAuthCallbackUrl,
+  getPasswordResetCallbackUrl,
+} from "@/lib/auth/password-recovery";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -13,8 +16,16 @@ export async function requestPasswordResetEmail(email: string): Promise<void> {
   if (!normalized) return;
 
   const supabase = createClient("site");
-  const redirectTo = getPasswordResetCallbackUrl(window.location.origin);
+  const origin = window.location.origin;
+  const redirectTo = getPasswordResetCallbackUrl(origin);
 
   // Errors are swallowed by callers — response must not reveal account existence.
-  await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
+  const { error } = await supabase.auth.resetPasswordForEmail(normalized, { redirectTo });
+  if (!error) return;
+
+  // Older Supabase allowlists only include /auth/callback. Still land recovery
+  // there so the callback can forward to /reset-password without consuming the code.
+  await supabase.auth.resetPasswordForEmail(normalized, {
+    redirectTo: getPasswordResetAuthCallbackUrl(origin),
+  });
 }

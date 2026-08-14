@@ -18,7 +18,7 @@ port = 54323
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://localhost:3000/reset-password"]
 # Hosted project: Authentication → Providers → Email → "Prevent use of leaked passwords"
 # (HaveIBeenPwned). Requires Pro. SQL cannot turn this on.
 

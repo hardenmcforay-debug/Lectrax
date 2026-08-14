@@ -21,11 +21,26 @@ function hasRecoveryQueryParams(url: URL): boolean {
     return true;
   }
 
-  return url.pathname === PASSWORD_RESET_PAGE_PATH && url.searchParams.has("code");
+  if (url.searchParams.has("token_hash")) {
+    return true;
+  }
+
+  return (
+    url.pathname === PASSWORD_RESET_PAGE_PATH &&
+    (url.searchParams.has("code") || url.searchParams.has("token_hash"))
+  );
 }
 
 function hasRecoveryHash(): boolean {
-  return window.location.hash.includes("type=recovery");
+  const hash = window.location.hash;
+  if (hash.includes("type=recovery")) {
+    return true;
+  }
+
+  return (
+    window.location.pathname === PASSWORD_RESET_PAGE_PATH &&
+    (hash.includes("access_token=") || hash.includes("refresh_token="))
+  );
 }
 
 function claimExchangeLock(key: string): boolean {
@@ -80,7 +95,10 @@ export function PasswordRecoverySessionBootstrap() {
         return;
       }
 
-      if (tokenHash && type === "recovery") {
+      if (
+        tokenHash &&
+        (type === "recovery" || url.pathname === PASSWORD_RESET_PAGE_PATH)
+      ) {
         if (!claimExchangeLock(`token:${tokenHash}`)) {
           return;
         }
@@ -96,11 +114,15 @@ export function PasswordRecoverySessionBootstrap() {
       }
 
       if (hasRecoveryHash()) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session) {
-          goToResetPasswordPage();
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session) {
+            goToResetPasswordPage();
+            return;
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, 50));
         }
       }
     }

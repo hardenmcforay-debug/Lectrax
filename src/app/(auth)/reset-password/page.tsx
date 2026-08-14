@@ -174,7 +174,7 @@ export default function ResetPasswordPage() {
           {saved ? (
             <p className="text-sm text-accent">Password updated. Redirecting to sign in...</p>
           ) : sessionStatus === "checking" ? (
-            <p className="text-sm text-muted-foreground">Validating your reset linkâ€¦</p>
+            <p className="text-sm text-muted-foreground">Validating your reset link...</p>
           ) : sessionStatus === "expired" ? (
             <div className="space-y-4">
               {error && <AuthErrorNotice error={error} />}

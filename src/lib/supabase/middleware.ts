@@ -160,14 +160,20 @@ export async function updateSession(
   }
 
   const recoveryType = request.nextUrl.searchParams.get("type");
+  const isRecoveryQuery =
+    recoveryType === "recovery" ||
+    request.nextUrl.searchParams.has("token_hash") ||
+    request.nextUrl.searchParams.get("next") === "/reset-password";
+
   // Password recovery must stay on the unscoped site path so PKCE/session cookies match
   // the browser cookie jar used when the email link opens (never `/go/reset-password`).
   if (
     (pathname === "/login" || pathname === "/" || pathname === "/go/login") &&
-    (recoveryType === "recovery" || request.nextUrl.searchParams.has("token_hash"))
+    isRecoveryQuery
   ) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/reset-password";
+    redirectUrl.searchParams.set("type", "recovery");
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
@@ -178,6 +184,7 @@ export async function updateSession(
   ) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/reset-password";
+    redirectUrl.searchParams.set("type", "recovery");
     return withSessionCookies(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
