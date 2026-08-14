@@ -17,12 +17,16 @@ export function AuthSessionSync() {
       if (event === "PASSWORD_RECOVERY") {
         // Keep recovery on the site path so it matches the site PKCE/session cookies.
         if (window.location.pathname !== PASSWORD_RESET_PAGE_PATH) {
-          window.location.replace(PASSWORD_RESET_PAGE_PATH);
+          const url = new URL(window.location.href);
+          window.location.replace(`${PASSWORD_RESET_PAGE_PATH}${url.search}${url.hash}`);
         }
         return;
       }
 
       if (event === "SIGNED_OUT") {
+        if (window.location.pathname === PASSWORD_RESET_PAGE_PATH) {
+          return;
+        }
         // Confirm the session is actually gone — spurious SIGNED_OUT can fire after
         // cross-site returns (e.g. payment gateway) when a transient auth fetch fails.
         void (async () => {

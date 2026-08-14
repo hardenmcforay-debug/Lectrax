@@ -123,6 +123,14 @@ body {
   overflow: hidden;
 }
 
+.auth-route-root:has([data-reset-password-page]) {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 .auth-shell {
   height: 100vh;
   min-height: 100vh;

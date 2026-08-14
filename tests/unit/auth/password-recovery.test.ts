@@ -37,3 +37,35 @@ describe("password recovery redirect URLs", () => {
     expect(isPasswordRecoveryLandingPath("/student")).toBe(false);
   });
 });
+
+describe("password recovery URL tokens", () => {
+  it("reads implicit hash tokens used by recovery emails", async () => {
+    const { readPasswordRecoveryParams, hasPasswordRecoveryParams } = await import(
+      "@/lib/auth/establish-password-recovery-session"
+    );
+    const href =
+      "https://www.lectrax.com/reset-password#access_token=tok&refresh_token=ref&type=recovery";
+    expect(hasPasswordRecoveryParams(href)).toBe(true);
+    expect(readPasswordRecoveryParams(href)).toEqual({
+      code: null,
+      tokenHash: null,
+      accessToken: "tok",
+      refreshToken: "ref",
+      type: "recovery",
+    });
+  });
+
+  it("reads PKCE code and token_hash from the query string", async () => {
+    const { readPasswordRecoveryParams } = await import(
+      "@/lib/auth/establish-password-recovery-session"
+    );
+    expect(
+      readPasswordRecoveryParams("https://www.lectrax.com/reset-password?code=abc&type=recovery")
+    ).toMatchObject({ code: "abc", type: "recovery" });
+    expect(
+      readPasswordRecoveryParams(
+        "https://www.lectrax.com/reset-password?token_hash=hash&type=recovery"
+      )
+    ).toMatchObject({ tokenHash: "hash", type: "recovery" });
+  });
+});

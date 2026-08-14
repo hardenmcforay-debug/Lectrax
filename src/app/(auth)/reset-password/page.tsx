@@ -17,6 +17,10 @@ import type { AuthUserMessage } from "@/lib/errors/auth-messages";
 import { mapAuthError, mapSupabaseAuthError } from "@/lib/errors/map-auth-error";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { clearClientStorageAfterAuthReset } from "@/lib/auth/client-sign-out";
+import {
+  clearPasswordRecoveryTokensFromUrl,
+  establishPasswordRecoverySession,
+} from "@/lib/auth/establish-password-recovery-session";
 
 type ResetPasswordInput = {
   password: string;
@@ -48,30 +52,11 @@ export default function ResetPasswordPage() {
     const supabase = createClient("site");
 
     async function waitForRecoverySession() {
-      // Allow hash/code bootstrap a moment to finish before declaring expiry.
-      for (let attempt = 0; attempt < 40; attempt += 1) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session) {
-          if (!cancelled) {
-            setSessionStatus("ready");
-            setError(null);
-          }
-          return;
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 150));
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+      const established = await establishPasswordRecoverySession(supabase);
       if (cancelled) return;
 
-      if (user) {
+      if (established) {
+        clearPasswordRecoveryTokensFromUrl();
         setSessionStatus("ready");
         setError(null);
         return;
@@ -88,6 +73,7 @@ export default function ResetPasswordPage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
+        clearPasswordRecoveryTokensFromUrl();
         setSessionStatus("ready");
         setError(null);
       }
@@ -161,7 +147,10 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4">
+    <div
+      data-reset-password-page
+      className="flex min-h-[100dvh] flex-col items-center justify-center overflow-y-auto bg-slate-50 p-4"
+    >
       <Logo className="mb-8" />
       <Card className="w-full max-w-md">
         <CardHeader>
@@ -208,9 +197,11 @@ export default function ResetPasswordPage() {
               </Button>
             </form>
           )}
-          <Link href="/login" className="mt-4 block text-center text-sm text-primary hover:underline">
-            Sign in
-          </Link>
+          {sessionStatus !== "checking" ? (
+            <Link href="/login" className="mt-4 block text-center text-sm text-primary hover:underline">
+              Sign in
+            </Link>
+          ) : null}
         </CardContent>
       </Card>
     </div>

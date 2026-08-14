@@ -30,6 +30,13 @@ export function createClient(surface: AuthSurface = getClientAuthSurface()) {
       path: "/",
       sameSite: "lax",
     },
+    auth: {
+      // Recovery hash tokens are applied on /reset-password via setSession.
+      // Auto-detect would reject implicit recovery URLs (PKCE client) and can
+      // consume a one-time `code` into the wrong cookie jar (PWA vs site).
+      detectSessionInUrl: false,
+      flowType: "pkce",
+    },
   });
 
   clientsBySurface.set(surface, client);
