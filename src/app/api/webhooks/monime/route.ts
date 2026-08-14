@@ -26,8 +26,10 @@ async function postHandler(request: Request) {
   const signature = getMonimeWebhookSignature(request);
 
   if (!verifyMonimeWebhookSignature(rawBody, signature)) {
-    logServerError("webhooks.monime.invalid_signature", {
+    logServerError("webhooks.monime.invalid_signature", new Error("invalid_signature"), {
       hasSignature: Boolean(signature),
+      structuredHeader: Boolean(signature?.includes("=")),
+      secretConfigured: Boolean(process.env.MONIME_WEBHOOK_SECRET),
     });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }

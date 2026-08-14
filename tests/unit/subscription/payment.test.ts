@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, createSign, generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   BILLING_PLANS,
@@ -41,6 +41,38 @@ describe("payment & billing", () => {
     expect(verifyMonimeWebhookSignature(payload, signature)).toBe(true);
     expect(verifyMonimeWebhookSignature(payload, "bad-signature")).toBe(false);
     expect(verifyMonimeWebhookSignature(payload, null)).toBe(false);
+  });
+
+  it("accepts timestamped Monime HMAC headers, including stale retries", () => {
+    const payload = JSON.stringify({ event: { name: "payment.completed" } });
+    const secret = process.env.MONIME_WEBHOOK_SECRET!;
+    const timestamp = "1700000000";
+    const v1 = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
+    const v1Base64 = createHmac("sha256", secret)
+      .update(`${timestamp}.${payload}`)
+      .digest("base64");
+
+    expect(verifyMonimeWebhookSignature(payload, `t=${timestamp},v1=${v1}`)).toBe(true);
+    expect(verifyMonimeWebhookSignature(payload, `t=${timestamp},v1=${v1Base64}`)).toBe(true);
+  });
+
+  it("verifies ES256 Monime signatures from a PEM public key", () => {
+    const payload = JSON.stringify({ event: { name: "payment.completed" } });
+    const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+    const pem = publicKey.export({ type: "spki", format: "pem" }).toString();
+    const timestamp = "1700000000";
+    const signature = createSign("SHA256")
+      .update(`${timestamp}.${payload}`)
+      .sign({ key: privateKey, dsaEncoding: "ieee-p1363" });
+    const previous = process.env.MONIME_WEBHOOK_SECRET;
+    process.env.MONIME_WEBHOOK_SECRET = pem;
+    try {
+      expect(
+        verifyMonimeWebhookSignature(payload, `t=${timestamp},v1=${signature.toString("base64")}`)
+      ).toBe(true);
+    } finally {
+      process.env.MONIME_WEBHOOK_SECRET = previous;
+    }
   });
 
   it("reads Monime signature headers", () => {
