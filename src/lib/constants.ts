@@ -42,6 +42,8 @@ export const PUBLIC_ROUTES = [
   /** Payment gateway return bounce (may arrive cross-site without cookies). */
   "/payments/return",
   "/offline",
+  /** PDF.js worker — static public file; must not be treated as a protected page. */
+  "/pdf.worker.min.mjs",
 ];
 
 /** Public form/API endpoints that must work without login */
