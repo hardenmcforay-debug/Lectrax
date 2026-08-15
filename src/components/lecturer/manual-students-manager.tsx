@@ -206,15 +206,13 @@ export function ManualStudentsManager({
       <Card className={lecturerPortalCardClass}>
         <CardHeader>
           <CardTitle className="text-base">Manual students</CardTitle>
-          <CardDescription>
-            Update names and college IDs anytime. Changes appear on attendance, grades, and CA tables
-            automatically.
-            {dirtyCount > 0 ? (
-              <span className="mt-1 block text-amber-800">
+          {dirtyCount > 0 ? (
+            <CardDescription>
+              <span className="text-amber-800">
                 {dirtyCount} unsaved {dirtyCount === 1 ? "change" : "changes"}.
               </span>
-            ) : null}
-          </CardDescription>
+            </CardDescription>
+          ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="w-full overflow-x-auto rounded-lg border bg-white">
@@ -265,7 +263,6 @@ export function ManualStudentsManager({
                         <Input
                           id={`college-id-${student.id}`}
                           value={row.collegeId}
-                          placeholder="e.g. STU/2024/001"
                           className="font-mono"
                           maxLength={50}
                           disabled={!canWrite || row.saving}
