@@ -564,7 +564,7 @@ export function SessionPageClient({
             <CardTitle className="text-base">Add Manual Student</CardTitle>
             <Button asChild size="sm" className="shrink-0">
               <Link href={`/lecturer/sessions/${session.id}/manual-students`}>
-                Manage College IDs
+                Manage Manual Student
               </Link>
             </Button>
           </CardHeader>

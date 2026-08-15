@@ -12,11 +12,6 @@ import { sanitizeErrorMessage } from "@/lib/errors/classify";
 import { parseJsonBody, parseRouteUuid } from "@/lib/security/parse-request";
 import { withApiObservability } from "@/lib/observability/with-api-observability";
 
-
-const updateManualStudentCollegeIdSchema = manualStudentSchema.pick({
-  collegeId: true,
-});
-
 async function patchHandler(
   request: Request,
   { params }: { params: Promise<{ id: string; manualStudentId: string }> }
@@ -57,14 +52,15 @@ async function patchHandler(
   const parsedBody = await parseJsonBody(request);
   if (!parsedBody.ok) return parsedBody.response;
 
-  const parsed = updateManualStudentCollegeIdSchema.safeParse(parsedBody.body);
+  const parsed = manualStudentSchema.safeParse(parsedBody.body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: userFacingZodMessage(parsed.error, "Invalid college ID") },
+      { error: userFacingZodMessage(parsed.error, "Invalid student details") },
       { status: 400 }
     );
   }
 
+  const fullName = parsed.data.fullName.trim();
   const collegeId = parsed.data.collegeId?.trim() || null;
   const service = await createServiceClient();
 
@@ -88,7 +84,7 @@ async function patchHandler(
 
   const { data: updated, error: updateError } = await service
     .from("manual_students")
-    .update({ college_id: collegeId })
+    .update({ full_name: fullName, college_id: collegeId })
     .eq("id", manualIdParsed.id)
     .eq("class_session_id", sessionIdParsed.id)
     .select("id, full_name, college_id")
@@ -98,7 +94,7 @@ async function patchHandler(
     return NextResponse.json(
       {
         error: sanitizeErrorMessage(
-          updateError?.message ?? "Could not update college ID"
+          updateError?.message ?? "Could not update student"
         ),
       },
       { status: 500 }

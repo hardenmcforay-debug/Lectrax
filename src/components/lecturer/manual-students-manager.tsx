@@ -20,6 +20,8 @@ import type { ManualStudentListItem } from "@/lib/lecturer/manual-students";
 import { cn } from "@/lib/utils";
 
 type RowState = {
+  fullName: string;
+  savedFullName: string;
   collegeId: string;
   savedCollegeId: string;
   saving: boolean;
@@ -30,12 +32,21 @@ type RowState = {
 function toRowState(student: ManualStudentListItem): RowState {
   const collegeId = student.collegeId ?? "";
   return {
+    fullName: student.fullName,
+    savedFullName: student.fullName,
     collegeId,
     savedCollegeId: collegeId,
     saving: false,
     error: null,
     savedFlash: false,
   };
+}
+
+function isRowDirty(row: RowState): boolean {
+  return (
+    row.fullName.trim() !== row.savedFullName.trim() ||
+    row.collegeId.trim() !== row.savedCollegeId.trim()
+  );
 }
 
 export function ManualStudentsManager({
@@ -54,31 +65,35 @@ export function ManualStudentsManager({
   );
 
   const dirtyCount = useMemo(
-    () =>
-      Object.values(rows).filter((row) => row.collegeId.trim() !== row.savedCollegeId.trim())
-        .length,
+    () => Object.values(rows).filter(isRowDirty).length,
     [rows]
   );
 
-  const updateCollegeId = useCallback((id: string, collegeId: string) => {
+  const updateRow = useCallback((id: string, patch: Partial<Pick<RowState, "fullName" | "collegeId">>) => {
     setRows((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        collegeId,
+        ...patch,
         error: null,
         savedFlash: false,
       },
     }));
   }, []);
 
-  const saveCollegeId = useCallback(
+  const saveStudent = useCallback(
     async (id: string) => {
       const row = rows[id];
       if (!row || !canWrite || row.saving) return;
 
+      const nextName = row.fullName.trim();
       const nextCollegeId = row.collegeId.trim();
-      if (nextCollegeId === row.savedCollegeId.trim()) return;
+      if (
+        nextName === row.savedFullName.trim() &&
+        nextCollegeId === row.savedCollegeId.trim()
+      ) {
+        return;
+      }
 
       setRows((prev) => ({
         ...prev,
@@ -91,7 +106,10 @@ export function ManualStudentsManager({
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ collegeId: nextCollegeId || undefined }),
+            body: JSON.stringify({
+              fullName: nextName,
+              collegeId: nextCollegeId || undefined,
+            }),
           }
         );
 
@@ -106,30 +124,39 @@ export function ManualStudentsManager({
             [id]: {
               ...prev[id],
               saving: false,
-              error: body.error ?? "Could not update college ID.",
+              error: body.error ?? "Could not update student.",
             },
           }));
           return;
         }
 
-        const saved = body.student.collegeId ?? "";
+        const savedName = body.student.fullName;
+        const savedCollegeId = body.student.collegeId ?? "";
         setStudents((prev) =>
           prev.map((student) =>
-            student.id === id ? { ...student, collegeId: body.student?.collegeId ?? null } : student
+            student.id === id
+              ? {
+                  ...student,
+                  fullName: savedName,
+                  collegeId: body.student?.collegeId ?? null,
+                }
+              : student
           )
         );
         setRows((prev) => ({
           ...prev,
           [id]: {
-            collegeId: saved,
-            savedCollegeId: saved,
+            fullName: savedName,
+            savedFullName: savedName,
+            collegeId: savedCollegeId,
+            savedCollegeId: savedCollegeId,
             saving: false,
             error: null,
             savedFlash: true,
           },
         }));
 
-        // Refresh session tables so College ID columns update when the lecturer goes back.
+        // Refresh session tables so name and College ID columns update when the lecturer goes back.
         router.refresh();
 
         window.setTimeout(() => {
@@ -171,7 +198,7 @@ export function ManualStudentsManager({
       {!canWrite ? (
         <Card className={cn(lecturerPortalCardClass, "border-amber-200 bg-amber-50")}>
           <CardContent className="py-4 text-sm text-amber-900">
-            Your account is in read-only mode. Renew your subscription to update college IDs.
+            Your account is in read-only mode. Renew your subscription to update names and college IDs.
           </CardContent>
         </Card>
       ) : null}
@@ -180,7 +207,7 @@ export function ManualStudentsManager({
         <CardHeader>
           <CardTitle className="text-base">Manual students</CardTitle>
           <CardDescription>
-            Update college IDs anytime. Changes appear on attendance, grades, and CA tables
+            Update names and college IDs anytime. Changes appear on attendance, grades, and CA tables
             automatically.
             {dirtyCount > 0 ? (
               <span className="mt-1 block text-amber-800">
@@ -203,14 +230,34 @@ export function ManualStudentsManager({
               <TableBody>
                 {students.map((student, index) => {
                   const row = rows[student.id] ?? toRowState(student);
-                  const dirty = row.collegeId.trim() !== row.savedCollegeId.trim();
+                  const dirty = isRowDirty(row);
 
                   return (
                     <TableRow key={student.id} className={dirty ? "bg-amber-50/60" : undefined}>
                       <TableCell className="text-center text-muted-foreground">
                         {index + 1}
                       </TableCell>
-                      <TableCell className="font-medium">{student.fullName}</TableCell>
+                      <TableCell>
+                        <Label htmlFor={`full-name-${student.id}`} className="sr-only">
+                          Name for {student.fullName}
+                        </Label>
+                        <Input
+                          id={`full-name-${student.id}`}
+                          value={row.fullName}
+                          placeholder="e.g. Jane Doe"
+                          maxLength={120}
+                          disabled={!canWrite || row.saving}
+                          onChange={(event) =>
+                            updateRow(student.id, { fullName: event.target.value })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void saveStudent(student.id);
+                            }
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>
                         <Label htmlFor={`college-id-${student.id}`} className="sr-only">
                           College ID for {student.fullName}
@@ -222,11 +269,13 @@ export function ManualStudentsManager({
                           className="font-mono"
                           maxLength={50}
                           disabled={!canWrite || row.saving}
-                          onChange={(event) => updateCollegeId(student.id, event.target.value)}
+                          onChange={(event) =>
+                            updateRow(student.id, { collegeId: event.target.value })
+                          }
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
                               event.preventDefault();
-                              void saveCollegeId(student.id);
+                              void saveStudent(student.id);
                             }
                           }}
                         />
@@ -244,7 +293,7 @@ export function ManualStudentsManager({
                           variant={dirty ? "accent" : "outline"}
                           loading={row.saving}
                           disabled={!canWrite || !dirty || row.saving}
-                          onClick={() => void saveCollegeId(student.id)}
+                          onClick={() => void saveStudent(student.id)}
                         >
                           {row.saving ? "Saving..." : "Save"}
                         </Button>

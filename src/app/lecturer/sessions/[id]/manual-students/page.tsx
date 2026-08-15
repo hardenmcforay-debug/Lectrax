@@ -38,7 +38,7 @@ export default async function ManualStudentsPage({
     <DashboardShell
       role="lecturer"
       title="Manual Students"
-      description={`Update college IDs for manually added students in ${courseLabel}.`}
+      description={`Update names and college IDs for manually added students in ${courseLabel}.`}
     >
       <div className="mb-4">
         <BackLink href={`/lecturer/sessions/${id}?tab=students`} />
