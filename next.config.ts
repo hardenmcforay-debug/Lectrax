@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
     // warning). Disabling it keeps dev in-memory for the session — same app
     // behavior/UI, less disk thrash. Production `next build` is unchanged.
     turbopackFileSystemCacheForDev: false,
+    // Match assignment multipart uploads (10 MB PDF + form overhead). The
+    // proxy default of 10 MB truncates the body and the scanner then rejects
+    // the file as "not a PDF".
+    proxyClientMaxBodySize: "12mb",
   },
   images: {
     formats: ["image/avif", "image/webp"],

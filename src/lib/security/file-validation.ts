@@ -3,15 +3,26 @@ import "server-only";
 export { brandingExtensionMatchesMime, hasBlockedUploadExtension } from "@/lib/security/file-validation-shared";
 import { BRANDING_IMAGE_MAX_BYTES } from "@/lib/landing/branding-image-validation";
 
+/** ISO 32000 allows a short prefix before the `%PDF` header. */
+const PDF_HEADER_SEARCH_LIMIT = 1024;
+
 export function hasPdfMagicHeader(bytes: Uint8Array): boolean {
-  return (
-    bytes.length >= 5 &&
-    bytes[0] === 0x25 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x44 &&
-    bytes[3] === 0x46 &&
-    (bytes[4] === 0x2d || bytes[4] === 0x20)
-  );
+  if (bytes.length < 5) return false;
+
+  const lastStart = Math.min(bytes.length - 5, PDF_HEADER_SEARCH_LIMIT);
+  for (let i = 0; i <= lastStart; i += 1) {
+    if (
+      bytes[i] === 0x25 &&
+      bytes[i + 1] === 0x50 &&
+      bytes[i + 2] === 0x44 &&
+      bytes[i + 3] === 0x46 &&
+      (bytes[i + 4] === 0x2d || bytes[i + 4] === 0x20)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function hasJpegMagicHeader(bytes: Uint8Array): boolean {

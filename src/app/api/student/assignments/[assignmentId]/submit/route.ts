@@ -179,4 +179,6 @@ async function postHandler(
   return NextResponse.json({ success: true });
 }
 
+export const maxDuration = 60;
+
 export const POST = withApiObservability("student.assignments.submit.post", postHandler);

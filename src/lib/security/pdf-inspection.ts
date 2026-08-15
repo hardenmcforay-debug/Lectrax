@@ -1,5 +1,12 @@
 import "server-only";
 
+import {
+  hasGifMagicHeader,
+  hasJpegMagicHeader,
+  hasPngMagicHeader,
+  hasWebpMagicHeader,
+} from "@/lib/security/file-validation";
+
 export type PdfInspectionCode =
   | "invalid_structure"
   | "dangerous_content"
@@ -12,13 +19,13 @@ export type PdfInspectionResult =
   | { safe: false; code: PdfInspectionCode; detail: string };
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const PDF_HEADER_SEARCH_LIMIT = 1024;
+const PDF_TRAILER_SEARCH_LIMIT = 64 * 1024;
 
 /** PDF features that can execute code, launch files, or hide payloads. */
 const DANGEROUS_PDF_PATTERNS: { pattern: RegExp; detail: string }[] = [
   { pattern: /\/JavaScript\b/i, detail: "JavaScript action" },
   { pattern: /\/JS\s*[\(<]/i, detail: "JavaScript stream" },
-  { pattern: /\/OpenAction\b/i, detail: "open action" },
-  { pattern: /\/AA\s*</, detail: "additional actions" },
   { pattern: /\/Launch\b/i, detail: "file launch action" },
   { pattern: /\/EmbeddedFile\b/i, detail: "embedded attachment" },
   { pattern: /\/EmbeddedFiles\b/i, detail: "embedded files collection" },
@@ -30,24 +37,38 @@ const DANGEROUS_PDF_PATTERNS: { pattern: RegExp; detail: string }[] = [
   { pattern: /\/URI\s*\(\s*javascript:/i, detail: "javascript URI" },
 ];
 
+const latin1Decoder = new TextDecoder("latin1");
+
 function decodePdfSample(bytes: Uint8Array): string {
   const length = Math.min(bytes.length, MAX_PDF_BYTES);
-  let text = "";
-  for (let i = 0; i < length; i += 1) {
-    text += String.fromCharCode(bytes[i]!);
-  }
-  return text;
+  return latin1Decoder.decode(bytes.subarray(0, length));
 }
 
 function hasValidPdfTrailer(bytes: Uint8Array): boolean {
-  const tailSize = Math.min(bytes.length, 4096);
-  const tail = decodePdfSample(bytes.subarray(bytes.length - tailSize));
+  const tailSize = Math.min(bytes.length, PDF_TRAILER_SEARCH_LIMIT);
+  const tail = latin1Decoder.decode(bytes.subarray(bytes.length - tailSize));
   return tail.includes("%%EOF");
 }
 
-function countPdfHeaders(bytes: Uint8Array): number {
-  const sample = decodePdfSample(bytes);
-  return sample.match(/%PDF-\d/gi)?.length ?? 0;
+function headerRegion(bytes: Uint8Array): string {
+  const length = Math.min(bytes.length, PDF_HEADER_SEARCH_LIMIT);
+  return latin1Decoder.decode(bytes.subarray(0, length));
+}
+
+function countPdfHeadersNearStart(bytes: Uint8Array): number {
+  return headerRegion(bytes).match(/%PDF-\d/gi)?.length ?? 0;
+}
+
+function hasForeignFilePrefix(bytes: Uint8Array): boolean {
+  if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04) {
+    return true;
+  }
+  return (
+    hasJpegMagicHeader(bytes) ||
+    hasPngMagicHeader(bytes) ||
+    hasGifMagicHeader(bytes) ||
+    hasWebpMagicHeader(bytes)
+  );
 }
 
 function userMessageForCode(code: PdfInspectionCode): string {
@@ -84,16 +105,17 @@ export function inspectPdfContent(bytes: Uint8Array): PdfInspectionResult {
     return { safe: false, code: "invalid_structure", detail: "Missing PDF trailer (%%EOF)" };
   }
 
-  const headerCount = countPdfHeaders(bytes);
-  if (headerCount > 1) {
+  const start = headerRegion(bytes);
+  if (!/%PDF-\d/i.test(start)) {
+    return { safe: false, code: "invalid_structure", detail: "Invalid PDF version header" };
+  }
+
+  const headerCount = countPdfHeadersNearStart(bytes);
+  if (headerCount > 1 || (start.search(/%PDF-\d/i) > 0 && hasForeignFilePrefix(bytes))) {
     return { safe: false, code: "polyglot", detail: "Multiple PDF headers detected" };
   }
 
   const content = decodePdfSample(bytes);
-
-  if (!/^%PDF-\d/i.test(content.trimStart())) {
-    return { safe: false, code: "invalid_structure", detail: "Invalid PDF version header" };
-  }
 
   if (/\/Encrypt\b/i.test(content)) {
     return { safe: false, code: "encrypted", detail: "Encrypted PDF object" };
