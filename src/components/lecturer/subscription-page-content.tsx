@@ -3,7 +3,7 @@
 import { appFetch } from "@/lib/api/client-fetch";
 import { deferNonCriticalTask } from "@/lib/low-data/defer-non-critical";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import {
@@ -31,6 +31,7 @@ import { BillingPlanPriceBlock } from "@/components/pricing/billing-plan-price-b
 import { formatSleChargeAmount, formatUsdPrice } from "@/lib/subscription/payment-currency";
 import { isAllowedPaymentCallbackFlag } from "@/lib/security/sanitize";
 import { stripSensitiveUrlParams } from "@/lib/security/client-storage";
+import { getAdaptivePollIntervalMs } from "@/lib/network/connection-quality";
 import { PaymentCheckoutFlow } from "@/components/lecturer/payment-checkout-flow";
 import { CircleAlert, Check, Trash2 } from "lucide-react";
 import {
@@ -43,6 +44,7 @@ import {
 } from "@/components/ui/dialog";
 
 const PAYMENT_CANCELLED_NOTICE_MS = 10000;
+const PAYMENT_ACTIVATED_NOTICE_MS = 10000;
 
 const plans: { id: BillingPlan; label: string; description: string }[] = [
   { id: "monthly", label: BILLING_PLANS.monthly.label, description: BILLING_PLANS.monthly.description },
@@ -89,27 +91,14 @@ export function SubscriptionPageContent({
   const [showCancelledNotice, setShowCancelledNotice] = useState(() =>
     isAllowedPaymentCallbackFlag(searchParams.get("cancelled"))
   );
+  const [paymentActivationNotice, setPaymentActivationNotice] = useState<
+    "activating" | "active" | null
+  >(() => {
+    if (!isAllowedPaymentCallbackFlag(searchParams.get("success"))) return null;
+    return hasActiveSubscriptionPeriod(initialData.profile) ? "active" : "activating";
+  });
 
-  useEffect(() => {
-    deferNonCriticalTask(() => {
-      void appFetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
-    });
-    stripSensitiveUrlParams();
-  }, []);
-
-  useEffect(() => {
-    if (!showCancelledNotice) return;
-
-    stripSensitiveUrlParams(["cancelled"]);
-
-    const timeout = window.setTimeout(() => {
-      setShowCancelledNotice(false);
-    }, PAYMENT_CANCELLED_NOTICE_MS);
-
-    return () => window.clearTimeout(timeout);
-  }, [showCancelledNotice]);
-
-  async function refreshSubscriptionData() {
+  const refreshSubscriptionData = useCallback(async () => {
     const supabase = createClient();
     // Prefer local session cookies first — more reliable in the PWA after hosted checkout.
     const {
@@ -123,7 +112,7 @@ export function SubscriptionPageContent({
       } = await supabase.auth.getUser();
       userId = user?.id ?? null;
     }
-    if (!userId) return;
+    if (!userId) return null;
 
     const { data: p } = await supabase
       .from("profiles")
@@ -159,7 +148,64 @@ export function SubscriptionPageContent({
     setProfile(p);
     setAdminGrantedActive(isAdminGranted);
     setPayments((pay as Payment[]) ?? []);
-  }
+    return p;
+  }, []);
+
+  useEffect(() => {
+    deferNonCriticalTask(() => {
+      void appFetch("/api/lecturer/subscription/sync", { method: "POST" }).catch(() => {});
+    });
+    stripSensitiveUrlParams();
+  }, []);
+
+  useEffect(() => {
+    if (!showCancelledNotice) return;
+
+    stripSensitiveUrlParams(["cancelled"]);
+
+    const timeout = window.setTimeout(() => {
+      setShowCancelledNotice(false);
+    }, PAYMENT_CANCELLED_NOTICE_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [showCancelledNotice]);
+
+  useEffect(() => {
+    if (!paymentActivationNotice) return;
+
+    stripSensitiveUrlParams(["success"]);
+
+    if (paymentActivationNotice === "active") {
+      const timeout = window.setTimeout(() => {
+        setPaymentActivationNotice(null);
+      }, PAYMENT_ACTIVATED_NOTICE_MS);
+      return () => window.clearTimeout(timeout);
+    }
+
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      void (async () => {
+        const nextProfile = await refreshSubscriptionData();
+        if (cancelled) return;
+        if (hasActiveSubscriptionPeriod(nextProfile ?? null)) {
+          setPaymentActivationNotice("active");
+        }
+      })();
+    };
+
+    tick();
+    const interval = window.setInterval(tick, getAdaptivePollIntervalMs(5_000));
+    document.addEventListener("visibilitychange", tick);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [paymentActivationNotice, refreshSubscriptionData]);
 
   function openCheckout(plan: BillingPlan) {
     if (activeSubscriptionPeriod) return;
@@ -225,11 +271,13 @@ export function SubscriptionPageContent({
 
   return (
     <DashboardShell role="lecturer" title="Subscription">
-      {isAllowedPaymentCallbackFlag(searchParams.get("success")) && (
+      {paymentActivationNotice ? (
         <Badge variant="accent" className="mb-4">
-          Payment successful! Your Lectrax Premium plan is activating…
+          {paymentActivationNotice === "active"
+            ? "Payment successful! Your Lectrax Premium plan is active."
+            : "Payment successful! Your Lectrax Premium plan is activating…"}
         </Badge>
-      )}
+      ) : null}
       {showCancelledNotice && (
         <div
           role="alert"
@@ -370,7 +418,12 @@ export function SubscriptionPageContent({
                 </span>{" "}
                 {p.payment_method && (
                   <span className="text-muted-foreground">via {p.payment_method}</span>
-                )}
+                )}{" "}
+                <ClientDateText
+                  value={p.paid_at ?? p.created_at}
+                  mode="datetime"
+                  className="text-muted-foreground"
+                />
               </span>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge variant={p.status === "completed" ? "accent" : "secondary"}>
