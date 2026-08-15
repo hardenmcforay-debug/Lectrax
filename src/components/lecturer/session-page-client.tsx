@@ -4,7 +4,7 @@ import { appFetch } from "@/lib/api/client-fetch";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 import { toClientAppPath } from "@/lib/pwa/config";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
@@ -53,7 +53,9 @@ import { AssignmentDeadline } from "@/components/shared/assignment-deadline";
 import { AssignmentOpenClosedBadge } from "@/components/shared/assignment-status-badge";
 import { isPastDeadline } from "@/lib/assignments/deadline";
 import { manualStudentSchema } from "@/lib/validations";
+import { compareBySurname } from "@/lib/names/compare-by-surname";
 import { sanitizeErrorMessage } from "@/lib/errors/classify";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import { getAdaptiveDebounceMs } from "@/lib/network/connection-quality";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 
@@ -161,6 +163,7 @@ export function SessionPageClient({
   const [closeSessionError, setCloseSessionError] = useState<string | null>(null);
   const [studentRows, setStudentRows] = useState(rows);
   const [prevRows, setPrevRows] = useState(rows);
+  const [studentSearch, setStudentSearch] = useState("");
   const studentRowsRefreshTimerRef = useRef<number | null>(null);
   const caPreviewTimerRef = useRef<number | null>(null);
   const savedCaWeightsRef = useRef<CAWeights | undefined>(initialCaWeights);
@@ -169,6 +172,18 @@ export function SessionPageClient({
     setPrevRows(rows);
     setStudentRows(rows);
   }
+
+  const filteredStudentRows = useMemo(() => {
+    const query = studentSearch.trim().toLowerCase();
+    const list = !query
+      ? studentRows
+      : studentRows.filter((student) => {
+          const name = student.name.toLowerCase();
+          const collegeId = (student.collegeId ?? "").toLowerCase();
+          return name.includes(query) || collegeId.includes(query);
+        });
+    return [...list].sort((a, b) => compareBySurname(a.name, b.name));
+  }, [studentRows, studentSearch]);
 
   useEffect(() => {
     savedCaWeightsRef.current = initialCaWeights;
@@ -623,6 +638,17 @@ export function SessionPageClient({
           assignmentCount={initialClassAssignments.length}
           disabled={studentRows.length === 0}
         />
+        <div className="mb-3">
+          <Label htmlFor="students-search" className="sr-only">
+            Search students
+          </Label>
+          <Input
+            id="students-search"
+            value={studentSearch}
+            onChange={(event) => setStudentSearch(sanitizeSearchQuery(event.target.value))}
+            placeholder="Search by name or ID"
+          />
+        </div>
         <div className="w-full overflow-x-auto rounded-lg border bg-white">
           <Table className="w-full min-w-[52rem]">
             <TableHeader>
@@ -663,7 +689,7 @@ export function SessionPageClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {studentRows.map((r, index) => (
+              {filteredStudentRows.map((r, index) => (
                 <TableRow
                   key={r.enrollmentId}
                   className={cn(

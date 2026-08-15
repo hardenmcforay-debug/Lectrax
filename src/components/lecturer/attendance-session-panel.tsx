@@ -55,6 +55,7 @@ import {
 import type { ClassSession, StudentTableRow } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { QR_SIZE } from "@/lib/low-data/constants";
+import { compareBySurname } from "@/lib/names/compare-by-surname";
 import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import { cn } from "@/lib/utils";
 
@@ -155,12 +156,14 @@ export function AttendanceSessionPanel({
 
   const filteredRows = useMemo(() => {
     const query = studentSearch.trim().toLowerCase();
-    if (!query) return rows;
-    return rows.filter((student) => {
-      const name = student.name.toLowerCase();
-      const collegeId = (student.collegeId ?? "").toLowerCase();
-      return name.includes(query) || collegeId.includes(query);
-    });
+    const list = !query
+      ? rows
+      : rows.filter((student) => {
+          const name = student.name.toLowerCase();
+          const collegeId = (student.collegeId ?? "").toLowerCase();
+          return name.includes(query) || collegeId.includes(query);
+        });
+    return [...list].sort((a, b) => compareBySurname(a.name, b.name));
   }, [rows, studentSearch]);
 
   useEffect(() => {

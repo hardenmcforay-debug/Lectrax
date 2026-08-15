@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/table";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import type { ManualStudentListItem } from "@/lib/lecturer/manual-students";
+import { compareBySurname } from "@/lib/names/compare-by-surname";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import { cn } from "@/lib/utils";
 
 type RowState = {
@@ -63,11 +65,25 @@ export function ManualStudentsManager({
   const [rows, setRows] = useState<Record<string, RowState>>(() =>
     Object.fromEntries(initialStudents.map((student) => [student.id, toRowState(student)]))
   );
+  const [studentSearch, setStudentSearch] = useState("");
 
   const dirtyCount = useMemo(
     () => Object.values(rows).filter(isRowDirty).length,
     [rows]
   );
+
+  const filteredStudents = useMemo(() => {
+    const query = studentSearch.trim().toLowerCase();
+    const list = !query
+      ? students
+      : students.filter((student) => {
+          const row = rows[student.id];
+          const name = (row?.fullName ?? student.fullName).toLowerCase();
+          const collegeId = (row?.collegeId ?? student.collegeId ?? "").toLowerCase();
+          return name.includes(query) || collegeId.includes(query);
+        });
+    return [...list].sort((a, b) => compareBySurname(a.fullName, b.fullName));
+  }, [students, rows, studentSearch]);
 
   const updateRow = useCallback((id: string, patch: Partial<Pick<RowState, "fullName" | "collegeId">>) => {
     setRows((prev) => ({
@@ -215,6 +231,17 @@ export function ManualStudentsManager({
           ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
+          <div>
+            <Label htmlFor="manual-students-search" className="sr-only">
+              Search students
+            </Label>
+            <Input
+              id="manual-students-search"
+              value={studentSearch}
+              onChange={(event) => setStudentSearch(sanitizeSearchQuery(event.target.value))}
+              placeholder="Search by name or ID"
+            />
+          </div>
           <div className="w-full overflow-x-auto rounded-lg border bg-white">
             <Table className="w-full min-w-[36rem]">
               <TableHeader>
@@ -226,7 +253,7 @@ export function ManualStudentsManager({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {students.map((student, index) => {
+                {filteredStudents.map((student, index) => {
                   const row = rows[student.id] ?? toRowState(student);
                   const dirty = isRowDirty(row);
 
