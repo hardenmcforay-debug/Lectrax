@@ -3,12 +3,13 @@
 import { appFetch } from "@/lib/api/client-fetch";
 import { isAbortError } from "@/lib/errors/classify";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -54,6 +55,7 @@ import {
 import type { ClassSession, StudentTableRow } from "@/types/database";
 import { lecturerPortalCardClass } from "@/components/lecturer/lecturer-dashboard-styles";
 import { QR_SIZE } from "@/lib/low-data/constants";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import { cn } from "@/lib/utils";
 
 export type ActiveAttendanceSession = {
@@ -124,6 +126,7 @@ export function AttendanceSessionPanel({
   );
   const [qrExpiresAt, setQrExpiresAt] = useState<number | null>(null);
   const [qrVersion, setQrVersion] = useState(0);
+  const [studentSearch, setStudentSearch] = useState("");
   const [unmarkTarget, setUnmarkTarget] = useState<{
     enrollmentId: string;
     name: string;
@@ -149,6 +152,20 @@ export function AttendanceSessionPanel({
   const presentCount = presentRecords.size;
   const totalStudents = rows.length;
   const notMarkedCount = Math.max(0, totalStudents - presentCount);
+
+  const filteredRows = useMemo(() => {
+    const query = studentSearch.trim().toLowerCase();
+    if (!query) return rows;
+    return rows.filter((student) => {
+      const name = student.name.toLowerCase();
+      const collegeId = (student.collegeId ?? "").toLowerCase();
+      return name.includes(query) || collegeId.includes(query);
+    });
+  }, [rows, studentSearch]);
+
+  useEffect(() => {
+    if (!activeSessionId) setStudentSearch("");
+  }, [activeSessionId]);
 
   useEffect(() => {
     if (!activeSessionId) return;
@@ -890,8 +907,19 @@ export function AttendanceSessionPanel({
             {notice ? (
               <p className="shrink-0 text-sm text-amber-700">{notice}</p>
             ) : null}
+            <div className="shrink-0">
+              <Label htmlFor="manual-attendance-search" className="sr-only">
+                Search students
+              </Label>
+              <Input
+                id="manual-attendance-search"
+                value={studentSearch}
+                onChange={(event) => setStudentSearch(sanitizeSearchQuery(event.target.value))}
+                placeholder="Search by name or ID"
+              />
+            </div>
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
-              {rows.map((student) => {
+              {filteredRows.map((student) => {
                 const markMethod = presentRecords.get(student.enrollmentId);
                 const isMarked = markMethod !== undefined;
                 const isQr = markMethod !== undefined && isQrLockedAttendance(markMethod);
