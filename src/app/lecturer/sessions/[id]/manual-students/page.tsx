@@ -30,15 +30,10 @@ export default async function ManualStudentsPage({
 
   const canWrite = isSubscriptionWritable(subscription);
 
-  const courseLabel = session.class_name
-    ? `${session.course_code} — ${session.class_name}`
-    : `${session.course_code} — ${session.title}`;
-
   return (
     <DashboardShell
       role="lecturer"
       title="Manual Students"
-      description={`Update names and college IDs for manually added students in ${courseLabel}.`}
     >
       <div className="mb-4">
         <BackLink href={`/lecturer/sessions/${id}?tab=students`} />
