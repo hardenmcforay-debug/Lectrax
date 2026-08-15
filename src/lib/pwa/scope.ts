@@ -68,3 +68,42 @@ export function isAppShellPath(pathname: string): boolean {
     path.startsWith("/api/")
   );
 }
+
+/**
+ * Password recovery must stay on the unscoped site path so PKCE/session cookies
+ * match the browser that opened the email link.
+ */
+function isRecoveryAppShellPath(pathname: string): boolean {
+  return (
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/") ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback/")
+  );
+}
+
+/**
+ * Rewrite an unscoped app-shell href onto `/go/*`.
+ * Returns null when the URL should be left alone (already scoped, marketing,
+ * recovery, or a different origin).
+ */
+export function rewriteUnscopedAppShellHref(href: string, origin: string): string | null {
+  let url: URL;
+  let originUrl: URL;
+  try {
+    url = new URL(href, origin);
+    originUrl = new URL(origin);
+  } catch {
+    return null;
+  }
+
+  if (url.origin !== originUrl.origin) return null;
+  if (isPwaScopePath(url.pathname)) return null;
+  if (isMarketingPath(url.pathname)) return null;
+  if (isRecoveryAppShellPath(url.pathname)) return null;
+  if (!isAppShellPath(url.pathname)) return null;
+
+  url.pathname = toPwaScopePath(url.pathname);
+  const scopedPath = `${url.pathname}${url.search}${url.hash}`;
+  return /^https?:\/\//i.test(href) ? `${url.origin}${scopedPath}` : scopedPath;
+}

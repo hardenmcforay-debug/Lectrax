@@ -8,12 +8,32 @@ import {
   isAppShellPath,
   isMarketingPath,
   isPwaScopePath,
+  rewriteUnscopedAppShellHref,
   toPwaScopePath,
 } from "@/lib/pwa/scope";
+
+function rewriteInstalledPwaFetchInput(input: RequestInfo | URL): RequestInfo | URL {
+  const href =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+  const rewritten = rewriteUnscopedAppShellHref(href, window.location.origin);
+  if (!rewritten) return input;
+
+  if (typeof input === "string") return rewritten;
+  if (input instanceof URL) return new URL(rewritten, window.location.origin);
+  return new Request(new URL(rewritten, window.location.origin), input);
+}
 
 /**
  * In the installed PWA, keep navigations under `/go/*` (manifest scope) and
  * send marketing URLs out to a normal browser tab when possible.
+ *
+ * Programmatic `router.push("/lecturer/...")` (and RSC prefetch) also leave
+ * `/go`, hit site cookies, and flash login. Rewrite those requests here so
+ * Create Assignment and similar actions cannot drop the PWA session.
  */
 export function PwaScopeNavigator() {
   const pathname = usePathname();
@@ -22,13 +42,28 @@ export function PwaScopeNavigator() {
   useEffect(() => {
     if (!isRunningAsInstalledPwa()) return;
 
+    const originalFetch = window.fetch.bind(window);
+    function lectraxPwaScopedFetch(
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ): Promise<Response> {
+      return originalFetch(rewriteInstalledPwaFetchInput(input), init);
+    }
+    window.fetch = lectraxPwaScopedFetch;
+
+    function restoreFetch() {
+      if (window.fetch === lectraxPwaScopedFetch) {
+        window.fetch = originalFetch;
+      }
+    }
+
     if (pathname && !isPwaScopePath(pathname) && isAppShellPath(pathname)) {
       // Recovery must stay on the site path so PKCE/session cookies match the email link.
       if (isPasswordRecoveryLandingPath(pathname)) {
-        return;
+        return restoreFetch;
       }
       router.replace(toPwaScopePath(pathname) + window.location.search + window.location.hash);
-      return;
+      return restoreFetch;
     }
 
     function onClick(event: MouseEvent) {
@@ -68,7 +103,10 @@ export function PwaScopeNavigator() {
     }
 
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      restoreFetch();
+    };
   }, [pathname, router]);
 
   return null;

@@ -191,7 +191,9 @@ export function SessionPageClient({
     }
 
     setAssignmentLimitMessage(null);
-    router.push(`/lecturer/sessions/${session.id}/assignments`);
+    // Stay on `/go/*` in the PWA. Bare `router.push("/lecturer/...")` hits the
+    // site cookie jar, flashes login, then snaps back — the create form never opens.
+    router.push(toClientAppPath(`/lecturer/sessions/${session.id}/assignments`));
   }
 
   async function handleCloseSession() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { toClientAppPath } from "@/lib/pwa/config";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -65,7 +66,7 @@ export function CreateSessionForm({ defaultAcademicYear }: CreateSessionFormProp
         throw new Error("CREATE_SESSION_FAILED");
       }
 
-      router.push(`/lecturer/sessions/${result.session.id}`);
+      router.push(toClientAppPath(`/lecturer/sessions/${result.session.id}`));
     }, { holdOnSuccess: true }).catch((error: unknown) => {
       if (error instanceof Error && error.message === "CREATE_SESSION_FAILED") return;
       setSubmitError("Could not create class session. Please try again.");

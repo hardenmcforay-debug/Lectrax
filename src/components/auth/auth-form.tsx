@@ -29,6 +29,7 @@ import {
   getPlatformAdminMainAppLoginDeniedMessage,
 } from "@/lib/auth/admin-deployment";
 import { redirectAfterAuth } from "@/lib/auth/roles";
+import { toClientAppPath } from "@/lib/pwa/config";
 import { resolveClientRoleAfterAuth } from "@/lib/auth/resolve-client-role";
 import { syncStudentCollegeIdFromSignupMetadata } from "@/lib/auth/sync-signup-profile";
 import { getAttendanceDeviceIdentity } from "@/lib/attendance/device-identity";
@@ -536,9 +537,11 @@ export function SignupForm() {
 
       setIsRedirecting(true);
       router.push(
-        signupId.type === "email"
-          ? "/login?message=confirm-email"
-          : "/login?message=account-created"
+        toClientAppPath(
+          signupId.type === "email"
+            ? "/login?message=confirm-email"
+            : "/login?message=account-created"
+        )
       );
     } catch (cause) {
       setIsRedirecting(false);

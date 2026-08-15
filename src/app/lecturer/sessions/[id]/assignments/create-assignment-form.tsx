@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { toClientAppPath } from "@/lib/pwa/config";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 import { useState } from "react";
@@ -61,7 +62,7 @@ export function CreateAssignmentForm({ sessionId }: { sessionId: string }) {
           throw new Error("CREATE_ASSIGNMENT_FAILED");
         }
 
-        router.push(`/lecturer/sessions/${sessionId}?tab=assignments`);
+        router.push(toClientAppPath(`/lecturer/sessions/${sessionId}?tab=assignments`));
         router.refresh();
       } catch (error) {
         if (error instanceof Error && error.message === "CREATE_ASSIGNMENT_FAILED") {

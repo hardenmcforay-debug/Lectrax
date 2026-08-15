@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { toClientAppPath } from "@/lib/pwa/config";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ export default function JoinClassPage() {
 
       setSuccess(`Joined ${result.session.courseCode} — ${result.session.title}`);
       setTimeout(() => {
-        router.push("/student/academic-overview");
+        router.push(toClientAppPath("/student/academic-overview"));
       }, 1500);
     }, { holdOnSuccess: true }).catch((error: unknown) => {
       if (error instanceof Error && error.message === "JOIN_FAILED") return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { appFetch } from "@/lib/api/client-fetch";
+import { toClientAppPath } from "@/lib/pwa/config";
 import { userFacingZodMessage } from "@/lib/security/zod-helpers";
 
 import { useMemo, useState } from "react";
@@ -234,7 +235,13 @@ export function CaStructurePanel({
       }
 
       setCreateOpen(false);
-      router.push(`/lecturer/sessions/${session.id}/tests/${data.test.id}`);
+      // Hard-navigate within the current auth surface (`/go/*` in PWA). Soft
+      // `router.push("/lecturer/...")` leaves PWA scope, hits site cookies, and
+      // briefly redirects to login before the app snaps back — the new test
+      // page never opens, so it looks like the test was not created.
+      window.location.assign(
+        toClientAppPath(`/lecturer/sessions/${session.id}/tests/${data.test.id}`)
+      );
       // Keep `creating` locked until navigation unmounts this view.
     } catch {
       setCreateError("Network error. Try again.");
@@ -367,6 +374,7 @@ export function CaStructurePanel({
           <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-base font-semibold">Create Test</h3>
               <Button
+                type="button"
                 variant="accent"
                 disabled={nextTestNumber === null}
                 onClick={openCreateDialog}
@@ -537,10 +545,16 @@ export function CaStructurePanel({
             {createError && <p className="text-sm text-destructive">{createError}</p>}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              disabled={creating}
+            >
               Cancel
             </Button>
             <Button
+              type="button"
               variant="accent"
               onClick={() => void handleCreateTest()}
               loading={creating}
