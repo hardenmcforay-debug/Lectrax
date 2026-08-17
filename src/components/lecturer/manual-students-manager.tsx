@@ -78,9 +78,12 @@ export function ManualStudentsManager({
       ? students
       : students.filter((student) => {
           const row = rows[student.id];
-          const name = (row?.fullName ?? student.fullName).toLowerCase();
-          const collegeId = (row?.collegeId ?? student.collegeId ?? "").toLowerCase();
-          return name.includes(query) || collegeId.includes(query);
+          const names = [student.fullName, row?.fullName];
+          const collegeIds = [student.collegeId, row?.collegeId];
+          return (
+            names.some((name) => (name ?? "").toLowerCase().includes(query)) ||
+            collegeIds.some((collegeId) => (collegeId ?? "").toLowerCase().includes(query))
+          );
         });
     return [...list].sort((a, b) => compareBySurname(a.fullName, b.fullName));
   }, [students, rows, studentSearch]);
@@ -247,7 +250,7 @@ export function ManualStudentsManager({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12 text-center">No.</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead className="min-w-[12rem]">Name</TableHead>
                   <TableHead className="min-w-[12rem]">College ID</TableHead>
                   <TableHead className="w-[8rem]" />
                 </TableRow>

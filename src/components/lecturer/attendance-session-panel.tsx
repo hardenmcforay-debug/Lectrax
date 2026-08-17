@@ -771,15 +771,10 @@ export function AttendanceSessionPanel({
     <div
       className={cn(
         "grid gap-6",
-        activeSession && "lg:grid-cols-2 lg:items-start",
+        activeSession && "lg:grid-cols-2",
       )}
     >
-      <Card
-        className={cn(
-          lecturerPortalCardClass,
-          activeSession && "lg:sticky lg:top-4 lg:self-start",
-        )}
-      >
+      <Card className={lecturerPortalCardClass}>
         <CardHeader>
           <CardTitle>
             {activeSession ? "Active Attendance Session" : "Generate QR Code"}
@@ -885,10 +880,11 @@ export function AttendanceSessionPanel({
       </Card>
 
       {activeSession && (
+        <div className="relative min-h-0">
         <Card
           className={cn(
             lecturerPortalCardClass,
-            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden",
+            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden lg:absolute lg:inset-0 lg:max-h-none",
           )}
         >
           <CardHeader className="shrink-0">
@@ -976,6 +972,7 @@ export function AttendanceSessionPanel({
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
 
       <Dialog
