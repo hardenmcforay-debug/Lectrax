@@ -255,11 +255,6 @@ export function AttendanceSessionPanel({
     }
   }, []);
 
-  const hideExpiredQr = useCallback(() => {
-    setQrImage(null);
-    setQrRendering(true);
-  }, []);
-
   const refreshQr = useCallback(
     async (attendanceSessionId: string, source = "unknown") => {
       if (refreshingRef.current) {
@@ -267,9 +262,6 @@ export function AttendanceSessionPanel({
         return false;
       }
       refreshingRef.current = true;
-      // Drop the on-screen code before the server invalidates it, so students
-      // cannot scan a dead QR while the next one is requested/rendered.
-      hideExpiredQr();
       logQrRefresh("start", { attendanceSessionId, source });
 
       try {
@@ -289,7 +281,6 @@ export function AttendanceSessionPanel({
         if (res.status === 410) {
           setActiveSession(null);
           setQrImage(null);
-          setQrRendering(false);
           setQrExpiresAt(null);
           setPresentRecords(new Map());
           presentLoadedForSessionRef.current = null;
@@ -306,7 +297,7 @@ export function AttendanceSessionPanel({
           return false;
         }
 
-        await renderQr(data.qrPayload);
+        void renderQr(data.qrPayload);
         const nextExpiresAt = data.tokenExpiresAt
           ? new Date(data.tokenExpiresAt).getTime()
           : Date.now() + QR_REFRESH_INTERVAL_MS;
@@ -337,7 +328,7 @@ export function AttendanceSessionPanel({
         refreshingRef.current = false;
       }
     },
-    [hideExpiredQr, renderQr, router]
+    [renderQr, router]
   );
 
   useEffect(() => {
@@ -387,28 +378,6 @@ export function AttendanceSessionPanel({
 
     return clearRefreshTimer;
   }, [activeSessionId, qrExpiresAt, scheduleNextRefresh, clearRefreshTimer]);
-
-  useEffect(() => {
-    if (!activeSessionId || !qrExpiresAt || !qrImage) return;
-
-    const hideWhenExpired = () => {
-      if (Date.now() < qrExpiresAt) return;
-      hideExpiredQr();
-    };
-
-    const delay = Math.max(0, qrExpiresAt - Date.now());
-    const timeoutId = window.setTimeout(hideWhenExpired, delay);
-
-    const onVisibility = () => {
-      if (!document.hidden) hideWhenExpired();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [activeSessionId, hideExpiredQr, qrExpiresAt, qrImage]);
 
   useEffect(() => {
     return clearRefreshTimer;
