@@ -123,7 +123,7 @@ export function AssignmentGradesClient({
       ? rows.filter(
           (r) =>
             r.name.toLowerCase().includes(q) ||
-            r.collegeId.toLowerCase().includes(q),
+            (r.collegeId ?? "").toLowerCase().includes(q),
         )
       : rows;
     return [...filtered].sort((a, b) => compareBySurname(a.name, b.name));
