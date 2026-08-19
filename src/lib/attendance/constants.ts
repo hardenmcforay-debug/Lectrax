@@ -1,8 +1,15 @@
-/** How long each QR token remains valid (seconds). Matches refresh interval — only one token valid at a time. */
+/** How long each QR token remains valid (seconds). */
 export const QR_TOKEN_TTL_SECONDS = 5;
 
 /** How often the lecturer UI refreshes the displayed QR code (milliseconds). */
 export const QR_REFRESH_INTERVAL_MS = QR_TOKEN_TTL_SECONDS * 1000;
+
+/**
+ * Start fetching the next QR this many ms before the current token expires.
+ * The old QR stays on screen (still valid) while the new one is fetched and
+ * rendered, so there is never a gap where students see a spinner or dead code.
+ */
+export const QR_PREFETCH_MS = 2_000;
 
 /**
  * If the lecturer stops refreshing the QR for this long, treat the session as abandoned

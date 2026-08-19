@@ -37,6 +37,7 @@ import {
   PRESENT_COUNT_POLL_INTERVAL_MS,
   PRESENT_COUNT_POLL_SLOW_FALLBACK_MS,
   PRESENT_COUNT_POLL_SLOW_INTERVAL_MS,
+  QR_PREFETCH_MS,
   QR_REFRESH_INTERVAL_MS,
   SESSION_DURATION_OPTIONS,
 } from "@/lib/attendance/constants";
@@ -297,7 +298,7 @@ export function AttendanceSessionPanel({
           return false;
         }
 
-        void renderQr(data.qrPayload);
+        await renderQr(data.qrPayload);
         const nextExpiresAt = data.tokenExpiresAt
           ? new Date(data.tokenExpiresAt).getTime()
           : Date.now() + QR_REFRESH_INTERVAL_MS;
@@ -346,7 +347,7 @@ export function AttendanceSessionPanel({
   const scheduleNextRefresh = useCallback(
     (attendanceSessionId: string, expiresAt: number) => {
       clearRefreshTimer();
-      const delay = Math.max(0, expiresAt - Date.now());
+      const delay = Math.max(0, expiresAt - Date.now() - QR_PREFETCH_MS);
       logQrRefresh("timer:scheduled", {
         attendanceSessionId,
         delayMs: delay,
