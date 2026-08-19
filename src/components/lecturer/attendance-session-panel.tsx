@@ -881,10 +881,11 @@ export function AttendanceSessionPanel({
       </Card>
 
       {activeSession && (
+        <div className="relative min-h-0">
         <Card
           className={cn(
             lecturerPortalCardClass,
-            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden",
+            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden lg:absolute lg:inset-0 lg:max-h-none",
           )}
         >
           <CardHeader className="shrink-0">
@@ -972,6 +973,7 @@ export function AttendanceSessionPanel({
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
 
       <Dialog
