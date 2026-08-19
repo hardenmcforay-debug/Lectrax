@@ -884,7 +884,7 @@ export function AttendanceSessionPanel({
         <Card
           className={cn(
             lecturerPortalCardClass,
-            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden lg:max-h-none lg:self-stretch",
+            "flex max-h-[min(36rem,calc(100dvh-9rem))] flex-col overflow-hidden",
           )}
         >
           <CardHeader className="shrink-0">
