@@ -35,9 +35,14 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 
+import { Input } from "@/components/ui/input";
+
 import type { AssignmentGradeEntryData } from "@/lib/lecturer/class-assignments";
 
 import { AssignmentGradeRow } from "@/components/lecturer/assignment-grade-row";
+
+import { compareBySurname } from "@/lib/names/compare-by-surname";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 
 import {
   buildGradeSavePayload,
@@ -109,6 +114,20 @@ export function AssignmentGradesClient({
   const [pdfViewer, setPdfViewer] = useState<AssignmentSubmissionViewerData | null>(
     null,
   );
+
+  const [studentSearch, setStudentSearch] = useState("");
+
+  const filteredRows = useMemo(() => {
+    const q = sanitizeSearchQuery(studentSearch).toLowerCase();
+    const filtered = q
+      ? rows.filter(
+          (r) =>
+            r.name.toLowerCase().includes(q) ||
+            r.collegeId.toLowerCase().includes(q),
+        )
+      : rows;
+    return [...filtered].sort((a, b) => compareBySurname(a.name, b.name));
+  }, [rows, studentSearch]);
 
   const submittedRows = useMemo(
     () => rows.filter((r) => r.hasSubmission),
@@ -514,6 +533,17 @@ export function AssignmentGradesClient({
               first.
             </p>
           ) : (
+            <div className="mb-3">
+              <Input
+                placeholder="Search by name or ID…"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+          )}
+
+          {rows.length > 0 && (
             <div className="overflow-x-auto rounded-lg border bg-white">
               <Table>
                 <TableHeader>
@@ -533,7 +563,7 @@ export function AssignmentGradesClient({
                 </TableHeader>
 
                 <TableBody>
-                  {rows.map((row) => (
+                  {filteredRows.map((row) => (
                     <AssignmentGradeRow
                       key={row.enrollmentId}
                       enrollmentId={row.enrollmentId}
@@ -556,6 +586,12 @@ export function AssignmentGradesClient({
                 </TableBody>
               </Table>
             </div>
+          )}
+
+          {rows.length > 0 && filteredRows.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No students match your search.
+            </p>
           )}
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}

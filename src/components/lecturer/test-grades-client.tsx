@@ -15,7 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { TestGradeMobileCard, TestGradeRow } from "@/components/lecturer/test-grade-row";
+import { Input } from "@/components/ui/input";
 import type { TestGradeEntryData } from "@/lib/lecturer/class-tests";
+import { compareBySurname } from "@/lib/names/compare-by-surname";
+import { sanitizeSearchQuery } from "@/lib/security/sanitize";
 import {
   buildGradeSavePayload,
   countDirtyGrades,
@@ -56,6 +59,19 @@ export function TestGradesClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+
+  const filteredRows = useMemo(() => {
+    const q = sanitizeSearchQuery(studentSearch).toLowerCase();
+    const filtered = q
+      ? rows.filter(
+          (r) =>
+            r.name.toLowerCase().includes(q) ||
+            r.collegeId.toLowerCase().includes(q),
+        )
+      : rows;
+    return [...filtered].sort((a, b) => compareBySurname(a.name, b.name));
+  }, [rows, studentSearch]);
 
   if (serverScores !== prevServerScores) {
     setPrevServerScores(serverScores);
@@ -194,8 +210,22 @@ export function TestGradesClient({
             </p>
           ) : (
             <>
+              <div className="mb-3">
+                <Input
+                  placeholder="Search by name or ID…"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              {filteredRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No students match your search.
+                </p>
+              ) : (
+              <>
               <div className="space-y-3 md:hidden">
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <TestGradeMobileCard
                     key={row.enrollmentId}
                     enrollmentId={row.enrollmentId}
@@ -226,7 +256,7 @@ export function TestGradesClient({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((row) => (
+                    {filteredRows.map((row) => (
                       <TestGradeRow
                         key={row.enrollmentId}
                         enrollmentId={row.enrollmentId}
@@ -243,6 +273,8 @@ export function TestGradesClient({
                   </TableBody>
                 </Table>
               </div>
+              </>
+              )}
             </>
           )}
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
